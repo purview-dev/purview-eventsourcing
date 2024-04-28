@@ -1,6 +1,4 @@
-﻿using Purview.EventSourcing.Aggregates.Test;
-
-namespace Purview.EventSourcing.Aggregates;
+﻿namespace Purview.EventSourcing.Aggregates;
 
 partial class AggregateBaseTests
 {
@@ -12,16 +10,14 @@ partial class AggregateBaseTests
 	[InlineData(0, 1)]
 	[InlineData(0, 10)]
 	[InlineData(0, 100)]
-	public void ClearUnsavedEvents_GivenNoUpperBoundVersionIsSpecifiedAndHasEvents_ReturnsToPreUnSavedAndAppliedEventVerison(int savedEventCount, int unSavedEventCount)
+	public void ClearUnsavedEvents_GivenNoUpperBoundVersionIsSpecifiedAndHasEvents_ReturnsToPreUnSavedAndAppliedEventVersion(int savedEventCount, int unSavedEventCount)
 	{
 		// Arrange
-		TestAggregate testAggregate = CreateTestAggregate();
+		var testAggregate = CreateTestAggregate();
 		testAggregate.Details.SavedVersion = testAggregate.Details.CurrentVersion = savedEventCount;
 
-		for (int i = 0; i < unSavedEventCount; i++)
-		{
+		for (var i = 0; i < unSavedEventCount; i++)
 			testAggregate.Increment();
-		}
 
 		testAggregate
 			.Details
@@ -56,12 +52,10 @@ partial class AggregateBaseTests
 	public void ClearUnsavedEvents_GivenUpperBoundVersionIsSpecifiedAndIsLessThanEventsUnsaved_ReturnsToPreUnSavedUpToSpecifiedBound(int unSavedEventCount, int eventsToRemove)
 	{
 		// Arrange
-		TestAggregate testAggregate = CreateTestAggregate();
+		var testAggregate = CreateTestAggregate();
 
-		for (int i = 0; i < unSavedEventCount; i++)
-		{
+		for (var i = 0; i < unSavedEventCount; i++)
 			testAggregate.Increment();
-		}
 
 		// Act
 		testAggregate.ClearUnsavedEvents(upToVersion: eventsToRemove);

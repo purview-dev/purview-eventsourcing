@@ -4,8 +4,6 @@
 
 	<PropertyGroup>
 		<NoWarn>$(NoWarn);CS0436;</NoWarn>
-		
-		<DefineConstants Condition="'$(Configuration)' == 'DEBUG'">DEBUG_SG</DefineConstants>
 	</PropertyGroup>
 
 </Project>

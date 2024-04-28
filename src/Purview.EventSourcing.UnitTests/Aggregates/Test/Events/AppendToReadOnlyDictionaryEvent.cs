@@ -11,6 +11,10 @@ public class AppendToReadOnlyDictionaryEvent : EventBase
 	protected override void BuildEventHash(ref HashCode hash)
 	{
 		hash.Add(Key);
-		Values.BuildHash(ref hash);
+		if (Values is not null)
+		{
+			foreach (string value in Values)
+				hash.Add(value);
+		}
 	}
 }

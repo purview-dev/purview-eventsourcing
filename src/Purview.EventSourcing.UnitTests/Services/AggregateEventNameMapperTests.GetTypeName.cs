@@ -1,6 +1,4 @@
-﻿using Purview.EventSourcing.Services;
-
-namespace Purview.EventSourcing;
+﻿namespace Purview.EventSourcing;
 
 partial class AggregateEventNameMapperTests
 {
@@ -8,11 +6,11 @@ partial class AggregateEventNameMapperTests
 	public void GetTypeName_GivenEventTypeNameIsNotInCollection_ReturnsNull()
 	{
 		// Arrange
-		AggregateEventNameMapper mapper = CreateMapper<CorrectlyNamedAggregate>();
+		var mapper = CreateMapper<CorrectlyNamedAggregate>();
 		const string missingEventTypeName = "no-event-type";
 
 		// Act
-		string? result = mapper.GetTypeName<CorrectlyNamedAggregate>(missingEventTypeName);
+		var result = mapper.GetTypeName<CorrectlyNamedAggregate>(missingEventTypeName);
 
 		// Assert
 		result
@@ -28,10 +26,10 @@ partial class AggregateEventNameMapperTests
 	public void GetTypeName_GivenEventTypeNameIsNullOrWhitespace_ThrowsArgumentNullException(string? eventTypeName)
 	{
 		// Arrange
-		AggregateEventNameMapper mapper = CreateMapper<CorrectlyNamedAggregate>();
+		var mapper = CreateMapper<CorrectlyNamedAggregate>();
 
 		// Act
-		Action action = () => mapper.GetTypeName<CorrectlyNamedAggregate>(eventTypeName!);
+		var action = () => mapper.GetTypeName<CorrectlyNamedAggregate>(eventTypeName!);
 
 		// Assert
 		action

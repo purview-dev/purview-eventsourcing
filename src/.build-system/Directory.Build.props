@@ -110,10 +110,12 @@
 	<!-- Test Projects. -->
 	<PropertyGroup Label="Testing Project Properties" Condition="'$(IsTestProject)' == 'true'">
 
-		<NoWarn>CA1701;CA1702;CA1705;CA1707;CA1806;CA2000;$(NoWarn)</NoWarn>
+		<NoWarn>$(NoWarn);CA1707</NoWarn>
+
+		<!-- <NoWarn>CA1701;CA1702;CA1705;CA1707;CA1806;CA2000;$(NoWarn)</NoWarn>
 		<NoWarn>IDE0001;IDE0007;$(NoWarn)</NoWarn>
 		<NoWarn>RCS1001;RCS1003;RCS1010;RCS1018;$(NoWarn)</NoWarn>
-		<NoWarn>VSTHRD200;$(NoWarn)</NoWarn>
+		<NoWarn>VSTHRD200;$(NoWarn)</NoWarn> -->
 
 		<CollectCoverage>true</CollectCoverage>
 		<CoverletOutput Condition=" '$(OutputPath)' != '' ">$(OutputPath)/</CoverletOutput>
@@ -170,5 +172,5 @@
 		</PackageReference>
 
 	</ItemGroup>
-	
+
 </Project>

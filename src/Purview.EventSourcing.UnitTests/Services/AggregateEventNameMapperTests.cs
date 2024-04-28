@@ -6,10 +6,10 @@ namespace Purview.EventSourcing
 {
 	public partial class AggregateEventNameMapperTests
 	{
-		const string _correctlyNamedAggregateName = "correctly-named";
+		const string CorrectlyNamedAggregateName = "correctly-named";
 
 		static AggregateEventNameMapper CreateMapper<T>()
-			where T : class, Interfaces.Aggregates.IAggregate, new()
+			where T : class, Aggregates.IAggregate, new()
 		{
 			AggregateEventNameMapper? eventNameMapper = new();
 			eventNameMapper.InitializeAggregate<T>();

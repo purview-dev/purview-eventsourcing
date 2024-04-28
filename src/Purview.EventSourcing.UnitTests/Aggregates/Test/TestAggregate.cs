@@ -24,9 +24,7 @@ public class TestAggregate : AggregateBase
 	void Apply(PropertyBaseExpressionEvent obj)
 	{
 		if (obj.PropertyName == nameof(DoNotTouchCasePropertyValue))
-		{
 			DoNotTouchCasePropertyValue = obj.PropertyValue;
-		}
 	}
 
 	void Apply(AppendToReadOnlyDictionaryEvent obj)

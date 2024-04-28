@@ -1,6 +1,5 @@
 ﻿using Purview.EventSourcing.Aggregates.Test;
 using Purview.EventSourcing.Aggregates.Test.Events;
-using Purview.EventSourcing.Interfaces.Aggregates.Events;
 
 namespace Purview.EventSourcing.Aggregates;
 
@@ -10,7 +9,7 @@ public partial class AggregateBaseTests
 	public void GetHashCode_GivenIdentificationEvents_GeneratesIdenticalHashCodes()
 	{
 		// Arrange
-		static AppendToReadOnlyDictionaryEvent gen()
+		static AppendToReadOnlyDictionaryEvent Generate()
 		{
 			AppendToReadOnlyDictionaryEvent @event = new()
 			{
@@ -21,12 +20,12 @@ public partial class AggregateBaseTests
 			return @event;
 		}
 
-		AppendToReadOnlyDictionaryEvent event1 = gen();
-		AppendToReadOnlyDictionaryEvent event2 = gen();
+		var event1 = Generate();
+		var event2 = Generate();
 
 		// Act
-		int event1HashCode = event1.GetHashCode();
-		int event2HashCode = event2.GetHashCode();
+		var event1HashCode = event1.GetHashCode();
+		var event2HashCode = event2.GetHashCode();
 
 		// Assert
 		event1HashCode
@@ -38,7 +37,7 @@ public partial class AggregateBaseTests
 	public void Register_GivenEventTypeNotEndingWithEvent_ThrowsInvalidOperationException()
 	{
 		// Arrange/ Act
-		Action act = () =>
+		var act = () =>
 		{
 			InvalidEventTestAggregate aggregate = new();
 		};
@@ -57,7 +56,7 @@ public partial class AggregateBaseTests
 	public void RecordEvent_GivenEvent_AppliesEvent()
 	{
 		// Arrange
-		TestAggregate aggregate = CreateTestAggregate();
+		var aggregate = CreateTestAggregate();
 
 		// Act
 		aggregate.RecordEvent();
@@ -73,12 +72,12 @@ public partial class AggregateBaseTests
 	public void GetUnsavedEvents_GivenEvent_RecordsOneEventToBeRecorded()
 	{
 		// Arrange
-		TestAggregate aggregate = CreateTestAggregate();
+		var aggregate = CreateTestAggregate();
 
 		aggregate.RecordEvent();
 
 		// Act
-		IEnumerable<IEvent> events = aggregate.GetUnsavedEvents();
+		var events = aggregate.GetUnsavedEvents();
 
 		// Assert
 		events
@@ -93,11 +92,9 @@ public partial class AggregateBaseTests
 	public void ClearUnsavedEvents_GivenEventsAndClearEventsCalledWithSpecificVersion_ClearEventsThatAreGreaterThanOrOrEqualToSpecifiedVersion(int eventsToCreate, int versionToClear, int expectedVersion)
 	{
 		// Arrange
-		TestAggregate aggregate = CreateTestAggregate();
-		for (int i = 0; i < eventsToCreate; i++)
-		{
+		var aggregate = CreateTestAggregate();
+		for (var i = 0; i < eventsToCreate; i++)
 			aggregate.Increment();
-		}
 
 		// Act
 		aggregate.ClearUnsavedEvents(versionToClear);
@@ -119,7 +116,7 @@ public partial class AggregateBaseTests
 	public void ClearUnsavedEvents_GivenEventsAndClearEventsCalledWithNull_ClearEventsAllEvents()
 	{
 		// Arrange
-		TestAggregate aggregate = CreateTestAggregate();
+		var aggregate = CreateTestAggregate();
 
 		aggregate.Increment();
 		aggregate.Increment();
@@ -142,11 +139,9 @@ public partial class AggregateBaseTests
 	public void ClearUnsavedEvents_GivenClearValueIsGreaterThanEventDetailsAggregateVersion_SetsUpToSavedVersion(int eventsToCreate, int versionToClear)
 	{
 		// Arrange
-		TestAggregate aggregate = CreateTestAggregate();
-		for (int i = 0; i < eventsToCreate; i++)
-		{
+		var aggregate = CreateTestAggregate();
+		for (var i = 0; i < eventsToCreate; i++)
 			aggregate.Increment();
-		}
 
 		// Act
 		aggregate.ClearUnsavedEvents(versionToClear);
@@ -167,11 +162,9 @@ public partial class AggregateBaseTests
 	public void ClearUnsavedEvents_GivenClearValueIsGreaterThanEventDetailsAggregateVersionAndValuesPreviousSaved_SetsCurrentVersionTo0(int eventsToCreate, int versionToClear)
 	{
 		// Arrange
-		TestAggregate aggregate = CreateTestAggregate();
-		for (int i = 0; i < eventsToCreate; i++)
-		{
+		var aggregate = CreateTestAggregate();
+		for (var i = 0; i < eventsToCreate; i++)
 			aggregate.Increment();
-		}
 
 		// Act
 		aggregate.ClearUnsavedEvents(versionToClear);
@@ -196,13 +189,11 @@ public partial class AggregateBaseTests
 	public void DetailsCurrentVersion_GivenEvents_IncrementsCurrentVersion(int eventCount)
 	{
 		// Arrange
-		TestAggregate aggregate = CreateTestAggregate();
+		var aggregate = CreateTestAggregate();
 
 		// Act
-		for (int i = 0; i < eventCount; i++)
-		{
+		for (var i = 0; i < eventCount; i++)
 			aggregate.Increment();
-		}
 
 		// Assert
 		aggregate.Details

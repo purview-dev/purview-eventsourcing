@@ -1,6 +1,4 @@
-﻿using Purview.EventSourcing.Services;
-
-namespace Purview.EventSourcing;
+﻿namespace Purview.EventSourcing;
 
 partial class AggregateEventNameMapperTests
 {
@@ -8,27 +6,27 @@ partial class AggregateEventNameMapperTests
 	public void GetName_GivenEventTypeEndingWithEvent_ReturnsMappedName()
 	{
 		// Arrange
-		AggregateEventNameMapper mapper = CreateMapper<CorrectlyNamedAggregate>();
-		Type eventType = typeof(EventTypeEndingInEvent);
+		var mapper = CreateMapper<CorrectlyNamedAggregate>();
+		var eventType = typeof(EventTypeEndingInEvent);
 
 		// Act
-		string result = mapper.GetName<CorrectlyNamedAggregate>(eventType);
+		var result = mapper.GetName<CorrectlyNamedAggregate>(eventType);
 
 		// Assert
 		result
 			.Should()
-			.Be($"{_correctlyNamedAggregateName}.event-type-ending-in");
+			.Be($"{CorrectlyNamedAggregateName}.event-type-ending-in");
 	}
 
 	[Fact]
 	public void GetName_GivenEventTypeNotEndingInEvent_ReturnsTypeName()
 	{
 		// Arrange
-		AggregateEventNameMapper mapper = CreateMapper<CorrectlyNamedAggregate>();
-		Type eventType = typeof(EventTypeNotEndingInEvent2);
+		var mapper = CreateMapper<CorrectlyNamedAggregate>();
+		var eventType = typeof(EventTypeNotEndingInEvent2);
 
 		// Act
-		string result = mapper.GetName<CorrectlyNamedAggregate>(eventType);
+		var result = mapper.GetName<CorrectlyNamedAggregate>(eventType);
 
 		// Assert
 		result

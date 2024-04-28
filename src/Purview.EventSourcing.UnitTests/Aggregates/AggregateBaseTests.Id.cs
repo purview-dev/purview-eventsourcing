@@ -1,5 +1,4 @@
 ﻿using Purview.EventSourcing.Aggregates.Exceptions;
-using Purview.EventSourcing.Aggregates.Test;
 
 namespace Purview.EventSourcing.Aggregates;
 
@@ -9,10 +8,10 @@ partial class AggregateBaseTests
 	public void Id_GivenIdAlreadySet_ThrowsArgumentIdAlreadySetException()
 	{
 		// Arrange
-		TestAggregate aggregate = CreateTestAggregate("Aggregate-Id");
+		var aggregate = CreateTestAggregate("Aggregate-Id");
 
 		// Act
-		Action action = () => aggregate.Details.Id = "Another Id";
+		var action = () => aggregate.Details.Id = "Another Id";
 
 		// Assert
 		action
@@ -24,12 +23,12 @@ partial class AggregateBaseTests
 	public void Id_GivenIdAlreadySetAndIdIsSetToTheSame_DoesNotThrowException()
 	{
 		// Arrange
-		const string AggregateId = "Aggregate-Id";
+		const string aggregateId = "Aggregate-Id";
 
-		TestAggregate aggregate = CreateTestAggregate(AggregateId);
+		var aggregate = CreateTestAggregate(aggregateId);
 
 		// Act
-		Action action = () => aggregate.Details.Id = AggregateId;
+		var action = () => aggregate.Details.Id = aggregateId;
 
 		// Assert
 		action

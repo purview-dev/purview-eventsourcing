@@ -1,6 +1,4 @@
-﻿using Purview.EventSourcing.Services;
-
-namespace Purview.EventSourcing;
+﻿namespace Purview.EventSourcing;
 
 partial class AggregateEventNameMapperTests
 {
@@ -8,27 +6,27 @@ partial class AggregateEventNameMapperTests
 	public void GetName_GivenEventInstanceWithDefinedName_ReturnsFullTypeName()
 	{
 		// Arrange
-		AggregateEventNameMapper mapper = CreateMapper<CorrectlyNamedAggregate>();
+		var mapper = CreateMapper<CorrectlyNamedAggregate>();
 		EventTypeEndingInEvent @event = new();
 
 		// Act
-		string result = mapper.GetName<CorrectlyNamedAggregate>(@event);
+		var result = mapper.GetName<CorrectlyNamedAggregate>(@event);
 
 		// Assert
 		result
 			.Should()
-			.Be($"{_correctlyNamedAggregateName}.event-type-ending-in");
+			.Be($"{CorrectlyNamedAggregateName}.event-type-ending-in");
 	}
 
 	[Fact]
 	public void GetName_GivenEventInstanceWithNoDefinedName_ReturnsFullTypeName()
 	{
 		// Arrange
-		AggregateEventNameMapper mapper = CreateMapper<CorrectlyNamedAggregate>();
+		var mapper = CreateMapper<CorrectlyNamedAggregate>();
 		EventTypeNotEndingInEvent2 @event = new();
 
 		// Act
-		string result = mapper.GetName<CorrectlyNamedAggregate>(@event);
+		var result = mapper.GetName<CorrectlyNamedAggregate>(@event);
 
 		// Assert
 		result
@@ -42,19 +40,19 @@ partial class AggregateEventNameMapperTests
 	public void GetName_GivenEventName_MatchesExpectation(string eventType, string expectation)
 	{
 		// Arrange
-		AggregateEventNameMapper mapper = CreateMapper<CorrectlyNamedAggregate>();
+		var mapper = CreateMapper<CorrectlyNamedAggregate>();
 
 		// Act
-		Type? aggregateEventType = Type.GetType(eventType, true);
+		var aggregateEventType = Type.GetType(eventType, true);
 		aggregateEventType
 			.Should()
 			.NotBeNull();
 
-		string result = mapper.GetName<CorrectlyNamedAggregate>(aggregateEventType!);
+		var result = mapper.GetName<CorrectlyNamedAggregate>(aggregateEventType!);
 
 		// Assert
 		result
 			.Should()
-			.Be($"{_correctlyNamedAggregateName}.{expectation}");
+			.Be($"{CorrectlyNamedAggregateName}.{expectation}");
 	}
 }

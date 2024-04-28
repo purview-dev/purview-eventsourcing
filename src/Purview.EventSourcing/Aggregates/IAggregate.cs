@@ -15,7 +15,6 @@ public interface IAggregate
 	/// </summary>
 	/// <remarks>Do not manually edit this instance or any of it's properties.</remarks>
 	[NotNull]
-	[DisallowNull]
 	AggregateDetails Details { get; init; }
 
 	/// <summary>
@@ -23,6 +22,7 @@ public interface IAggregate
 	/// </summary>
 	/// <remarks>Some implementations of the <see cref="IEventStore{T}"/> use this
 	/// value a querying parameter.</remarks>
+	[NotNull]
 	string AggregateType { get; }
 
 	/// <summary>
@@ -66,7 +66,7 @@ public interface IAggregate
 	/// </para>
 	/// </summary>
 	/// <param name="aggregateEvent">The event instance to apply.</param>
-	void ApplyEvent(IEvent aggregateEvent);
+	void ApplyEvent([DisallowNull] IEvent aggregateEvent);
 
 	/// <summary>
 	/// Gets a value indicate if the <see cref="IEvent"/> type
@@ -74,5 +74,5 @@ public interface IAggregate
 	/// </summary>
 	/// <param name="aggregateEvent">The event being tested.</param>
 	/// <returns>True if this instance can process this event, otherwise, false.</returns>
-	bool CanApplyEvent(IEvent aggregateEvent);
+	bool CanApplyEvent([DisallowNull] IEvent aggregateEvent);
 }

@@ -8,11 +8,11 @@ partial class AggregateRequiredServiceManagerTests
 	public void Populate_GivenAggregateHasIRequirement_PopulatesService()
 	{
 		// Arrange
-		AggregateRequirementsTest aggregate = CreateAggregate<AggregateRequirementsTest>();
-		ITestService testService = CreateTestService();
-		IServiceProvider serviceProvider = CreateServiceProvider(testService, null);
+		var aggregate = TestHelpers.Aggregate<AggregateRequirementsTest>();
+		var testService = CreateTestService();
+		var serviceProvider = TestHelpers.ServiceProvider(new ServiceDefinition(typeof(ITestService), testService));
 
-		AggregateRequiredServiceManager serviceManager = CreateServiceManager(serviceProvider);
+		var serviceManager = CreateServiceManager(serviceProvider);
 
 		// Act
 		serviceManager.Fulfil(aggregate);
@@ -25,13 +25,17 @@ partial class AggregateRequiredServiceManagerTests
 	public void Populate_GivenAggregateHasMultipleIRequirements_PopulatesServices()
 	{
 		// Arrange
-		AggregateMultipleRequirementsTest aggregate = CreateAggregate<AggregateMultipleRequirementsTest>();
+		var aggregate = TestHelpers.Aggregate<AggregateMultipleRequirementsTest>();
 
-		ITestService testService = CreateTestService();
-		ITestService2 testService2 = CreateTestService2();
-		IServiceProvider serviceProvider = CreateServiceProvider(testService, testService2);
+		var testService = CreateTestService();
+		var testService2 = CreateTestService2();
 
-		AggregateRequiredServiceManager serviceManager = CreateServiceManager(serviceProvider);
+		var serviceProvider = TestHelpers.ServiceProvider(
+			new ServiceDefinition(typeof(ITestService), testService),
+			new ServiceDefinition(typeof(ITestService2), testService2)
+		);
+
+		var serviceManager = CreateServiceManager(serviceProvider);
 
 		// Act
 		serviceManager.Fulfil(aggregate);
@@ -45,13 +49,13 @@ partial class AggregateRequiredServiceManagerTests
 	public void Populate_GivenAggregateHasNoIRequirements_DoesNotThrow()
 	{
 		// Arrange
-		TestAggregate aggregate = SubstituteBuilder.Aggregate<TestAggregate>();
-		IServiceProvider serviceProvider = CreateServiceProvider(null, null);
+		var aggregate = TestHelpers.Aggregate<TestAggregate>();
+		var serviceProvider = TestHelpers.ServiceProvider();
 
-		AggregateRequiredServiceManager serviceManager = CreateServiceManager(serviceProvider);
+		var serviceManager = CreateServiceManager(serviceProvider);
 
 		// Act
-		Action act = () => serviceManager.Fulfil(aggregate);
+		var act = () => serviceManager.Fulfil(aggregate);
 
 		// Assert
 		act.Should().NotThrow();
