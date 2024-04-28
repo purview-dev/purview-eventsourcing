@@ -1,0 +1,11 @@
+﻿<Project>
+
+	<Import Project="./.build-system/Directory.Build.props"/>
+
+	<PropertyGroup>
+		<NoWarn>$(NoWarn);CS0436;</NoWarn>
+		
+		<DefineConstants Condition="'$(Configuration)' == 'DEBUG'">DEBUG_SG</DefineConstants>
+	</PropertyGroup>
+
+</Project>

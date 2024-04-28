@@ -1,0 +1,14 @@
+﻿{
+  Diagnostics: [
+    {
+      Id: ESSG4000,
+      Title: Apply method is public,
+      Severity: Warning,
+      WarningLevel: 1,
+      Location: Guid_1: (14,1)-(15,2),
+      MessageFormat: The apply method should not be public.,
+      Message: The apply method should not be public.,
+      Category: Activity.Usage
+    }
+  ]
+}

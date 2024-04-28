@@ -1,0 +1,14 @@
+﻿{
+  Diagnostics: [
+    {
+      Id: ESSG3000,
+      Title: Missing GenerateAggregateAttribute,
+      Severity: Error,
+      WarningLevel: 0,
+      Location: Guid_1: (11,9)-(11,21),
+      MessageFormat: Parent class does not contain the GenerateAggregateAttribute.,
+      Message: Parent class does not contain the GenerateAggregateAttribute.,
+      Category: Activity.Usage
+    }
+  ]
+}

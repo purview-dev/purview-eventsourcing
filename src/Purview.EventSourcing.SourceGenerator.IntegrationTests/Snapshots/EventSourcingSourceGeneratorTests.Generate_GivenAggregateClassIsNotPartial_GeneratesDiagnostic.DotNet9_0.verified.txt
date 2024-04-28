@@ -1,0 +1,14 @@
+﻿{
+  Diagnostics: [
+    {
+      Id: ESSG2001,
+      Title: Class is not a partial class,
+      Severity: Error,
+      WarningLevel: 0,
+      Location: Guid_1: (9,0)-(14,1),
+      MessageFormat: {0} should be partial.,
+      Message: {0} should be partial.,
+      Category: Activity.Usage
+    }
+  ]
+}

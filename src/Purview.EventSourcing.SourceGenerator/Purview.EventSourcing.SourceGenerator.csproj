@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<NoPackageAnalysis>true</NoPackageAnalysis>
+		<IsPackable>true</IsPackable>
+
+		<PackageId>Purview.EventSourcing.SourceGenerator</PackageId>
+		<Title>Purview Event Sourcing Source Generator</Title>
+		<Description>A source generator for creating aggregates based on the Purview.EventSourcing library.</Description>
+		<PackageIcon>purview-logo.png</PackageIcon>
+
+		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+		<CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+		<IsRoslynComponent>true</IsRoslynComponent>
+
+		<Version>0.1.0.0</Version>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Using Include="Purview.EventSourcing.SourceGenerator.Helpers" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+		<PackageReference Remove="Purview.Telemetry.SourceGenerator" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="..\.build-system\msbuild\Properties\AssemblyInfo_Shared.cs" />
+
+		<Compile Remove="Templates\Sources\**\*.cs" />
+		<EmbeddedResource Include="Templates\Sources\**\*.cs" />
+	</ItemGroup>
+
+	<!-- Package the build output into the "analyzer" slot in the NuGet package -->
+	<ItemGroup>
+		<None Include="purview-logo.png" Pack="true" PackagePath="" />
+		<None Include="..\..\README.md" Pack="true" PackagePath="\" />
+		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+	</ItemGroup>
+
+</Project>

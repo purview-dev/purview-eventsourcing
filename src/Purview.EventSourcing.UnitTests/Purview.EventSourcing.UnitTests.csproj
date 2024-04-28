@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<NoWarn>IDE0044;RCS1169;CS0649;$(NoWarn)</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Purview.EventSourcing\Purview.EventSourcing.csproj" />
+		<ProjectReference Include="..\Purview.Testing\Purview.Testing.csproj" />
+	</ItemGroup>
+
+</Project>

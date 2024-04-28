@@ -1,0 +1,14 @@
+﻿{
+  Diagnostics: [
+    {
+      Id: ESSG2000,
+      Title: Class does not implement IAggregate,
+      Severity: Error,
+      WarningLevel: 0,
+      Location: Guid_1: (8,0)-(13,1),
+      MessageFormat: {0} must implement {1}.,
+      Message: {0} must implement {1}.,
+      Category: Activity.Usage
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+﻿{
+  Diagnostics: [
+    {
+      Id: ESSG4001,
+      Title: Apply method has return value,
+      Severity: Error,
+      WarningLevel: 0,
+      Location: Guid_1: (14,1)-(16,2),
+      MessageFormat: The apply method should not have a return value.,
+      Message: The apply method should not have a return value.,
+      Category: Activity.Usage
+    }
+  ]
+}
