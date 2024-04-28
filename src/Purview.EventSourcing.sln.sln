@@ -6,11 +6,23 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purview.EventSourcing", "Pu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purview.EventSourcing.UnitTests", "Purview.EventSourcing.UnitTests\Purview.EventSourcing.UnitTests.csproj", "{8962E348-5255-4A4E-A662-1C150231EFB7}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purview.EventSourcing.AzureStorage.Table", "Purview.EventSourcing.AzureStorage.Table\Purview.EventSourcing.AzureStorage.Table.csproj", "{4BC85B4D-2731-48EA-A37C-5C869784A33F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purview.EventSourcing.CosmosDb.Snapshot", "Purview.EventSourcing.CosmosDb.Snapshot\Purview.EventSourcing.CosmosDb.Snapshot.csproj", "{18A57493-CA9C-4C54-8B25-10524117755C}"
+EndProject
 Global
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A36D164E-EDA9-41C6-88D3-151E15E8D5A6}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{18A57493-CA9C-4C54-8B25-10524117755C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18A57493-CA9C-4C54-8B25-10524117755C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18A57493-CA9C-4C54-8B25-10524117755C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18A57493-CA9C-4C54-8B25-10524117755C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BC85B4D-2731-48EA-A37C-5C869784A33F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BC85B4D-2731-48EA-A37C-5C869784A33F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BC85B4D-2731-48EA-A37C-5C869784A33F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BC85B4D-2731-48EA-A37C-5C869784A33F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8962E348-5255-4A4E-A662-1C150231EFB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8962E348-5255-4A4E-A662-1C150231EFB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8962E348-5255-4A4E-A662-1C150231EFB7}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<RootNamespace>Purview.EventSourcing</RootNamespace>
+	</PropertyGroup>
+
+	<PropertyGroup Label="NuGet Package Values">
+		<IsPackable>true</IsPackable>
+		<Title>Purview Event Store based on MongoDb</Title>
+		<Description>Queryable Event Store using MongoDb for queryable snapshots.</Description>
+		<PackageTags>$(PackageTags);events;event-sourcing;event-store;mongodb;</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Purview.EventSourcing\Purview.EventSourcing.csproj" />
+		<ProjectReference Include="..\Purview.Extensions.Storage.MongoDb\Purview.Extensions.Storage.MongoDb.csproj" />
+	</ItemGroup>
+
+</Project>
