@@ -1,6 +1,4 @@
-﻿using MongoDB.Driver;
-using Purview.EventSourcing.Aggregates.Persistence;
-using Purview.EventSourcing.SnapshotOnly.MongoDb;
+﻿using Purview.EventSourcing.Aggregates.Persistence;
 
 namespace Purview.EventSourcing.MongoDb.Snapshot;
 
@@ -10,29 +8,29 @@ partial class MongoDbSnapshotEventStoreTests
 	public async Task DeleteAsync_GivenExistingAggregateMarkedAsDeleted_DeletesFromMongoDb()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		using MongoDbSnapshotTestContext context = fixture.CreateContext();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		var context = fixture.CreateContext();
 
-		string aggregateId = Guid.NewGuid().ToString();
-		PersistenceAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = Guid.NewGuid().ToString();
+		var aggregate = CreateAggregate(id: aggregateId);
 		aggregate.IncrementInt32Value();
 
-		MongoDbSnapshotEventStore<PersistenceAggregate> mongoDbEventStore = context.EventStore;
+		var mongoDbEventStore = context.EventStore;
 
 		bool saveResult = await mongoDbEventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 		saveResult
 			.Should()
 			.BeTrue();
 
-		FilterDefinition<PersistenceAggregate> predicate = PredicateId(aggregateId);
+		var predicate = PredicateId(aggregateId);
 
-		PersistenceAggregate? aggregateFromMongoDb = await context.MongoDbClient.GetAsync<PersistenceAggregate>(predicate, cancellationToken: tokenSource.Token);
+		var aggregateFromMongoDb = await context.MongoDbClient.GetAsync(predicate, cancellationToken: tokenSource.Token);
 		aggregateFromMongoDb
 			.Should()
 			.NotBeNull();
 
 		// Act
-		bool deleteResult = await mongoDbEventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
+		var deleteResult = await mongoDbEventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		aggregateFromMongoDb = await context.MongoDbClient.GetAsync<PersistenceAggregate>(a => a.Details.Id == aggregateId, cancellationToken: tokenSource.Token);
 

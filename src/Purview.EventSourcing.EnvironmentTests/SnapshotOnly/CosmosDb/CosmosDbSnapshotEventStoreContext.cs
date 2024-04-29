@@ -33,6 +33,7 @@ public sealed class CosmosDbSnapshotEventStoreContext(string cosmosDbConnectionS
 
 	internal CosmosDbClient CosmosDbClient => _cosmosDbClient;
 
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Used elsewhere.")]
 	public void CreateCosmosDbEventStore(int correlationIdsToGenerate = 1, string? container = null)
 	{
 		var tableEventStore = CreateTableEventStore(correlationIdsToGenerate);

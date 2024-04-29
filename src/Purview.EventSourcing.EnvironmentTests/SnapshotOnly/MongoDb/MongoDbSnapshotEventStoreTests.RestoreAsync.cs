@@ -1,6 +1,4 @@
-﻿using MongoDB.Driver;
-using Purview.EventSourcing.Aggregates.Persistence;
-using Purview.EventSourcing.SnapshotOnly.MongoDb;
+﻿using Purview.EventSourcing.Aggregates.Persistence;
 
 namespace Purview.EventSourcing.MongoDb.Snapshot;
 
@@ -10,28 +8,28 @@ partial class MongoDbSnapshotEventStoreTests
 	public async Task RestoreAsync_GivenExistingAggregateMarkedAsDeletedAndDoesNotExistInMongoDbWhenRestore_SnapshotCreatedInMongoDb()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		using MongoDbSnapshotTestContext context = fixture.CreateContext();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		var context = fixture.CreateContext();
 
-		string aggregateId = Guid.NewGuid().ToString();
-		PersistenceAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = Guid.NewGuid().ToString();
+		var aggregate = CreateAggregate(id: aggregateId);
 		aggregate.IncrementInt32Value();
 
-		MongoDbSnapshotEventStore<PersistenceAggregate> mongoDbEventStore = context.EventStore;
+		var mongoDbEventStore = context.EventStore;
 
 		bool saveResult = await mongoDbEventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 		saveResult
 			.Should()
 			.BeTrue();
 
-		FilterDefinition<PersistenceAggregate> predicate = PredicateId(aggregateId);
+		var predicate = PredicateId(aggregateId);
 
-		PersistenceAggregate? aggregateFromMongo = await context.MongoDbClient.GetAsync<PersistenceAggregate>(predicate, cancellationToken: tokenSource.Token);
+		var aggregateFromMongo = await context.MongoDbClient.GetAsync(predicate, cancellationToken: tokenSource.Token);
 		aggregateFromMongo
 			.Should()
 			.NotBeNull();
 
-		bool deleteResult = await mongoDbEventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
+		var deleteResult = await mongoDbEventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
 		deleteResult
 			.Should()
 			.BeTrue();
@@ -42,7 +40,7 @@ partial class MongoDbSnapshotEventStoreTests
 			.BeNull();
 
 		// Act
-		bool restoreResult = await mongoDbEventStore.RestoreAsync(aggregate, cancellationToken: tokenSource.Token);
+		var restoreResult = await mongoDbEventStore.RestoreAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		aggregateFromMongo = await context.MongoDbClient.GetAsync<PersistenceAggregate>(aggregateId, cancellationToken: tokenSource.Token);
 

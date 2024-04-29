@@ -1,6 +1,4 @@
-﻿using Purview.EventSourcing.Helpers;
-
-namespace Purview.EventSourcing.SnapshotOnly.MongoDb;
+﻿namespace Purview.EventSourcing.SnapshotOnly.MongoDb;
 
 public class MongoDbSnapshotEventStoreFixture : IAsyncLifetime
 {

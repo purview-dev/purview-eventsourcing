@@ -26,7 +26,7 @@ public partial class MongoDbSnapshotEventStoreTests(MongoDbSnapshotEventStoreFix
 
 	static FilterDefinition<PersistenceAggregate> PredicateId(string aggregateId)
 	{
-		FilterDefinition<PersistenceAggregate> builder = new FilterDefinitionBuilder<PersistenceAggregate>()
+		var builder = new FilterDefinitionBuilder<PersistenceAggregate>()
 			.Eq("_id", aggregateId);
 
 		return builder;

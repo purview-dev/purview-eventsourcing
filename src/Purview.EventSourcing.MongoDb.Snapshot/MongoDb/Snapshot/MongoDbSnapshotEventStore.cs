@@ -25,7 +25,13 @@ public partial class MongoDbSnapshotEventStore<T> : IMongoDbSnapshotEventStore<T
 		_mongoDbOptions = mongoDbOptions;
 
 		var collectionName = $"{TypeNameHelper.GetName(typeof(T), "aggregate")}-store";
-		_mongoDbClient = new(_mongoDbOptions.Value, null, collectionName);
+		_mongoDbClient = new(new()
+		{
+			ConnectionString = _mongoDbOptions.Value.ConnectionString,
+			Database = _mongoDbOptions.Value.Database,
+			Collection = collectionName,
+			ApplicationName = _mongoDbOptions.Value.ApplicationName
+		}, null, collectionName);
 	}
 
 	async public Task ForceSaveAsync(T aggregate, CancellationToken cancellationToken = default)

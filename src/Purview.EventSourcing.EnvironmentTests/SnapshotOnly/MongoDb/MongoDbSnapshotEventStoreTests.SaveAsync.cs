@@ -1,8 +1,4 @@
-﻿using MongoDB.Driver;
-using Purview.EventSourcing.Aggregates.Persistence;
-using Purview.EventSourcing.SnapshotOnly.MongoDb;
-
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+﻿namespace Purview.EventSourcing.MongoDb.Snapshot;
 
 partial class MongoDbSnapshotEventStoreTests
 {
@@ -10,15 +6,15 @@ partial class MongoDbSnapshotEventStoreTests
 	public async Task SaveAsync_GivenNewAggregateWithChanges_SavesAggregate()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		using MongoDbSnapshotTestContext context = fixture.CreateContext();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		var context = fixture.CreateContext();
 
-		string aggregateId = Guid.NewGuid().ToString();
-		PersistenceAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = Guid.NewGuid().ToString();
+		var aggregate = CreateAggregate(id: aggregateId);
 		aggregate.IncrementInt32Value();
 		aggregate.AppendString(aggregateId);
 
-		MongoDbSnapshotEventStore<PersistenceAggregate> mongoDbEventStore = context.EventStore;
+		var mongoDbEventStore = context.EventStore;
 
 		// Act
 		bool result = await mongoDbEventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -33,10 +29,10 @@ partial class MongoDbSnapshotEventStoreTests
 			.Should()
 			.BeFalse();
 
-		FilterDefinition<PersistenceAggregate> builder = PredicateId(aggregateId);
+		var builder = PredicateId(aggregateId);
 
 		// Verify by re-getting the aggregate directly from the MongoClient, not via the event store.
-		PersistenceAggregate? aggregateFromMongoDb = await context.MongoDbClient.GetAsync<PersistenceAggregate>(builder, cancellationToken: tokenSource.Token);
+		var aggregateFromMongoDb = await context.MongoDbClient.GetAsync(builder, cancellationToken: tokenSource.Token);
 
 		aggregateFromMongoDb
 			.Should()
@@ -59,9 +55,9 @@ partial class MongoDbSnapshotEventStoreTests
 
 		aggregateFromMongoDb
 			.Details
-				.SavedVersion
-				.Should()
-				.Be(aggregate.Details.SavedVersion);
+			.SavedVersion
+			.Should()
+			.Be(aggregate.Details.SavedVersion);
 
 		aggregateFromMongoDb
 			.Details

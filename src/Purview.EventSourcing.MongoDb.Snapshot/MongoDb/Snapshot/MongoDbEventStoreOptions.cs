@@ -4,7 +4,7 @@ namespace Purview.EventSourcing.MongoDb.Snapshot;
 
 sealed public class MongoDbEventStoreOptions
 {
-	public const string MongoDbEventStore = "EventStore:MongoDbSnapshot";
+	public const string MongoDbEventStore = "EventStore:MongoDb";
 
 	[Required]
 	public string ConnectionString { get; set; } = default!;

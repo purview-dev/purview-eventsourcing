@@ -1,7 +1,4 @@
-﻿using Purview.EventSourcing.Aggregates.Persistence;
-using Purview.EventSourcing.SnapshotOnly.MongoDb;
-
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+﻿namespace Purview.EventSourcing.MongoDb.Snapshot;
 
 partial class MongoDbSnapshotEventStoreTests
 {
@@ -20,19 +17,19 @@ partial class MongoDbSnapshotEventStoreTests
 		const int numberOfEvents = 5;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		var context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
-		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;
+		var eventStore = context.EventStore;
 
-		for (int aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
+		for (var aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
+			var aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
 			aggregate.AppendString(aggregate.Id());
 
 			firstId ??= aggregate.Id();
 
-			for (int eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
+			for (var eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
 			{
 				aggregate.IncrementInt32Value();
 			}
@@ -45,7 +42,7 @@ partial class MongoDbSnapshotEventStoreTests
 		}
 
 		// Act
-		PersistenceAggregate? aggregateResult = await eventStore.SingleOrDefaultAsync(m => m.StringProperty == firstId, cancellationToken: tokenSource.Token);
+		var aggregateResult = await eventStore.SingleOrDefaultAsync(m => m.StringProperty == firstId, cancellationToken: tokenSource.Token);
 
 		// Assert
 		aggregateResult
@@ -72,18 +69,18 @@ partial class MongoDbSnapshotEventStoreTests
 		string? firstId = null;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		var context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
-		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;
+		var eventStore = context.EventStore;
 
-		for (int aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
+		for (var aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
+			var aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
 
 			firstId ??= aggregate.Id();
 
-			for (int eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
+			for (var eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
 			{
 				aggregate.IncrementInt32Value();
 			}
@@ -96,7 +93,7 @@ partial class MongoDbSnapshotEventStoreTests
 		}
 
 		// Act
-		PersistenceAggregate? aggregateResult = await eventStore.FirstOrDefaultAsync(m => m.IncrementInt32 == numberOfEvents, cancellationToken: tokenSource.Token);
+		var aggregateResult = await eventStore.FirstOrDefaultAsync(m => m.IncrementInt32 == numberOfEvents, cancellationToken: tokenSource.Token);
 
 		// Assert
 		aggregateResult
@@ -122,18 +119,18 @@ partial class MongoDbSnapshotEventStoreTests
 		string? firstId = null;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		var context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
-		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;
+		var eventStore = context.EventStore;
 
-		for (int aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
+		for (var aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
+			var aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
 
 			firstId ??= aggregate.Id();
 
-			for (int eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
+			for (var eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
 			{
 				aggregate.IncrementInt32Value();
 			}
@@ -148,7 +145,7 @@ partial class MongoDbSnapshotEventStoreTests
 		}
 
 		// Act
-		PersistenceAggregate? aggregateResult = await eventStore.FirstOrDefaultAsync(m => m.IncrementInt32 == numberOfEvents, m => m.OrderByDescending(m => m.Int32Value), cancellationToken: tokenSource.Token);
+		var aggregateResult = await eventStore.FirstOrDefaultAsync(m => m.IncrementInt32 == numberOfEvents, m => m.OrderByDescending(m => m.Int32Value), cancellationToken: tokenSource.Token);
 
 		// Assert
 		aggregateResult
@@ -175,18 +172,18 @@ partial class MongoDbSnapshotEventStoreTests
 		string? firstId = null;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		var context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
-		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;
+		var eventStore = context.EventStore;
 
-		for (int aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
+		for (var aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
+			var aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
 
 			firstId ??= aggregate.Id();
 
-			for (int eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
+			for (var eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
 			{
 				aggregate.IncrementInt32Value();
 			}
@@ -201,7 +198,7 @@ partial class MongoDbSnapshotEventStoreTests
 		}
 
 		// Act
-		PersistenceAggregate? aggregateResult = await eventStore.FirstOrDefaultAsync(m => m.IncrementInt32 == numberOfEvents, m => m.OrderBy(m => m.Int32Value), cancellationToken: tokenSource.Token);
+		var aggregateResult = await eventStore.FirstOrDefaultAsync(m => m.IncrementInt32 == numberOfEvents, m => m.OrderBy(m => m.Int32Value), cancellationToken: tokenSource.Token);
 
 		// Assert
 		aggregateResult

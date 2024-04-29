@@ -1,7 +1,5 @@
 ﻿using System.Linq.Expressions;
 using Purview.EventSourcing.Aggregates.Persistence;
-using Purview.EventSourcing.SnapshotOnly.MongoDb;
-using Purview.Interfaces.Storage;
 
 namespace Purview.EventSourcing.MongoDb.Snapshot;
 
@@ -20,19 +18,17 @@ partial class MongoDbSnapshotEventStoreTests
 		const int numberOfEvents = 10;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		var context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
-		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;
+		var eventStore = context.EventStore;
 
-		for (int aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
+		for (var aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
+			var aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
 
-			for (int eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
-			{
+			for (var eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
 				aggregate.IncrementInt32Value();
-			}
 
 			bool saveResult = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
@@ -44,10 +40,10 @@ partial class MongoDbSnapshotEventStoreTests
 		// Act
 		List<PersistenceAggregate> aggregates = [];
 
-		ContinuationResponse<PersistenceAggregate> aggregateResponse = await eventStore.ListAsync(maxRecordCount: pageCount, cancellationToken: tokenSource.Token);
+		var aggregateResponse = await eventStore.ListAsync(maxRecordCount: pageCount, cancellationToken: tokenSource.Token);
 		aggregates.AddRange(aggregateResponse.Results);
 
-		while (aggregateResponse.ContinuationToken.HasValue())
+		while (aggregateResponse.ContinuationToken != null)
 		{
 			aggregateResponse = await eventStore.ListAsync(aggregateResponse.ToRequest(), cancellationToken: tokenSource.Token);
 			aggregates.AddRange(aggregateResponse.Results);
@@ -73,18 +69,15 @@ partial class MongoDbSnapshotEventStoreTests
 		const int numberOfEvents = 10;
 
 		// Arrange
-		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates * 2);
-		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;
+		var context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates * 2);
+		var eventStore = context.EventStore;
 
 		// These are matching.
-		for (int aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
+		for (var aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
-
-			for (int eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
-			{
+			var aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
+			for (var eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
 				aggregate.IncrementInt32Value();
-			}
 
 			bool saveResult = await eventStore.SaveAsync(aggregate);
 
@@ -94,15 +87,13 @@ partial class MongoDbSnapshotEventStoreTests
 		}
 
 		// These are non-matching.
-		for (int aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
+		for (var aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate($"{aggregateIndex + (numberOfAggregates + 100000)}_{context.RunId}");
+			var aggregate = CreateAggregate($"{aggregateIndex + (numberOfAggregates + 100000)}_{context.RunId}");
 
 			// We're changing the event count so as to make the query not match these updated records.
-			for (int eventIndex = 0; eventIndex < (numberOfEvents * 2); eventIndex++)
-			{
+			for (var eventIndex = 0; eventIndex < (numberOfEvents * 2); eventIndex++)
 				aggregate.IncrementInt32Value();
-			}
 
 			bool saveResult = await eventStore.SaveAsync(aggregate);
 
@@ -116,10 +107,10 @@ partial class MongoDbSnapshotEventStoreTests
 
 		Expression<Func<PersistenceAggregate, bool>> query = a => a.IncrementInt32 == numberOfEvents;
 
-		ContinuationResponse<PersistenceAggregate> aggregateResponse = await eventStore.QueryAsync(query, maxRecordCount: pageCount);
+		var aggregateResponse = await eventStore.QueryAsync(query, maxRecordCount: pageCount);
 		aggregates.AddRange(aggregateResponse.Results);
 
-		while (aggregateResponse.ContinuationToken.HasValue())
+		while (aggregateResponse.ContinuationToken != null)
 		{
 			aggregateResponse = await eventStore.QueryAsync(query, aggregateResponse.ToRequest());
 			aggregates.AddRange(aggregateResponse.Results);

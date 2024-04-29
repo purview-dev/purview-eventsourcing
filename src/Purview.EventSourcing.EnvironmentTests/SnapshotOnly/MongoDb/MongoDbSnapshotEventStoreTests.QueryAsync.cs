@@ -1,6 +1,5 @@
 ﻿using MongoDB.Driver;
 using Purview.EventSourcing.Aggregates.Persistence;
-using Purview.EventSourcing.SnapshotOnly.MongoDb;
 
 namespace Purview.EventSourcing.MongoDb.Snapshot;
 
@@ -19,16 +18,16 @@ partial class MongoDbSnapshotEventStoreTests
 	public async Task QueryAsync_GivenAggregatesExist_QueriesAsExpected(int numberOfAggregates, int numberOfEvents)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		var context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
-		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;
+		var eventStore = context.EventStore;
 
-		for (int aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
+		for (var aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
+			var aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
 
-			for (int eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
+			for (var eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
 			{
 				aggregate.IncrementInt32Value();
 			}
