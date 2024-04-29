@@ -40,17 +40,13 @@ public sealed class PersistenceAggregate : AggregateBase, IAggregateTest
 	void Apply(AddStringValuesDictionaryKVPsEvent obj)
 	{
 		foreach (var kvp in obj.KVPs)
-		{
 			StringValuesDictionary.Add(kvp.Key, kvp.Value);
-		}
 	}
 
 	void Apply(AddStringDictionaryKVPsEvent obj)
 	{
 		foreach (var kvp in obj.KVPs)
-		{
 			StringsDictionary.Add(kvp.Key, kvp.Value);
-		}
 	}
 
 	void Apply(OldEvent @event) => OldEventValue = @event.Value;
@@ -64,9 +60,7 @@ public sealed class PersistenceAggregate : AggregateBase, IAggregateTest
 	public void SetInt32Value(int value)
 	{
 		if (Int32Value != value)
-		{
 			RecordAndApply(new SetInt32ValueEvent { Value = value });
-		}
 	}
 
 	public void AppendString(string value)
@@ -86,9 +80,7 @@ public sealed class PersistenceAggregate : AggregateBase, IAggregateTest
 	public void SetOldEventValue(Guid value)
 	{
 		if (value == Guid.Empty)
-		{
 			throw new ArgumentException("Don't use an empty guid, just for clarity.");
-		}
 
 		RecordAndApply(new OldEvent
 		{
@@ -97,5 +89,5 @@ public sealed class PersistenceAggregate : AggregateBase, IAggregateTest
 	}
 
 	public void SetComplexProperty(ComplexTestType complexTestType)
-		=> RecordAndApply(new Events.SetComplexPropertyEvent { ComplexProperty = complexTestType });
+		=> RecordAndApply(new SetComplexPropertyEvent { ComplexProperty = complexTestType });
 }

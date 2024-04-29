@@ -5,15 +5,15 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task GetAggregateIdsAsync_GivenNAggregatesInTheStore_CorrectlyReturnsTheirIds(int aggregateCount)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		List<string> generatedIds = [];
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: aggregateCount);
+		var eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: aggregateCount);
 
-		for (int i = 0; i < aggregateCount; i++)
+		for (var i = 0; i < aggregateCount; i++)
 		{
-			string aggregateId = $"{Guid.NewGuid()}";
-			TAggregate aggregate = CreateAggregate(id: aggregateId);
+			var aggregateId = $"{Guid.NewGuid()}";
+			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 			aggregate.IncrementInt32Value();
 
 			await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -22,7 +22,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		}
 
 		// Act
-		IEnumerable<string> returnedTypes = eventStore.GetAggregateIdsAsync(true, cancellationToken: tokenSource.Token).ToBlockingEnumerable(tokenSource.Token);
+		var returnedTypes = eventStore.GetAggregateIdsAsync(true, cancellationToken: tokenSource.Token).ToBlockingEnumerable(tokenSource.Token);
 
 		// Assert
 		returnedTypes
@@ -37,15 +37,15 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task GetAggregateIdsAsync_GivenNonDeletedAggregatesAndDeletedAggregatesInTheStoreAndRequestingOnlyNonDeleted_CorrectlyReturnsNonDeletedIdsOnly(int nonDeletedAggregateIdCount, int deletedAggregateIdCount)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		List<string> generatedIds = [];
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: nonDeletedAggregateIdCount + (deletedAggregateIdCount * 2));
+		var eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: nonDeletedAggregateIdCount + (deletedAggregateIdCount * 2));
 
-		for (int i = 0; i < nonDeletedAggregateIdCount; i++)
+		for (var i = 0; i < nonDeletedAggregateIdCount; i++)
 		{
-			string aggregateId = $"{Guid.NewGuid()}";
-			TAggregate aggregate = CreateAggregate(id: aggregateId);
+			var aggregateId = $"{Guid.NewGuid()}";
+			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 			aggregate.IncrementInt32Value();
 
 			await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -53,10 +53,10 @@ partial class GenericTableEventStoreTests<TAggregate>
 			generatedIds.Add(aggregateId);
 		}
 
-		for (int i = 0; i < deletedAggregateIdCount; i++)
+		for (var i = 0; i < deletedAggregateIdCount; i++)
 		{
-			string aggregateId = $"{Guid.NewGuid()}";
-			TAggregate aggregate = CreateAggregate(id: aggregateId);
+			var aggregateId = $"{Guid.NewGuid()}";
+			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 			aggregate.IncrementInt32Value();
 
 			await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -64,7 +64,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		}
 
 		// Act
-		IEnumerable<string> returnedTypes = eventStore.GetAggregateIdsAsync(false, cancellationToken: tokenSource.Token).ToBlockingEnumerable(tokenSource.Token);
+		var returnedTypes = eventStore.GetAggregateIdsAsync(false, cancellationToken: tokenSource.Token).ToBlockingEnumerable(tokenSource.Token);
 
 		// Assert
 		returnedTypes
@@ -79,15 +79,15 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task GetAggregateIdsAsync_GivenNonDeletedAggregatesAndDeletedAggregatesInTheStoreAndRequestingAll_CorrectlyReturnsAllIds(int nonDeletedAggregateIdCount, int deletedAggregateIdCount)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		List<string> generatedIds = [];
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: nonDeletedAggregateIdCount + (deletedAggregateIdCount * 2));
+		var eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: nonDeletedAggregateIdCount + (deletedAggregateIdCount * 2));
 
-		for (int i = 0; i < nonDeletedAggregateIdCount; i++)
+		for (var i = 0; i < nonDeletedAggregateIdCount; i++)
 		{
-			string aggregateId = $"{Guid.NewGuid()}";
-			TAggregate aggregate = CreateAggregate(id: aggregateId);
+			var aggregateId = $"{Guid.NewGuid()}";
+			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 			aggregate.IncrementInt32Value();
 
 			await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -95,10 +95,10 @@ partial class GenericTableEventStoreTests<TAggregate>
 			generatedIds.Add(aggregateId);
 		}
 
-		for (int i = 0; i < deletedAggregateIdCount; i++)
+		for (var i = 0; i < deletedAggregateIdCount; i++)
 		{
-			string aggregateId = $"{Guid.NewGuid()}";
-			TAggregate aggregate = CreateAggregate(id: aggregateId);
+			var aggregateId = $"{Guid.NewGuid()}";
+			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 			aggregate.IncrementInt32Value();
 
 			await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -108,7 +108,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		}
 
 		// Act
-		IEnumerable<string> returnedTypes = eventStore.GetAggregateIdsAsync(true, cancellationToken: tokenSource.Token).ToBlockingEnumerable(tokenSource.Token);
+		var returnedTypes = eventStore.GetAggregateIdsAsync(true, cancellationToken: tokenSource.Token).ToBlockingEnumerable(tokenSource.Token);
 
 		// Assert
 		returnedTypes

@@ -5,13 +5,13 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task RestoreAsync_GivenPreviouslySavedAndDeletedAggregate_MarksAsNotDeleted()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate? aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		aggregate.IncrementInt32Value();
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 3);
+		var eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 3);
 
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 		await eventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -24,7 +24,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		}
 
 		// Act
-		bool result = await eventStore.RestoreAsync(aggregate, cancellationToken: tokenSource.Token);
+		var result = await eventStore.RestoreAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Assert
 		result

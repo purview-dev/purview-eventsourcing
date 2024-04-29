@@ -12,7 +12,7 @@ partial class CosmosDbSnapshotEventStoreTests
 		const int matchingIncrement = 10;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
 
 		for (int i = 0; i < aggregateCount; i++)
@@ -45,7 +45,7 @@ partial class CosmosDbSnapshotEventStoreTests
 		const int matchingIncrement = 10;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
 
 		for (int i = 0; i < aggregateCount; i++)
@@ -78,7 +78,7 @@ partial class CosmosDbSnapshotEventStoreTests
 		const int matchingIncrement = 10;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
 
 		for (int i = 0; i < aggregateCount; i++)
@@ -107,7 +107,7 @@ partial class CosmosDbSnapshotEventStoreTests
 		const int matchingIncrement = 10;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
 
 		for (int i = 0; i < 10; i++)
@@ -136,7 +136,7 @@ partial class CosmosDbSnapshotEventStoreTests
 		const int matchingIncrement = 10;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
 
 		string aggregateId = Guid.NewGuid().ToString();
@@ -163,7 +163,7 @@ partial class CosmosDbSnapshotEventStoreTests
 		const int matchingIncrement = 10;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
 
 		for (int i = 0; i < 10; i++)

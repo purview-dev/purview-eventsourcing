@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Primitives;
-using Purview.EventSourcing.Interfaces.Aggregates;
 
 namespace Purview.EventSourcing.Aggregates;
 

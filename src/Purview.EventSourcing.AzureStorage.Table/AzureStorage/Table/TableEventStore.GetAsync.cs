@@ -7,8 +7,8 @@ namespace Purview.EventSourcing.AzureStorage.Table;
 partial class TableEventStore<T>
 {
 	[System.Diagnostics.DebuggerStepThrough]
-	public Task<T?> GetAsync(string id, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default)
-		=> GetCoreAsync(id, operationContext, cancellationToken);
+	public Task<T?> GetAsync(string aggregateId, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default)
+		=> GetCoreAsync(aggregateId, operationContext, cancellationToken);
 
 	async Task<T?> GetCoreAsync(string aggregateId, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default)
 	{
@@ -16,7 +16,7 @@ partial class TableEventStore<T>
 
 		operationContext ??= EventStoreOperationContext.DefaultContext;
 
-		_eventStoreLog.GetAggregateStart(aggregateId, _aggregateTypeFullName);
+		_eventStoreTelemetry.GetAggregateStart(aggregateId, _aggregateTypeFullName);
 		var getStopwatch = System.Diagnostics.Stopwatch.StartNew();
 		try
 		{
@@ -26,7 +26,7 @@ partial class TableEventStore<T>
 
 			if (aggregate != null)
 			{
-				_eventStoreLog.AggregateRetrievedFromCache(aggregateId, _aggregateTypeFullName);
+				_eventStoreTelemetry.AggregateRetrievedFromCache(aggregateId, _aggregateTypeFullName);
 
 				return ReturnAggregate(aggregate.Details.IsDeleted, aggregateId, operationContext)
 					? PrepareAggregateForReturn(aggregate, _aggregateRequirementsManager)
@@ -73,13 +73,13 @@ partial class TableEventStore<T>
 		}
 		catch (Exception ex)
 		{
-			_eventStoreLog.GetAggregateFailed(aggregateId, _aggregateTypeFullName, ex);
+			_eventStoreTelemetry.GetAggregateFailed(aggregateId, _aggregateTypeFullName, ex);
 			throw;
 		}
 		finally
 		{
 			getStopwatch.Stop();
-			_eventStoreLog.GetAggregateComplete(aggregateId, _aggregateTypeFullName, getStopwatch.ElapsedMilliseconds);
+			_eventStoreTelemetry.GetAggregateComplete(aggregateId, _aggregateTypeFullName, getStopwatch.ElapsedMilliseconds);
 		}
 
 		static T PrepareAggregateForReturn(T aggregate, Services.IAggregateRequirementsManager aggregateRequirementsManager)
@@ -108,9 +108,9 @@ partial class TableEventStore<T>
 			{
 				var eventType = @event.GetType();
 				if (@event is UnknownEvent)
-					_eventStoreLog.SkippedUnknownEvent(aggregateId, _aggregateTypeFullName, aggregate.AggregateType, eventResult.eventType, @event.Details.AggregateVersion);
+					_eventStoreTelemetry.SkippedUnknownEvent(aggregateId, _aggregateTypeFullName, aggregate.AggregateType, eventResult.eventType, @event.Details.AggregateVersion);
 				else
-					_eventStoreLog.CannotApplyEvent(aggregateId, _aggregateTypeFullName, aggregate.AggregateType, eventResult.eventType, eventType.FullName ?? eventType.Name, @event.Details.AggregateVersion);
+					_eventStoreTelemetry.CannotApplyEvent(aggregateId, _aggregateTypeFullName, aggregate.AggregateType, eventResult.eventType, eventType.FullName ?? eventType.Name, @event.Details.AggregateVersion);
 
 				// Without doing this, you won't be able to write to this aggregate anymore.
 				aggregate.Details.CurrentVersion = @event.Details.AggregateVersion;
@@ -121,7 +121,7 @@ partial class TableEventStore<T>
 			eventCount++;
 		}
 
-		_eventStoreLog.ReconstitutedAggregateFromEvents(aggregateId, _aggregateTypeFullName, aggregate.AggregateType, eventCount, AggregateVersionData.Create(aggregate));
+		_eventStoreTelemetry.ReconstitutedAggregateFromEvents(aggregateId, _aggregateTypeFullName, aggregate.AggregateType, eventCount, AggregateVersionData.Create(aggregate));
 
 		aggregate.Details.SavedVersion = aggregate.Details.CurrentVersion;
 		aggregate.Details.Etag = streamVersion.ETag.ToString();
@@ -149,7 +149,7 @@ partial class TableEventStore<T>
 		}
 		catch (Exception ex)
 		{
-			_eventStoreLog.SnapshotDeserializationFailed(aggregateId, _aggregateTypeFullName, ex);
+			_eventStoreTelemetry.SnapshotDeserializationFailed(aggregateId, _aggregateTypeFullName, ex);
 
 			return null;
 		}
@@ -161,7 +161,7 @@ partial class TableEventStore<T>
 		try
 		{
 			var cacheKey = CreateCacheKey(aggregateId);
-			var snapshotData = await _cache.GetStringAsync(cacheKey, cancellationToken);
+			var snapshotData = await _distributedCache.GetStringAsync(cacheKey, cancellationToken);
 			if (!string.IsNullOrWhiteSpace(snapshotData))
 			{
 				aggregate = DeserializeSnapshot(snapshotData);
@@ -170,7 +170,7 @@ partial class TableEventStore<T>
 		}
 		catch (Exception ex)
 		{
-			_eventStoreLog.CacheGetFailure(aggregateId, _aggregateTypeFullName, ex);
+			_eventStoreTelemetry.CacheGetFailure(aggregateId, _aggregateTypeFullName, ex);
 		}
 
 		return aggregate;

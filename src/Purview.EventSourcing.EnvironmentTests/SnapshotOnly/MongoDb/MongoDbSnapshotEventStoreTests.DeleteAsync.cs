@@ -10,7 +10,7 @@ partial class MongoDbSnapshotEventStoreTests
 	public async Task DeleteAsync_GivenExistingAggregateMarkedAsDeleted_DeletesFromMongoDb()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		using MongoDbSnapshotTestContext context = fixture.CreateContext();
 
 		string aggregateId = Guid.NewGuid().ToString();

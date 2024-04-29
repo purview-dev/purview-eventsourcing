@@ -2,7 +2,6 @@
 using Azure.Data.Tables;
 using Purview.EventSourcing.Aggregates;
 using Purview.EventSourcing.AzureStorage.Table.Entities;
-using Purview.Interfaces.Storage.AzureStorage.Table;
 
 namespace Purview.EventSourcing.AzureStorage.Table;
 
@@ -11,15 +10,15 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task SaveAsync_GivenAggregateWithDataAnnotationsAndInvalidProperties_NoChangesAreMadeAndNotSaved()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId, a => a.SetValidatedProperty(-1));
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId, a => a.SetValidatedProperty(-1));
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		// Act
-		SaveResult<TAggregate> result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
+		var result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Assert
 		result.Saved.Should().BeFalse();
@@ -32,21 +31,21 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task SaveAsync_GivenAggregateWithComplexProperty_SavesEventWithComplexProperty()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		ComplexTestType complexProperty = CreateComplexTestType();
+		var complexProperty = CreateComplexTestType();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 
 		aggregate.SetComplexProperty(complexProperty);
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
-		SaveResult<TAggregate> result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
+		var result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Act
-		TAggregate? aggregateGetResult = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
+		var aggregateGetResult = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
 
 		// Assert
 		aggregateGetResult
@@ -62,12 +61,12 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task SaveAsync_GivenAggregateWithNoChanges_DoesNotSave()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		// Act
 		bool result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -78,7 +77,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 			.BeFalse();
 
 		fixture
-			.Logs
+			.Telemetry
 			.Received(1)
 			.SaveContainedNoChanges(aggregateId, Arg.Any<string>(), Arg.Any<string>());
 	}
@@ -86,13 +85,13 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task SaveAsync_GivenNewAggregateWithChanges_SavesAggregate()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 		aggregate.IncrementInt32Value();
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		// Act
 		bool result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -108,7 +107,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 			.BeFalse();
 
 		// Verify by re-getting the aggregate, knowing that the cache is disabled.
-		TAggregate? aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
+		var aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
 
 		aggregateFromEventStore
 			.Should()
@@ -142,23 +141,23 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task SaveAsync_GivenStreamVersionWithoutVersionSetWhenSaved_StreamVersionHasCorrectEvent(int eventsToGenerate)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
-		for (int i = 0; i < eventsToGenerate; i++)
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		for (var i = 0; i < eventsToGenerate; i++)
 		{
 			aggregate.IncrementInt32Value();
 		}
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		// Act
 		bool result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Get and update stream version to remove the Version property.
-		TableEntity? streamVersion = await fixture.TableClient.GetAsync<TableEntity>(aggregateId, TableEventStoreConstants.StreamVersionRowKey, cancellationToken: tokenSource.Token) ?? throw new NullReferenceException();
-		int? streamVersionVersion = streamVersion[nameof(StreamVersionEntity.Version)] as int?;
+		var streamVersion = await fixture.TableClient.GetAsync<TableEntity>(aggregateId, TableEventStoreConstants.StreamVersionRowKey, cancellationToken: tokenSource.Token) ?? throw new NullReferenceException();
+		var streamVersionVersion = streamVersion[nameof(StreamVersionEntity.Version)] as int?;
 
 		streamVersion.Remove(nameof(StreamVersionEntity.Version));
 
@@ -175,7 +174,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 			.BeFalse();
 
 		// Verify by re-getting the aggregate, knowing that the cache is disabled.
-		TAggregate? aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
+		var aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
 
 		aggregateFromEventStore
 			.Should()
@@ -209,13 +208,13 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task SaveAsync_GivenNewAggregateWithLargeChanges_SavesAggregateWithLargeEventRecord()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 
-		string value = string.Empty;
-		bool sizeIsLessThan32K = true;
+		var value = string.Empty;
+		var sizeIsLessThan32K = true;
 		while (sizeIsLessThan32K)
 		{
 			value += "abcdefghijklmnopqrstvwxyz";
@@ -227,7 +226,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 
 		aggregate.AppendString(value);
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		// Act
 		bool result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -243,7 +242,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 			.BeFalse();
 
 		// Verify by re-getting the aggregate, knowing that the cache is disabled.
-		TAggregate? aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
+		var aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
 
 		(aggregateFromEventStore?.StringProperty ?? string.Empty)
 			.Length
@@ -265,13 +264,13 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task SaveAsync_GivenNewAggregateWithLargeChangesAndNoSnapshot_ReadsAggregateFromEvents()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 
-		string value = string.Empty;
-		bool sizeIsLessThan32K = true;
+		var value = string.Empty;
+		var sizeIsLessThan32K = true;
 		while (sizeIsLessThan32K)
 		{
 			value += "abcdefghijklmnopqrstvwxyz";
@@ -283,7 +282,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 
 		aggregate.AppendString(value);
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		// Act
 		bool result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -298,8 +297,8 @@ partial class GenericTableEventStoreTests<TAggregate>
 			.Should()
 			.BeFalse();
 
-		// Delete the snapshow to ensure the events are replayed.
-		string blobName = eventStore.GenerateSnapshotBlobName(aggregateId);
+		// Delete the snapshot to ensure the events are replayed.
+		var blobName = eventStore.GenerateSnapshotBlobName(aggregateId);
 		bool deleteResult = await fixture.BlobClient.DeleteBlobIfExistsAsync(blobName, cancellationToken: tokenSource.Token);
 
 		deleteResult
@@ -307,7 +306,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 			.BeTrue();
 
 		// Verify by re-getting the aggregate, knowing that the cache is disabled.
-		TAggregate? aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
+		var aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
 
 		(aggregateFromEventStore?.StringProperty ?? string.Empty)
 			.Length
@@ -329,34 +328,30 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task SaveAsync_GivenEventCountIsGreaterThanMaximumNumberOfAllowedInBatchOperation_BatchesEvents(int eventsToGenerate)
 	{
 		// Minus 2 is because we also add the idempotency marker and stream on the first batch.
-		if (eventsToGenerate < (Storage.AzureStorage.Table.TableClient.MaximumBatchSize - 2))
-		{
-			$"'{eventsToGenerate}' should be greater than {Storage.AzureStorage.Table.TableClient.MaximumBatchSize}.".Should().BeNull();
-		}
+		if (eventsToGenerate < (StorageClients.Table.AzureTableClient.MaximumBatchSize - 2))
+			$"'{eventsToGenerate}' should be greater than {StorageClients.Table.AzureTableClient.MaximumBatchSize}.".Should().BeNull();
 
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
-		for (int i = 0; i < eventsToGenerate; i++)
-		{
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		for (var i = 0; i < eventsToGenerate; i++)
 			aggregate.IncrementInt32Value();
-		}
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		// Act
 		bool result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Get and update stream version to remove the Version property.
-		TableEntity? streamVersion = await fixture.TableClient.GetAsync<TableEntity>(aggregateId, TableEventStoreConstants.StreamVersionRowKey, cancellationToken: tokenSource.Token);
+		var streamVersion = await fixture.TableClient.GetAsync<TableEntity>(aggregateId, TableEventStoreConstants.StreamVersionRowKey, cancellationToken: tokenSource.Token);
 
 		streamVersion
 			.Should()
 			.NotBeNull();
 
-		int? streamVersionVersion = streamVersion![nameof(StreamVersionEntity.Version)] as int?;
+		var streamVersionVersion = streamVersion![nameof(StreamVersionEntity.Version)] as int?;
 
 		// Assert
 		result
@@ -369,7 +364,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 			.BeFalse();
 
 		// Verify by re-getting the aggregate, knowing that the cache is disabled.
-		TAggregate? aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
+		var aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
 
 		aggregateFromEventStore
 			.Should()
@@ -403,19 +398,17 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task SaveAsync_GivenEventCountIsGreaterThanMaximumNumberOfAllowedEventsInSaveOperation_ThrowsException(int eventsToGenerate)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
-		for (int i = 0; i < eventsToGenerate; i++)
-		{
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		for (var i = 0; i < eventsToGenerate; i++)
 			aggregate.IncrementInt32Value();
-		}
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		// Act
-		Func<Task> func = async () => await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
+		var func = async () => await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Get and update stream version to remove the Version property.
 		await func.Should().ThrowExactlyAsync<ArgumentOutOfRangeException>();

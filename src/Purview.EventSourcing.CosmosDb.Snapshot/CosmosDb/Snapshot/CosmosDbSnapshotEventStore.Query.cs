@@ -88,7 +88,7 @@ partial class CosmosDbSnapshotEventStore<T>
 		Expression<Func<T, bool>> defaultClause = m => m.AggregateType == aggregateTypeName;
 
 		if (whereClause == null)
-			return PredicateBuilder.New<T>(defaultClause);
+			return PredicateBuilder.New(defaultClause);
 
 		var aggregateClause = PredicateBuilder.Extend(defaultClause, whereClause, PredicateOperator.And);
 		var expressionToRun = aggregateClause.Expand();

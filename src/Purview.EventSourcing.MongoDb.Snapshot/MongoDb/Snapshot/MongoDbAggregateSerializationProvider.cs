@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using MongoDB.Bson.Serialization;
-using Purview.EventSourcing.Interfaces.Aggregates;
+using Purview.EventSourcing.Aggregates;
 
 namespace Purview.EventSourcing.MongoDb.Snapshot;
 

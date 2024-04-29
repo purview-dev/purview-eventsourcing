@@ -9,6 +9,10 @@ public class AddStringValuesDictionaryKVPsEvent : EventBase
 
 	protected override void BuildEventHash(ref HashCode hash)
 	{
-		KVPs.BuildHash(ref hash);
+		foreach (var kvp in KVPs)
+		{
+			hash.Add(kvp.Key);
+			hash.Add(kvp.Value);
+		}
 	}
 }

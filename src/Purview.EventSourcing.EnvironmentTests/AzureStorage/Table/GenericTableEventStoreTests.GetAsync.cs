@@ -1,7 +1,6 @@
 ﻿using Purview.EventSourcing.Aggregates.Persistence.Events;
-using Purview.EventSourcing.AzureStorage.Table.Entities;
 using Purview.EventSourcing.AzureStorage.Table.Exceptions;
-using Purview.Interfaces.Storage.AzureStorage.Table;
+using Purview.EventSourcing.AzureStorage.Table.StorageClients.Table;
 
 namespace Purview.EventSourcing.AzureStorage.Table;
 
@@ -10,19 +9,19 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task GetAsync_GivenAggregateIsDeletedAndDeletedModeIsSetToThrow_ThrowsEventStoreAggregateDeletedException()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 		aggregate.IncrementInt32Value();
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 		await eventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Act
-		Func<Task<TAggregate?>> func = () => eventStore.GetAsync(aggregateId, new EventStoreOperationContext
+		var func = () => eventStore.GetAsync(aggregateId, new EventStoreOperationContext
 		{
 			DeleteMode = DeleteHandlingMode.ThrowsException
 		}, cancellationToken: tokenSource.Token);
@@ -30,28 +29,26 @@ partial class GenericTableEventStoreTests<TAggregate>
 		// Assert
 		await func
 			.Should()
-			.ThrowExactlyAsync<EventStoreAggregateIsDeletedException>();
+			.ThrowExactlyAsync<AggregateIsDeletedException>();
 	}
 
 	public async Task GetAsync_GivenAnAggregateWithSavedEventsButNoSnapshot_RecreatesAggregate(int eventsToCreate)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
-		for (int i = 0; i < eventsToCreate; i++)
-		{
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		for (var i = 0; i < eventsToCreate; i++)
 			aggregate.IncrementInt32Value();
-		}
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Act
-		string blobName = eventStore.GenerateSnapshotBlobName(aggregateId);
-		bool exists = await fixture.BlobClient.ExistsAsync(blobName, cancellationToken: tokenSource.Token);
+		var blobName = eventStore.GenerateSnapshotBlobName(aggregateId);
+		var exists = await fixture.BlobClient.ExistsAsync(blobName, cancellationToken: tokenSource.Token);
 
 		exists
 			.Should()
@@ -66,7 +63,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 			.BeFalse();
 
 		// Assert
-		TAggregate? result = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
+		var result = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
 
 		result
 			.Should()
@@ -108,33 +105,29 @@ partial class GenericTableEventStoreTests<TAggregate>
 		const int snapshotInterval = 5;
 		const int eventCountOffset = snapshotInterval - 1;
 
-		int expectedSnapshotVersion = eventsToCreate - eventCountOffset;
-		int initialEventsToCreate = eventsToCreate - eventCountOffset;
+		var expectedSnapshotVersion = eventsToCreate - eventCountOffset;
+		var initialEventsToCreate = eventsToCreate - eventCountOffset;
 
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
+		var aggregateId = $"{Guid.NewGuid()}";
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(snapshotRecalculationInterval: snapshotInterval);
+		var eventStore = fixture.CreateEventStore<TAggregate>(snapshotRecalculationInterval: snapshotInterval);
 
 		// Act
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
-		for (int i = 0; i < initialEventsToCreate; i++)
-		{
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		for (var i = 0; i < initialEventsToCreate; i++)
 			aggregate.IncrementInt32Value();
-		}
 
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
-		for (int i = 0; i < eventCountOffset; i++)
-		{
+		for (var i = 0; i < eventCountOffset; i++)
 			aggregate.IncrementInt32Value();
-		}
 
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Assert
-		TAggregate? result = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
+		var result = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
 
 		result
 			.Should()
@@ -170,39 +163,35 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task GetAsync_GivenAnAggregateWithNonRegisteredEventType_RecreatesAggregateAndLogsCannotApplyEvent(int eventsToCreate, int numberOfOldEventsToCreate)
 	{
 		// Arrange
-		int totalEvents = eventsToCreate + numberOfOldEventsToCreate;
+		var totalEvents = eventsToCreate + numberOfOldEventsToCreate;
 
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 		// Register the event type here...!
 		aggregate.RegisterOldEventType();
 
-		for (int i = 0; i < eventsToCreate; i++)
-		{
+		for (var i = 0; i < eventsToCreate; i++)
 			aggregate.IncrementInt32Value();
-		}
 
-		for (int i = 0; i < numberOfOldEventsToCreate; i++)
-		{
+		for (var i = 0; i < numberOfOldEventsToCreate; i++)
 			aggregate.SetOldEventValue(Guid.NewGuid());
-		}
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		// Act
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Get without using the snapshot, just from the event record.
-		TAggregate? result = await eventStore.GetAsync(aggregateId, new EventStoreOperationContext
+		var result = await eventStore.GetAsync(aggregateId, new EventStoreOperationContext
 		{
 			SkipSnapshot = true
 		}, cancellationToken: tokenSource.Token);
 
 		// Assert
 		fixture
-			.Logs
+			.Telemetry
 			.Received(numberOfOldEventsToCreate)
 			.CannotApplyEvent(aggregateId, Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Is<string>(eventType => eventType.Contains(typeof(OldEvent).Name, StringComparison.Ordinal)), Arg.Any<int>());
 
@@ -244,36 +233,32 @@ partial class GenericTableEventStoreTests<TAggregate>
 		// Arrange
 		const string unknownEventType = "an-unknown-type";
 
-		int totalEvents = eventsToCreate + numberOfOldEventsToCreate;
+		var totalEvents = eventsToCreate + numberOfOldEventsToCreate;
 
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 		// Register the event type here...!
 		aggregate.RegisterOldEventType();
 
-		for (int i = 0; i < eventsToCreate; i++)
-		{
+		for (var i = 0; i < eventsToCreate; i++)
 			aggregate.IncrementInt32Value();
-		}
 
-		for (int i = 0; i < numberOfOldEventsToCreate; i++)
-		{
+		for (var i = 0; i < numberOfOldEventsToCreate; i++)
 			aggregate.SetOldEventValue(Guid.NewGuid());
-		}
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		// Act
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Update existing events to make them unknown types effectively.
-		IAsyncEnumerable<EventEntity> eventsToUpdate = eventStore.GetEventRangeEntitiesAsync(aggregateId, eventsToCreate + 1, totalEvents, tokenSource.Token);
+		var eventsToUpdate = eventStore.GetEventRangeEntitiesAsync(aggregateId, eventsToCreate + 1, totalEvents, tokenSource.Token);
 
 		BatchOperation batchOperation = new();
-		BatchOperation batch = batchOperation;
-		await foreach (EventEntity eventToUpdate in eventsToUpdate)
+		var batch = batchOperation;
+		await foreach (var eventToUpdate in eventsToUpdate)
 		{
 			eventToUpdate.EventType = unknownEventType;
 
@@ -283,14 +268,14 @@ partial class GenericTableEventStoreTests<TAggregate>
 		await fixture.TableClient.SubmitBatchAsync(batch, tokenSource.Token);
 
 		// Get without using the snapshot, just from the event record.
-		TAggregate? result = await eventStore.GetAsync(aggregateId, new EventStoreOperationContext
+		var result = await eventStore.GetAsync(aggregateId, new EventStoreOperationContext
 		{
 			SkipSnapshot = true
 		}, cancellationToken: tokenSource.Token);
 
 		// Assert
 		fixture
-			.Logs
+			.Telemetry
 			.Received(numberOfOldEventsToCreate)
 			.SkippedUnknownEvent(aggregateId, Arg.Any<string>(), Arg.Any<string>(), unknownEventType, Arg.Any<int>());
 

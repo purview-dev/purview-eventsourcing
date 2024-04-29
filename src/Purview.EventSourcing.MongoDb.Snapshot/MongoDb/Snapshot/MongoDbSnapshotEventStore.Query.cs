@@ -1,5 +1,4 @@
 ﻿using System.Linq.Expressions;
-using Purview.Interfaces.Storage;
 
 namespace Purview.EventSourcing.MongoDb.Snapshot;
 
@@ -7,13 +6,11 @@ partial class MongoDbSnapshotEventStore<T>
 {
 	public IAsyncEnumerable<T> GetQueryEnumerableAsync(Expression<Func<T, bool>> whereClause, Func<IQueryable<T>, IQueryable<T>>? orderByClause, int maxRecordsPerIteration = ContinuationRequest.DefaultMaxRecords, CancellationToken cancellationToken = default)
 		=> _mongoDbClient
-				.Value
 				.GetQueryEnumerableAsync(whereClause, orderByClause, maxRecordsPerIteration, cancellationToken)
 				.SelectAsync(FulfilRequirements);
 
 	public IAsyncEnumerable<T> GetListEnumerableAsync(Func<IQueryable<T>, IQueryable<T>>? orderByClause, int maxRecordsPerIteration = ContinuationRequest.DefaultMaxRecords, CancellationToken cancellationToken = default)
 		=> _mongoDbClient
-				.Value
 				.GetListEnumerableAsync(orderByClause, maxRecordsPerIteration, cancellationToken)
 				.SelectAsync(FulfilRequirements);
 
@@ -24,9 +21,7 @@ partial class MongoDbSnapshotEventStore<T>
 
 		var result = query.Results.SingleOrDefault();
 		if (result != null)
-		{
 			FulfilRequirements(result);
-		}
 
 		return result;
 	}
@@ -37,26 +32,17 @@ partial class MongoDbSnapshotEventStore<T>
 
 		var result = query.Results.FirstOrDefault();
 		if (result != null)
-		{
 			FulfilRequirements(result);
-		}
 
 		return result;
 	}
 
 	public async Task<ContinuationResponse<T>> QueryAsync(Expression<Func<T, bool>> whereClause, Func<IQueryable<T>, IQueryable<T>>? orderByClause, ContinuationRequest request, CancellationToken cancellationToken = default)
 	{
-		if (whereClause == null)
-		{
-			throw new ArgumentNullException(nameof(whereClause));
-		}
+		ArgumentNullException.ThrowIfNull(whereClause, nameof(whereClause));
+		ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-		if (request == null)
-		{
-			throw new ArgumentNullException(nameof(request));
-		}
-
-		var result = await _mongoDbClient.Value.QueryAsync(whereClause, orderByClause, request, cancellationToken);
+		var result = await _mongoDbClient.QueryAsync(whereClause, orderByClause, request, cancellationToken);
 
 		result.Results = result.Results.Select(FulfilRequirements).ToArray();
 
@@ -65,7 +51,7 @@ partial class MongoDbSnapshotEventStore<T>
 
 	public async Task<ContinuationResponse<T>> ListAsync(Func<IQueryable<T>, IQueryable<T>>? orderByClause, ContinuationRequest request, CancellationToken cancellationToken = default)
 	{
-		var results = await _mongoDbClient.Value.ListAsync(orderByClause, request, cancellationToken);
+		var results = await _mongoDbClient.ListAsync(orderByClause, request, cancellationToken);
 
 		results.Results = results.Results.Select(FulfilRequirements).ToArray();
 
@@ -73,5 +59,5 @@ partial class MongoDbSnapshotEventStore<T>
 	}
 
 	public Task<long> CountAsync(Expression<Func<T, bool>>? whereClause, CancellationToken cancellationToken = default)
-		=> _mongoDbClient.Value.CountAsync(whereClause, cancellationToken);
+		=> _mongoDbClient.CountAsync(whereClause, cancellationToken);
 }

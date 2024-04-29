@@ -10,7 +10,7 @@ sealed class AzureTableClient
 {
 	public const int MaximumBatchSize = 100;
 
-	readonly AsyncLazy<Azure.Data.Tables.TableClient> _tableClient;
+	readonly AsyncLazy<TableClient> _tableClient;
 	readonly AzureStorageEventStoreOptions _configuration;
 	readonly string _tableName;
 
@@ -21,7 +21,7 @@ sealed class AzureTableClient
 		_configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
 		_tableName = tableOverride ?? _configuration.Table;
-		_tableClient = new AsyncLazy<Azure.Data.Tables.TableClient>(InitializeAsync);
+		_tableClient = new AsyncLazy<TableClient>(InitializeAsync);
 	}
 
 	public async Task<T?> OperationAsync<T>(TableTransactionActionType action, T entity, CancellationToken cancellationToken = default)
@@ -81,7 +81,7 @@ sealed class AzureTableClient
 		{
 			var response = await tableClient.SubmitTransactionAsync(actions, cancellationToken);
 			if (response != null)
-				responses.Add(idx, response.Value.ToArray());
+				responses.Add(idx, [.. response.Value]);
 
 			idx++;
 		}
@@ -200,7 +200,7 @@ sealed class AzureTableClient
 		return entity != null;
 	}
 
-	async Task<Azure.Data.Tables.TableClient> InitializeAsync(CancellationToken cancellationToken = default)
+	async Task<TableClient> InitializeAsync(CancellationToken cancellationToken = default)
 	{
 		var tableClient = CreateTableServiceClient().GetTableClient(_tableName);
 		await tableClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);

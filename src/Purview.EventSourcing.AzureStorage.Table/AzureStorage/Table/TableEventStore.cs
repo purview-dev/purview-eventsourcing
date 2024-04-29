@@ -23,8 +23,8 @@ public sealed partial class TableEventStore<T> : ITableEventStore<T>
 	readonly IOptions<AzureStorageEventStoreOptions> _eventStoreOptions;
 	readonly FluentValidation.IValidator<T>? _validator;
 	readonly IAggregateIdFactory? _aggregateIdFactory;
-	readonly IDistributedCache _cache;
-	readonly ITableEventStoreTelemetry _eventStoreLog;
+	readonly IDistributedCache _distributedCache;
+	readonly ITableEventStoreTelemetry _eventStoreTelemetry;
 	readonly ChangeFeed.IAggregateChangeFeedNotifier<T> _aggregateChangeNotifier;
 	readonly IAggregateRequirementsManager _aggregateRequirementsManager;
 
@@ -34,8 +34,8 @@ public sealed partial class TableEventStore<T> : ITableEventStore<T>
 	public TableEventStore(
 		IAggregateEventNameMapper eventNameMapper,
 		[NotNull] IOptions<AzureStorageEventStoreOptions> azureStorageOptions,
-		IDistributedCache cache,
-		ITableEventStoreTelemetry eventStoreLog,
+		IDistributedCache distributedCache,
+		ITableEventStoreTelemetry eventStoreTelemetry,
 		ChangeFeed.IAggregateChangeFeedNotifier<T> aggregateChangeNotifier,
 		IAggregateRequirementsManager aggregateRequirementsManager,
 		FluentValidation.IValidator<T>? validator = null,
@@ -46,17 +46,18 @@ public sealed partial class TableEventStore<T> : ITableEventStore<T>
 		_eventStoreOptions = azureStorageOptions;
 		_validator = validator;
 		_aggregateIdFactory = aggregateIdFactory;
-		_cache = cache;
-		_eventStoreLog = eventStoreLog;
+		_distributedCache = distributedCache;
+		_eventStoreTelemetry = eventStoreTelemetry;
 		_aggregateChangeNotifier = aggregateChangeNotifier;
 		_aggregateRequirementsManager = aggregateRequirementsManager;
 
 		var name = typeof(T).Name;
-		var tableName = nameBuilder?.GetTableName<T>() ?? $"{azureStorageOptions.Value.Table}{name}";
-		var containerName = nameBuilder?.GetBlobContainerName<T>() ?? azureStorageOptions.Value.Container;
 
-		_tableClient = new(azureStorageOptions.Value, tableName);
-		_blobClient = new(azureStorageOptions.Value, containerName);
+		TableName = nameBuilder?.GetTableName<T>() ?? $"{azureStorageOptions.Value.Table}{name}";
+		ContainerName = nameBuilder?.GetBlobContainerName<T>() ?? azureStorageOptions.Value.Container;
+
+		_tableClient = new(azureStorageOptions.Value, TableName);
+		_blobClient = new(azureStorageOptions.Value, ContainerName);
 
 		_aggregateTypeShortName = typeof(T).Name;
 		_aggregateTypeFullName = typeof(T).FullName ?? _aggregateTypeShortName;
@@ -66,6 +67,10 @@ public sealed partial class TableEventStore<T> : ITableEventStore<T>
 			// Could do with validating that this is a valid blob container name.
 			_aggregateTypeShortName = aggregateName;
 	}
+
+	internal string TableName { get; }
+
+	internal string ContainerName { get; }
 
 	public T FulfilRequirements(T aggregate)
 	{
@@ -82,19 +87,19 @@ public sealed partial class TableEventStore<T> : ITableEventStore<T>
 		{
 			var cacheKey = CreateCacheKey(aggregate.Id());
 			if (aggregate.Details.Locked || (aggregate.Details.IsDeleted && _eventStoreOptions.Value.RemoveDeletedFromCache))
-				await _cache.RemoveAsync(cacheKey, cancellationToken);
+				await _distributedCache.RemoveAsync(cacheKey, cancellationToken);
 			else
 			{
 				if (!_eventStoreOptions.Value.CacheMode.HasFlag(EventStoreCachingOptions.StoreInCache))
 					return;
 
 				var data = SerializeSnapshot(aggregate);
-				await _cache.SetStringAsync(cacheKey, data, cacheEntryOptions, cancellationToken);
+				await _distributedCache.SetStringAsync(cacheKey, data, cacheEntryOptions, cancellationToken);
 			}
 		}
 		catch (Exception ex)
 		{
-			_eventStoreLog.CacheUpdateFailure(aggregate.Id(), _aggregateTypeFullName, ex);
+			_eventStoreTelemetry.CacheUpdateFailure(aggregate.Id(), _aggregateTypeFullName, ex);
 		}
 	}
 
@@ -120,7 +125,7 @@ public sealed partial class TableEventStore<T> : ITableEventStore<T>
 
 	async Task<StreamVersionEntity?> GetStreamVersionAsync(string aggregateId, bool expectedToExist, CancellationToken cancellationToken)
 	{
-		_eventStoreLog.GetStreamVersionStart(aggregateId, TableEventStoreConstants.StreamVersionRowKey);
+		_eventStoreTelemetry.GetStreamVersionStart(aggregateId, TableEventStoreConstants.StreamVersionRowKey);
 
 		var elapsedMilliseconds = 0L;
 		StreamVersionEntity? result = null;
@@ -136,19 +141,19 @@ public sealed partial class TableEventStore<T> : ITableEventStore<T>
 			if (result == null)
 			{
 				if (expectedToExist)
-					_eventStoreLog.StreamVersionExpectedToExistButNotFound(aggregateId);
+					_eventStoreTelemetry.StreamVersionExpectedToExistButNotFound(aggregateId);
 				else
-					_eventStoreLog.StreamVersionNotFound(aggregateId);
+					_eventStoreTelemetry.StreamVersionNotFound(aggregateId);
 			}
 			else
-				_eventStoreLog.StreamVersionFound(aggregateId, result.Version, result.AggregateType, result.IsDeleted);
+				_eventStoreTelemetry.StreamVersionFound(aggregateId, result.Version, result.AggregateType, result.IsDeleted);
 		}
 		catch (Exception ex)
 		{
-			_eventStoreLog.GetStreamVersionFailed(aggregateId, TableEventStoreConstants.StreamVersionRowKey, ex);
+			_eventStoreTelemetry.GetStreamVersionFailed(aggregateId, TableEventStoreConstants.StreamVersionRowKey, ex);
 		}
 
-		_eventStoreLog.GetStreamVersionComplete(aggregateId, TableEventStoreConstants.StreamVersionRowKey, elapsedMilliseconds);
+		_eventStoreTelemetry.GetStreamVersionComplete(aggregateId, TableEventStoreConstants.StreamVersionRowKey, elapsedMilliseconds);
 
 		return result;
 	}

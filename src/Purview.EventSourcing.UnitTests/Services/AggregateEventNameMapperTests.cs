@@ -9,7 +9,7 @@ namespace Purview.EventSourcing
 		const string CorrectlyNamedAggregateName = "correctly-named";
 
 		static AggregateEventNameMapper CreateMapper<T>()
-			where T : class, Aggregates.IAggregate, new()
+			where T : class, IAggregate, new()
 		{
 			AggregateEventNameMapper? eventNameMapper = new();
 			eventNameMapper.InitializeAggregate<T>();

@@ -1,11 +1,11 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
-using Purview.EventSourcing.Interfaces.Aggregates;
+using Purview.EventSourcing.Aggregates;
 
 namespace Purview.EventSourcing.MongoDb.Snapshot;
 
-internal class MongoDbAggregateSerializer<TAggregate> : SerializerBase<TAggregate>, IBsonDocumentSerializer
+sealed class MongoDbAggregateSerializer<TAggregate> : SerializerBase<TAggregate>, IBsonDocumentSerializer
 	where TAggregate : class, IAggregate, new()
 {
 	public const string BsonDocuemntIdPropertyName = "_id";
@@ -16,9 +16,9 @@ internal class MongoDbAggregateSerializer<TAggregate> : SerializerBase<TAggregat
 		var document = serializer.Deserialize(context, args);
 
 		var bsonDocument = document.ToBsonDocument();
-
 		var result = bsonDocument.ToJson();
-		return Newtonsoft.Json.JsonConvert.DeserializeObject<TAggregate>(result, Newtonsoft.Json.GlobalJsonSettings.PrivateHandling)!;
+
+		return Newtonsoft.Json.JsonConvert.DeserializeObject<TAggregate>(result, JsonHelpers.JsonSerializerSettings)!;
 	}
 
 	public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, TAggregate value)
@@ -42,7 +42,7 @@ internal class MongoDbAggregateSerializer<TAggregate> : SerializerBase<TAggregat
 			return false;
 		}
 
-		serializationInfo = new BsonSerializationInfo(memberName, BsonSerializer.LookupSerializer(memberType), ValueType);
+		serializationInfo = new(memberName, BsonSerializer.LookupSerializer(memberType), ValueType);
 
 		return true;
 	}

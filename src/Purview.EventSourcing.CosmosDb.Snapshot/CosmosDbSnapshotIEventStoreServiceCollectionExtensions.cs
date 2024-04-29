@@ -8,7 +8,7 @@ namespace Purview;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class CosmosDbSnapshotIEventStoreServiceCollectionExtensions
 {
-	public static IServiceCollection AddCosmosDbQueryableEventStore(this IServiceCollection services, IConfiguration configuration)
+	public static IServiceCollection AddCosmosDbQueryableEventStore(this IServiceCollection services)
 	{
 		services.AddEventSourcing();
 
@@ -22,6 +22,9 @@ public static class CosmosDbSnapshotIEventStoreServiceCollectionExtensions
 			.Configure<IConfiguration>((options, configuration) =>
 			{
 				configuration.GetSection(CosmosDbEventStoreOptions.CosmosDbEventStore).Bind(options);
+
+				if (options.ConnectionString == null)
+					options.ConnectionString = configuration.GetConnectionString("EventStore_CosmosDb") ?? configuration.GetConnectionString("CosmosDb");
 			});
 
 		return services;

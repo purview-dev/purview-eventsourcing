@@ -19,7 +19,7 @@ partial class MongoDbSnapshotEventStoreTests
 	public async Task QueryAsync_GivenAggregatesExist_QueriesAsExpected(int numberOfAggregates, int numberOfEvents)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
 		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;

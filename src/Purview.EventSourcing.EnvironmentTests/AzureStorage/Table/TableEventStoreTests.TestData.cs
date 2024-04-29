@@ -6,10 +6,10 @@ partial class TableEventStoreTests
 	{
 		get
 		{
-			const int maximum = Storage.AzureStorage.Table.TableClient.MaximumBatchSize;
+			const int maximum = StorageClients.Table.AzureTableClient.MaximumBatchSize;
 
 			TheoryData<Type, int> data = [];
-			foreach (Type aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
+			foreach (var aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
 			{
 				data.Add(aggregateType, maximum - 2);
 				data.Add(aggregateType, maximum + (maximum / 2));
@@ -29,7 +29,7 @@ partial class TableEventStoreTests
 		get
 		{
 			TheoryData<Type, int> data = [];
-			foreach (Type aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
+			foreach (var aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
 			{
 				data.Add(aggregateType, 1_001);
 				data.Add(aggregateType, 10_000);
@@ -45,7 +45,7 @@ partial class TableEventStoreTests
 		get
 		{
 			TheoryData<Type, int, int> data = [];
-			foreach (Type aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
+			foreach (var aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
 			{
 				data.Add(aggregateType, 1, 1);
 				data.Add(aggregateType, 1, 10);
@@ -67,7 +67,7 @@ partial class TableEventStoreTests
 		{
 
 			TheoryData<Type, int, int> data = [];
-			foreach (Type aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
+			foreach (var aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
 			{
 				data.Add(aggregateType, 1, 1);
 				data.Add(aggregateType, 5, 2);
@@ -84,7 +84,7 @@ partial class TableEventStoreTests
 		get
 		{
 			TheoryData<Type, int, int, int?> data = [];
-			foreach (Type aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
+			foreach (var aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
 			{
 				data.Add(aggregateType, 5, 1, 5);
 				data.Add(aggregateType, 5, 1, null);
@@ -106,7 +106,7 @@ partial class TableEventStoreTests
 		get
 		{
 			TheoryData<Type, int, int, int?, int> data = [];
-			foreach (Type aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
+			foreach (var aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
 			{
 				data.Add(aggregateType, 5, 1, 5, 5);
 				data.Add(aggregateType, 5, 1, null, 5);
@@ -128,7 +128,7 @@ partial class TableEventStoreTests
 		get
 		{
 			TheoryData<Type, int> data = [];
-			foreach (Type aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
+			foreach (var aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
 			{
 				data.Add(aggregateType, 1);
 				data.Add(aggregateType, 10);
@@ -145,7 +145,7 @@ partial class TableEventStoreTests
 		get
 		{
 			TheoryData<Type, int> data = [];
-			foreach (Type aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
+			foreach (var aggregateType in AggregateTestTypes.Select(m => (Type)m[0]!))
 			{
 				data.Add(aggregateType, 10);
 				data.Add(aggregateType, 20);
@@ -172,7 +172,7 @@ partial class TableEventStoreTests
 
 	public ITableEventStoreTests CreateTableStoreTests(Type aggregateType)
 	{
-		Type testType = typeof(GenericTableEventStoreTests<>).MakeGenericType(aggregateType);
+		var testType = typeof(GenericTableEventStoreTests<>).MakeGenericType(aggregateType);
 
 		return (ITableEventStoreTests)Activator.CreateInstance(testType, args: [fixture])!;
 	}

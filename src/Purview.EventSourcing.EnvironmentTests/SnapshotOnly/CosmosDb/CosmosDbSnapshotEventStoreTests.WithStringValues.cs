@@ -14,7 +14,7 @@ partial class CosmosDbSnapshotEventStoreTests
 	public async Task CanQuery_GivenAggregatesContainsDictionaryWithStringValuesAsValue_QueryAsExpected(int numberOfAggregates)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
 		string aggregateType = CreateAggregate().AggregateType;
@@ -56,7 +56,7 @@ partial class CosmosDbSnapshotEventStoreTests
 	public async Task CanQuery_GivenAggregatesContainsDictionaryWithStringsAsValues_QueryAsExpected(int numberOfAggregates)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
 		string aggregateType = CreateAggregate().AggregateType;

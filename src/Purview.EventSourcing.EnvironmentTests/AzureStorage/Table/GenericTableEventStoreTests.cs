@@ -21,7 +21,4 @@ public partial class GenericTableEventStoreTests<TAggregate>(TableEventStoreFixt
 			}
 		};
 	}
-
-	static TAggregate CreateAggregate(string? id = null, Action<TAggregate>? action = null)
-		=> SubstituteBuilder.Aggregate<TAggregate>(id, action);
 }

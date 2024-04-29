@@ -5,19 +5,19 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task IsDeletedAsync_GivenDeletedAggregates_ReturnsTrue()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 		aggregate.IncrementInt32Value();
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2);
+		var eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2);
 
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 		await eventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Act
-		bool result = await eventStore.IsDeletedAsync(aggregateId, cancellationToken: tokenSource.Token);
+		var result = await eventStore.IsDeletedAsync(aggregateId, cancellationToken: tokenSource.Token);
 
 		// Assert
 		result
@@ -28,18 +28,18 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task IsDeletedAsync_GivenNonDeletedAggregates_ReturnsFalse()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 		aggregate.IncrementInt32Value();
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2);
+		var eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2);
 
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Act
-		bool result = await eventStore.IsDeletedAsync(aggregateId, cancellationToken: tokenSource.Token);
+		var result = await eventStore.IsDeletedAsync(aggregateId, cancellationToken: tokenSource.Token);
 
 		// Assert
 		result

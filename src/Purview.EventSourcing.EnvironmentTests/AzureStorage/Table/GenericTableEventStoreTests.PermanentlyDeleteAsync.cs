@@ -1,8 +1,5 @@
 ﻿using System.Text;
-using Azure;
 using Azure.Data.Tables;
-using Azure.Storage.Blobs.Models;
-using Purview.Interfaces.Storage.AzureStorage.Table;
 
 namespace Purview.EventSourcing.AzureStorage.Table;
 
@@ -11,24 +8,21 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task DeleteAsync_GivenAggregateExists_PermanentlyDeletesAllData()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate? aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		aggregate.IncrementInt32Value();
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2);
+		var eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2);
 
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		aggregate = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
-		if (aggregate == null)
-		{
-			throw new NullReferenceException();
-		}
+		aggregate.Should().NotBeNull();
 
 		// Act
-		bool result = await eventStore.DeleteAsync(aggregate, new EventStoreOperationContext
+		var result = await eventStore.DeleteAsync(aggregate!, new EventStoreOperationContext
 		{
 			PermanentlyDelete = true
 		}, cancellationToken: tokenSource.Token);
@@ -38,7 +32,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 			.Should()
 			.BeTrue();
 
-		aggregate
+		aggregate!
 			.Details
 			.IsDeleted
 			.Should()
@@ -56,14 +50,14 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task DeleteAsync_GivenAggregateExistsWithLargeEvent_PermanentlyDeletesAllData()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate? aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		aggregate.IncrementInt32Value();
 
-		string value = string.Empty;
-		bool sizeIsLessThan32K = true;
+		var value = string.Empty;
+		var sizeIsLessThan32K = true;
 		while (sizeIsLessThan32K)
 		{
 			value += "abcdefghijklmnopqrstvwxyz";
@@ -75,19 +69,15 @@ partial class GenericTableEventStoreTests<TAggregate>
 
 		aggregate.AppendString(value);
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2);
+		var eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2);
 
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		aggregate = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
-
-		if (aggregate == null)
-		{
-			throw new NullReferenceException();
-		}
+		aggregate.Should().NotBeNull();
 
 		// Act
-		bool result = await eventStore.DeleteAsync(aggregate, new EventStoreOperationContext
+		var result = await eventStore.DeleteAsync(aggregate!, new EventStoreOperationContext
 		{
 			PermanentlyDelete = true
 		}, cancellationToken: tokenSource.Token);
@@ -114,17 +104,17 @@ partial class GenericTableEventStoreTests<TAggregate>
 
 	async Task ValidateEntitiesDeletedAsync(TAggregate aggregate, TableEventStore<TAggregate> eventStore, CancellationToken cancellationToken)
 	{
-		TableQueryResponse<TableEntity> results = await fixture.TableClient.QueryAsync<TableEntity>(m => m.PartitionKey == aggregate.Details.Id, cancellationToken: cancellationToken);
+		var results = await fixture.TableClient.QueryAsync<TableEntity>(m => m.PartitionKey == aggregate.Details.Id, cancellationToken: cancellationToken);
 
 		results
 			.Results
 			.Should()
 			.BeEmpty();
 
-		string prefix = eventStore.GenerateSnapshotBlobPath(aggregate.Id());
+		var prefix = eventStore.GenerateSnapshotBlobPath(aggregate.Id());
 
-		AsyncPageable<BlobItem> blobResults = await fixture.BlobClient.GetBlobsAsync(prefix, cancellationToken: cancellationToken);
-		IEnumerable<BlobItem> blobsToDelete = blobResults.ToBlockingEnumerable(cancellationToken: cancellationToken);
+		var blobResults = await fixture.BlobClient.GetBlobsAsync(prefix, cancellationToken: cancellationToken);
+		var blobsToDelete = blobResults.ToBlockingEnumerable(cancellationToken: cancellationToken);
 
 		blobsToDelete
 			.Should()

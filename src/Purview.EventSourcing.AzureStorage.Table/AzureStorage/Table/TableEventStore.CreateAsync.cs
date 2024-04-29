@@ -15,7 +15,7 @@ partial class TableEventStore<T>
 					throw new NullReferenceException($"The {typeof(IAggregateIdFactory).FullName} implementation ({_aggregateIdFactory.GetType().FullName}) generated a null or empty Id.");
 			}
 			else
-				aggregateId = $"{Guid.NewGuid()}".ToLowerInvariant();
+				aggregateId = $"{Guid.NewGuid()}".ToLowerSafe();
 		}
 
 		var aggregate = new T

@@ -1,4 +1,4 @@
-﻿using Purview.EventSourcing.Interfaces.ChangeFeed;
+﻿using Purview.EventSourcing.ChangeFeed;
 
 namespace Purview.EventSourcing.AzureStorage.Table;
 
@@ -7,20 +7,20 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task DeleteAsync_GivenPreviouslySavedAggregate_MarksAsDeleted()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 		aggregate.IncrementInt32Value();
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2);
+		var eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2);
 
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
-		TAggregate? aggregateResult = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token) ?? throw new NullReferenceException();
+		var aggregateResult = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token) ?? throw new NullReferenceException();
 
 		// Act
-		bool result = await eventStore.DeleteAsync(aggregateResult, cancellationToken: tokenSource.Token);
+		var result = await eventStore.DeleteAsync(aggregateResult, cancellationToken: tokenSource.Token);
 
 		// Assert
 		result
@@ -43,22 +43,22 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task DeleteAsync_WhenTableStoreConfigRemoveDeletedFromCacheIsTrueAndPreviouslySavedAggregate_RemovesFromCache()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 		aggregate.IncrementInt32Value();
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2, removeFromCacheOnDelete: true);
+		var eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2, removeFromCacheOnDelete: true);
 
-		string cacheKey = eventStore.CreateCacheKey(aggregateId);
+		var cacheKey = eventStore.CreateCacheKey(aggregateId);
 
 		await eventStore.SaveAsync(aggregate, tokenSource.Token);
 
-		TAggregate? aggregateResult = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token) ?? throw new NullReferenceException();
+		var aggregateResult = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token) ?? throw new NullReferenceException();
 
 		// Act
-		bool result = await eventStore.DeleteAsync(aggregateResult, cancellationToken: tokenSource.Token);
+		var result = await eventStore.DeleteAsync(aggregateResult, cancellationToken: tokenSource.Token);
 
 		// Assert
 		result
@@ -73,17 +73,17 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task DeleteAsync_GivenDelete_NotifiesChangeFeed()
 	{
 		// Arrange
-		IAggregateChangeFeedNotifier<TAggregate> aggregateChangeNotifier = Substitute.For<IAggregateChangeFeedNotifier<TAggregate>>();
+		var aggregateChangeNotifier = Substitute.For<IAggregateChangeFeedNotifier<TAggregate>>();
 
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		bool beforeWasCalled = false;
-		bool afterWasCalled = false;
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var beforeWasCalled = false;
+		var afterWasCalled = false;
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 		aggregate.IncrementInt32Value();
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(aggregateChangeNotifier: aggregateChangeNotifier);
+		var eventStore = fixture.CreateEventStore(aggregateChangeNotifier: aggregateChangeNotifier);
 
 		aggregateChangeNotifier
 			.When(m => m.BeforeDeleteAsync(aggregate, Arg.Any<CancellationToken>()))
@@ -96,7 +96,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Act
-		bool result = await eventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
+		var result = await eventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Assert
 		beforeWasCalled

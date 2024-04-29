@@ -47,7 +47,7 @@ partial class TableEventStore<T>
 		if (streamVersion == null)
 			return false;
 
-		_eventStoreLog.PermanentDeleteRequested(aggregateId);
+		_eventStoreTelemetry.PermanentDeleteRequested(aggregateId);
 
 		const int entitiesInEachBatch = 20;
 		try
@@ -79,7 +79,7 @@ partial class TableEventStore<T>
 			foreach (var blob in blobsToDelete)
 				await _blobClient.DeleteBlobIfExistsAsync(blob.Name, cancellationToken);
 
-			_eventStoreLog.PermanentDeleteComplete(aggregateId);
+			_eventStoreTelemetry.PermanentDeleteComplete(aggregateId);
 
 			aggregate.Details.IsDeleted = true;
 			aggregate.Details.Locked = true;
@@ -88,7 +88,7 @@ partial class TableEventStore<T>
 		}
 		catch (Exception ex)
 		{
-			_eventStoreLog.PermanentDeleteFailed(aggregateId, ex);
+			_eventStoreTelemetry.PermanentDeleteFailed(aggregateId, ex);
 
 			return false;
 		}

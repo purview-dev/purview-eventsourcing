@@ -1,6 +1,6 @@
-﻿using Purview.EventSourcing.Interfaces.Aggregates;
+﻿using Purview.EventSourcing.Aggregates;
 
-namespace Purview.EventSourcing.Interfaces.MongoDb;
+namespace Purview.EventSourcing.MongoDb.Snapshot;
 
 public interface IMongoDbSnapshotEventStore<T> : IQueryableEventStore<T>
 	where T : class, IAggregate, new()

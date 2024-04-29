@@ -18,15 +18,6 @@ sealed partial class CosmosDbClient
 	readonly string _containerCreatedKey;
 	readonly string _partitionKey;
 
-	static internal readonly Newtonsoft.Json.JsonSerializerSettings JsonSerializerSettings = new()
-	{
-		TypeNameHandling = Newtonsoft.Json.TypeNameHandling.None,
-		ContractResolver = new Newtonsoft.Json.Serialization.PrivateSetterContractResolver(),
-		NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore,
-		Formatting = Newtonsoft.Json.Formatting.None,
-		Converters = [new Newtonsoft.Json.Converters.StringValuesConverter()]
-	};
-
 	static readonly ConcurrentDictionary<string, CosmosClient> _cosmosDbClients = new();
 	static readonly ConcurrentDictionary<string, AsyncLazy<Database>> _createdDatabases = new();
 	static readonly ConcurrentDictionary<string, AsyncLazy<Container>> _createdContainers = new();
@@ -221,7 +212,7 @@ sealed partial class CosmosDbClient
 			{
 				ConnectionMode = configuration.ConnectionMode,
 				RequestTimeout = TimeSpan.FromSeconds(configuration.RequestTimeoutInSeconds ?? CosmosDbOptions.DefaultRequestTimeout),
-				Serializer = new CosmosJsonNetSerializer(JsonSerializerSettings)
+				Serializer = new CosmosJsonNetSerializer(JsonHelpers.JsonSerializerSettings)
 			};
 
 			if (configuration.IgnoreSSLWarnings)

@@ -33,7 +33,7 @@ partial class TableEventStore<T>
 		static SaveResult<T> ReturnSaveResult(T a, bool success, bool skipped, ValidationResult? validationResult = null) => new(a, validationResult ?? new ValidationResult(), success, skipped);
 
 		if (!validationResult.IsValid)
-			return ReturnSaveResult(aggregate, false, false);
+			return ReturnSaveResult(aggregate, false, false, validationResult);
 
 		if (aggregate.Details.Locked)
 		{
@@ -45,10 +45,10 @@ partial class TableEventStore<T>
 		if (string.IsNullOrWhiteSpace(aggregate.Details.Id))
 			throw new Exceptions.MissingAggregateIdException(idempotencyId);
 
-		_eventStoreLog.SaveCalled(aggregate.Id(), _aggregateTypeFullName, aggregate.AggregateType);
+		_eventStoreTelemetry.SaveCalled(aggregate.Id(), _aggregateTypeFullName, aggregate.AggregateType);
 		if (!aggregate.HasUnsavedEvents() && (additionalEvents?.Length ?? 0) == 0)
 		{
-			_eventStoreLog.SaveContainedNoChanges(aggregate.Id(), _aggregateTypeFullName, aggregate.AggregateType);
+			_eventStoreTelemetry.SaveContainedNoChanges(aggregate.Id(), _aggregateTypeFullName, aggregate.AggregateType);
 
 			return ReturnSaveResult(aggregate, false, true);
 		}
@@ -65,7 +65,7 @@ partial class TableEventStore<T>
 			var exists = await _tableClient.EntityExistsAsync(idempotencyMarkerOperation.PartitionKey, idempotencyMarkerOperation.RowKey, cancellationToken);
 			if (exists)
 			{
-				_eventStoreLog.EventsAlreadyApplied(aggregate.Id(), idempotencyId);
+				_eventStoreTelemetry.EventsAlreadyApplied(aggregate.Id(), idempotencyId);
 				return ReturnSaveResult(aggregate, true, true);
 			}
 		}
@@ -153,11 +153,11 @@ partial class TableEventStore<T>
 				await CreateSnapshotAsync(aggregate, cancellationToken);
 
 			if (changeEvents.OfType<DeleteEvent>().Any())
-				_eventStoreLog.AggregateDeleted(aggregate.Id(), _aggregateTypeFullName, aggregate.AggregateType);
+				_eventStoreTelemetry.AggregateDeleted(aggregate.Id(), _aggregateTypeFullName, aggregate.AggregateType);
 			else if (changeEvents.OfType<RestoreEvent>().Any())
-				_eventStoreLog.AggregateRestored(aggregate.Id(), _aggregateTypeFullName, aggregate.AggregateType);
+				_eventStoreTelemetry.AggregateRestored(aggregate.Id(), _aggregateTypeFullName, aggregate.AggregateType);
 
-			_eventStoreLog.SavedAggregate(aggregate.Id(), _aggregateTypeFullName, changeEvents.Length, aggregate.AggregateType);
+			_eventStoreTelemetry.SavedAggregate(aggregate.Id(), _aggregateTypeFullName, changeEvents.Length, aggregate.AggregateType);
 
 			// Do not pass in the cancellation token. We want this to carry on as long as possible.
 			await UpdateCacheAsync(aggregate, operationContext.CacheOptions);
@@ -199,8 +199,7 @@ partial class TableEventStore<T>
 
 	async Task<ValidationResult> GuardAsync(T aggregate, CancellationToken cancellationToken = default)
 	{
-		if (aggregate == null)
-			throw new ArgumentNullException(nameof(aggregate));
+		ArgumentNullException.ThrowIfNull(aggregate, nameof(aggregate));
 
 		var validationResult = _validator == null
 			? await DefaultAggregateValidator<T>.Instance.ValidateAsync(aggregate, cancellationToken)
@@ -238,7 +237,7 @@ partial class TableEventStore<T>
 				{ "CompoundIdempotencyId", compoundIdempotencyId },
 			}, overwrite: true, cancellationToken: cancellationToken);
 
-			_eventStoreLog.WritingLargeEvent(aggregateId, blobName, stream.Length, largeEvent.Value.GetType().FullName ?? largeEvent.Value.GetType().Name);
+			_eventStoreTelemetry.WritingLargeEvent(aggregateId, blobName, stream.Length, largeEvent.Value.GetType().FullName ?? largeEvent.Value.GetType().Name);
 		}
 	}
 
@@ -289,7 +288,7 @@ partial class TableEventStore<T>
 		}
 		catch (RequestFailedException ex)
 		{
-			_eventStoreLog.SaveFailedAtStorage(aggregate.Id(), _aggregateTypeFullName, ex.Status, ex);
+			_eventStoreTelemetry.SaveFailedAtStorage(aggregate.Id(), _aggregateTypeFullName, ex.Status, ex);
 
 			var statusCode = (HttpStatusCode)ex.Status;
 
@@ -317,7 +316,7 @@ partial class TableEventStore<T>
 		}
 		catch (Exception ex)
 		{
-			_eventStoreLog.SaveFailed(aggregate.Id(), _aggregateTypeFullName, ex);
+			_eventStoreTelemetry.SaveFailed(aggregate.Id(), _aggregateTypeFullName, ex);
 
 			ClearCacheFireAndForget(aggregate);
 
@@ -360,11 +359,11 @@ partial class TableEventStore<T>
 			{
 				var cacheKey = CreateCacheKey(aggregate.Id());
 				// Do not pass in the cancellation token. We want this to carry on as long as possible.
-				await _cache.RemoveAsync(cacheKey);
+				await _distributedCache.RemoveAsync(cacheKey);
 			}
 			catch (Exception ex)
 			{
-				_eventStoreLog.CacheRemovalFailure(aggregate.Id(), _aggregateTypeFullName, ex);
+				_eventStoreTelemetry.CacheRemovalFailure(aggregate.Id(), _aggregateTypeFullName, ex);
 			}
 		});
 	}

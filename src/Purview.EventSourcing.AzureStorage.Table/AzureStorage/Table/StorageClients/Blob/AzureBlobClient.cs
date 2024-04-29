@@ -85,7 +85,7 @@ sealed class AzureBlobClient
 		return await containerClient.SetMetadataAsync(metadata, cancellationToken: cancellationToken);
 	}
 
-	public async Task<Azure.Storage.Blobs.BlobClient> GetBlobClientAsync(string blobName, CancellationToken cancellationToken = default)
+	public async Task<BlobClient> GetBlobClientAsync(string blobName, CancellationToken cancellationToken = default)
 	{
 		var containerClient = await _blobContainerClient;
 
@@ -161,7 +161,7 @@ sealed class AzureBlobClient
 		var containerClient = await _blobContainerClient;
 		var result = await containerClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
 
-		return result.Value;
+		return result?.Value ?? true;
 	}
 
 	public async Task<bool> DeleteBlobIfExistsAsync(string blobName, CancellationToken cancellationToken = default)
@@ -182,7 +182,7 @@ sealed class AzureBlobClient
 		return containerClient.GetBlobsByHierarchyAsync(delimiter: delimiter, prefix: prefix, cancellationToken: cancellationToken);
 	}
 
-	public async Task<BlobContainerInfo> CreateContainerIfNotExistsAsync(IDictionary<string, string>? metadata = null, CancellationToken cancellationToken = default)
+	public async Task<BlobContainerInfo?> CreateContainerIfNotExistsAsync(IDictionary<string, string>? metadata = null, CancellationToken cancellationToken = default)
 	{
 		var containerClient = CreateContainerClient();
 		var response = await containerClient.CreateIfNotExistsAsync(
@@ -191,7 +191,7 @@ sealed class AzureBlobClient
 			cancellationToken: cancellationToken
 		);
 
-		return response;
+		return response?.Value;
 	}
 
 	async Task<BlobContainerClient> InitializeAsync(CancellationToken cancellationToken = default)
@@ -204,7 +204,7 @@ sealed class AzureBlobClient
 
 	BlobContainerClient CreateContainerClient()
 	{
-		var clientOptions = new BlobClientOptions();
+		BlobClientOptions clientOptions = new();
 		if (_configuration.TimeoutInSeconds != null)
 			clientOptions.Retry.NetworkTimeout = TimeSpan.FromSeconds(_configuration.TimeoutInSeconds.Value);
 

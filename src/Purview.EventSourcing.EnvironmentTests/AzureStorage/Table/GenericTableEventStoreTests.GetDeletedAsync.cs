@@ -5,19 +5,19 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task GetDeletedAsync_GivenDeletedAggregate_ReturnsAggregate()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 		aggregate.IncrementInt32Value();
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2);
+		var eventStore = fixture.CreateEventStore<TAggregate>(correlationIdsToGenerate: 2);
 
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 		await eventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Act
-		TAggregate? aggregateResult = await eventStore.GetDeletedAsync(aggregateId, cancellationToken: tokenSource.Token);
+		var aggregateResult = await eventStore.GetDeletedAsync(aggregateId, cancellationToken: tokenSource.Token);
 
 		// Assert
 		aggregateResult!

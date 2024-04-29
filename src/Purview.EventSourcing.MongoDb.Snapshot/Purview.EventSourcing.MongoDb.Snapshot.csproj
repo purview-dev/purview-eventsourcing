@@ -12,8 +12,20 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="..\.shared-extensions\**\*" LinkBase="Extensions" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\Purview.EventSourcing\Purview.EventSourcing.csproj" />
-		<ProjectReference Include="..\Purview.Extensions.Storage.MongoDb\Purview.Extensions.Storage.MongoDb.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="LinqKit" />
+		<PackageReference Include="MongoDB.Driver" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+		<PackageReference Include="Microsoft.Extensions.Options" />
+		<PackageReference Include="Newtonsoft.Json" />
 	</ItemGroup>
 
 </Project>

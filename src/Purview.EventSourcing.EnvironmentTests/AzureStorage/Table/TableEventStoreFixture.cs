@@ -1,18 +1,10 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
 using NSubstitute.ReturnsExtensions;
-using Purview.EventSourcing.Interfaces.Aggregates;
-using Purview.EventSourcing.Interfaces.AzureStorage.Table;
-using Purview.EventSourcing.Interfaces.ChangeFeed;
-using Purview.EventSourcing.Interfaces.Services;
+using Purview.EventSourcing.Aggregates;
+using Purview.EventSourcing.AzureStorage.Table.StorageClients.Blob;
+using Purview.EventSourcing.AzureStorage.Table.StorageClients.Table;
+using Purview.EventSourcing.ChangeFeed;
 using Purview.EventSourcing.Services;
-using Purview.Interfaces.Identity;
-using Purview.Interfaces.Storage;
-using Purview.Interfaces.Storage.AzureStorage.Blob;
-using Purview.Interfaces.Storage.AzureStorage.Table;
-using Purview.Interfaces.Tracking;
-using Purview.Storage.AzureStorage.Blob;
-using Purview.Storage.AzureStorage.Table;
-using Purview.Testing;
 
 namespace Purview.EventSourcing.AzureStorage.Table;
 
@@ -23,12 +15,12 @@ public sealed class TableEventStoreFixture : IAsyncLifetime
 	string _containerName = default!;
 	string _tableName = default!;
 
-	IDistributedCache _cache = default!;
-	ITableClient _tableClient = default!;
-	IBlobClient _blobClient = default!;
-	ICorrelationIdProvider _correlationIdProvider = default!;
-	ITableEventStoreTelemetry _logs = default!;
+	IDistributedCache _distributedCache = default!;
+	ITableEventStoreTelemetry _telemetry = default!;
 	IAggregateEventNameMapper _eventNameMapper = default!;
+
+	AzureTableClient _tableClient = default!;
+	AzureBlobClient _blobClient = default!;
 
 	IDisposable? _eventStoreAsDisposable;
 
@@ -37,13 +29,13 @@ public sealed class TableEventStoreFixture : IAsyncLifetime
 		_azuriteContainer = ContainerHelper.CreateAzurite();
 	}
 
-	public IDistributedCache Cache => _cache;
+	public IDistributedCache Cache => _distributedCache;
 
-	public IBlobClient BlobClient => _blobClient;
+	public ITableEventStoreTelemetry Telemetry => _telemetry;
 
-	public ITableClient TableClient => _tableClient;
+	internal AzureTableClient TableClient => _tableClient;
 
-	public ITableEventStoreTelemetry Logs => _logs;
+	internal AzureBlobClient BlobClient => _blobClient;
 
 	public TableEventStore<TAggregate> CreateEventStore<TAggregate>(
 		IAggregateChangeFeedNotifier<TAggregate>? aggregateChangeNotifier = null,
@@ -52,88 +44,55 @@ public sealed class TableEventStoreFixture : IAsyncLifetime
 		int snapshotRecalculationInterval = 1)
 		where TAggregate : class, IAggregate, new()
 	{
-		Guid runId = Guid.NewGuid();
-		string[] runIds = Enumerable.Range(1, correlationIdsToGenerate).Select(_ => Guid.NewGuid().ToLoweredString()).ToArray();
+		var runId = Guid.NewGuid();
+		var runIds = Enumerable.Range(1, correlationIdsToGenerate)
+			.Select(_ => $"{Guid.NewGuid()}".ToUpperInvariant())
+			.ToArray();
 
-		_tableName = TestDataHelper.GenAzureTableName(runId);
-		_containerName = TestDataHelper.GenAzureBlobContainerName(runId);
+		_tableName = TestHelpers.GenAzureTableName(runId);
+		_containerName = TestHelpers.GenAzureBlobContainerName(runId);
 
-		_correlationIdProvider = Substitute.For<ICorrelationIdProvider>();
-		_correlationIdProvider
-			.GetCorrelationId()
-			.Returns(runId.ToLoweredString(), runIds);
-
-		_cache = CreateDistributedCache();
-		_logs = Substitute.For<ITableEventStoreTelemetry>();
+		_distributedCache = CreateDistributedCache();
+		_telemetry = Substitute.For<ITableEventStoreTelemetry>();
 		_eventNameMapper = new AggregateEventNameMapper();
 
-		IAggregateRequirementsManager aggregateRequirementsManager = Substitute.For<IAggregateRequirementsManager>();
+		var aggregateRequirementsManager = Substitute.For<IAggregateRequirementsManager>();
+
+		var azureStorageOptions = new Options.AzureStorageEventStoreOptions
+		{
+			ConnectionString = _azuriteContainer.GetConnectionString(),
+			Table = _tableName,
+			Container = _containerName,
+			TimeoutInSeconds = 10,
+			RemoveDeletedFromCache = removeFromCacheOnDelete,
+			SnapshotInterval = snapshotRecalculationInterval
+		};
 
 		TableEventStore<TAggregate> eventStore = new(
 			eventNameMapper: _eventNameMapper,
-			storageClientFactory: CreateStorageFactory(),
-			tableConfiguration: new Options.TableEventStoreConfiguration
-			{
-				ConnectionString = _azuriteContainer.GetConnectionString(),
-				Table = _tableName,
-				Container = _containerName,
-				TimeoutInSeconds = 10,
-				RemoveDeletedFromCache = removeFromCacheOnDelete,
-				SnapshotInterval = snapshotRecalculationInterval
-			}.AsOptions(),
-			blobConfigurationFunc: null!,
-			cache: _cache,
-			principalService: CreatePrincipalService(),
-			correlationIdProvider: _correlationIdProvider,
+			azureStorageOptions: Microsoft.Extensions.Options.Options.Create(azureStorageOptions),
+			distributedCache: _distributedCache,
 			aggregateChangeNotifier: aggregateChangeNotifier ?? Substitute.For<IAggregateChangeFeedNotifier<TAggregate>>(),
-			eventStoreLog: _logs,
+			eventStoreTelemetry: _telemetry,
 			aggregateRequirementsManager: aggregateRequirementsManager
 		);
+
+		_tableClient = new(azureStorageOptions, eventStore.TableName);
+		_blobClient = new(azureStorageOptions, eventStore.ContainerName);
 
 		_eventStoreAsDisposable = eventStore as IDisposable;
 
 		return eventStore;
 	}
 
-	public static IPrincipalService CreatePrincipalService() => Substitute.For<IPrincipalService>();
-
 	public static IDistributedCache CreateDistributedCache()
 	{
-		IDistributedCache cache = Substitute.For<IDistributedCache>();
+		var cache = Substitute.For<IDistributedCache>();
 		cache
 			.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
 			.ReturnsNullForAnyArgs();
 
 		return cache;
-	}
-
-	IStorageClientFactory CreateStorageFactory()
-	{
-		_blobClient = new BlobClient(new Options.BlobEventStoreConfiguration
-		{
-			ConnectionString = _azuriteContainer.GetConnectionString(),
-			Container = _containerName,
-			TimeoutInSeconds = 10
-		});
-
-		_tableClient = new TableClient(new Options.TableEventStoreConfiguration
-		{
-			ConnectionString = _azuriteContainer.GetConnectionString(),
-			Table = _tableName,
-			TimeoutInSeconds = 10
-		}, null);
-
-		IStorageClientFactory factory = Substitute.For<IStorageClientFactory>();
-
-		factory
-			.GetOrBuild<ITableClient, Options.TableEventStoreConfiguration>(Arg.Any<string>(), Arg.Any<Options.TableEventStoreConfiguration>(), Arg.Any<IDictionary<string, object?>?>())
-			.Returns(_tableClient);
-
-		factory
-			.GetOrBuild<IBlobClient, Options.BlobEventStoreConfiguration>(Arg.Any<string>(), Arg.Any<Options.BlobEventStoreConfiguration>(), Arg.Any<IDictionary<string, object?>?>())
-			.Returns(_blobClient);
-
-		return factory;
 	}
 
 	public Task InitializeAsync() => _azuriteContainer.StartAsync();

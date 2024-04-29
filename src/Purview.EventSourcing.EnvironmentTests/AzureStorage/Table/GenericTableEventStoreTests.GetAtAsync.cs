@@ -5,16 +5,16 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task GetAtAsync_GivenAnAggregateWithSavedEvents_RecreatesAggregateToPreviousVersion(int previousEventsToCreate)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
-		for (int i = 0; i < previousEventsToCreate; i++)
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		for (var i = 0; i < previousEventsToCreate; i++)
 		{
 			aggregate.IncrementInt32Value();
 		}
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>();
+		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
@@ -30,7 +30,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 			.Be(previousEventsToCreate + 1);
 
 		// Assert
-		TAggregate? result = await eventStore.GetAtAsync(aggregateId, version: previousEventsToCreate, cancellationToken: tokenSource.Token);
+		var result = await eventStore.GetAtAsync(aggregateId, version: previousEventsToCreate, cancellationToken: tokenSource.Token);
 
 		result
 			.Should()

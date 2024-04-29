@@ -20,7 +20,7 @@ partial class MongoDbSnapshotEventStoreTests
 		const int numberOfEvents = 5;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
 		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;
@@ -72,7 +72,7 @@ partial class MongoDbSnapshotEventStoreTests
 		string? firstId = null;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
 		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;
@@ -122,7 +122,7 @@ partial class MongoDbSnapshotEventStoreTests
 		string? firstId = null;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
 		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;
@@ -175,7 +175,7 @@ partial class MongoDbSnapshotEventStoreTests
 		string? firstId = null;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
 		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;

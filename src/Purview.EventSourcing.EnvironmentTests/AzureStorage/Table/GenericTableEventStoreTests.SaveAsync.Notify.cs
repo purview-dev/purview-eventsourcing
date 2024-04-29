@@ -1,5 +1,5 @@
-﻿using Purview.EventSourcing.Interfaces.Aggregates.Events;
-using Purview.EventSourcing.Interfaces.ChangeFeed;
+﻿using Purview.EventSourcing.Aggregates.Events;
+using Purview.EventSourcing.ChangeFeed;
 
 namespace Purview.EventSourcing.AzureStorage.Table;
 
@@ -8,20 +8,18 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task SaveAsync_GivenAggregateWithChanges_NotifiesChangeFeed(int eventsToCreate)
 	{
 		// Arrange
-		IAggregateChangeFeedNotifier<TAggregate> aggregateChangeNotifier = Substitute.For<IAggregateChangeFeedNotifier<TAggregate>>();
+		var aggregateChangeNotifier = Substitute.For<IAggregateChangeFeedNotifier<TAggregate>>();
 
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		bool beforeWasCalled = false;
-		bool afterWasCalled = false;
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
-		for (int i = 0; i < eventsToCreate; i++)
-		{
+		var beforeWasCalled = false;
+		var afterWasCalled = false;
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		for (var i = 0; i < eventsToCreate; i++)
 			aggregate.AppendString($"{i + 1} of {eventsToCreate}(s) to created.");
-		}
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(aggregateChangeNotifier: aggregateChangeNotifier);
+		var eventStore = fixture.CreateEventStore(aggregateChangeNotifier: aggregateChangeNotifier);
 
 		aggregateChangeNotifier
 			.When(m => m.BeforeSaveAsync(Arg.Is(aggregate), Arg.Is(true), Arg.Any<CancellationToken>()))
@@ -61,14 +59,14 @@ partial class GenericTableEventStoreTests<TAggregate>
 	public async Task SaveAsync_GivenAggregateWithNoChanges_DoesNotNotifyChangeFeed()
 	{
 		// Arrange
-		IAggregateChangeFeedNotifier<TAggregate> aggregateChangeNotifier = Substitute.For<IAggregateChangeFeedNotifier<TAggregate>>();
+		var aggregateChangeNotifier = Substitute.For<IAggregateChangeFeedNotifier<TAggregate>>();
 
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
 
-		string aggregateId = $"{Guid.NewGuid()}";
-		TAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = $"{Guid.NewGuid()}";
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
 
-		TableEventStore<TAggregate> eventStore = fixture.CreateEventStore<TAggregate>(aggregateChangeNotifier: aggregateChangeNotifier);
+		var eventStore = fixture.CreateEventStore(aggregateChangeNotifier: aggregateChangeNotifier);
 
 		// Act
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);

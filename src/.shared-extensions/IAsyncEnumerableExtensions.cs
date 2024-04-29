@@ -6,7 +6,7 @@ namespace System.Collections.Generic;
 
 [EditorBrowsable(EditorBrowsableState.Never)]
 [DebuggerStepThrough]
-public static class IAsyncEnumerableExtensions
+static class IAsyncEnumerableExtensions
 {
 	public static async IAsyncEnumerable<TResult> SelectAsync<TSource, TResult>([NotNull] this IAsyncEnumerable<TSource> source, [NotNull] Func<TSource, Task<TResult>> selector)
 	{

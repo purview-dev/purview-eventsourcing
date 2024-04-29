@@ -98,7 +98,7 @@ static class CosmosDbUtilities
 			cancellationToken.ThrowIfCancellationRequested();
 
 			var memoryStream = new MemoryStream();
-			var value = JsonConvert.SerializeObject(documentResponse, CosmosDbClient.JsonSerializerSettings);
+			var value = JsonConvert.SerializeObject(documentResponse, JsonHelpers.JsonSerializerSettings);
 			using (var writer = new StreamWriter(memoryStream, Encoding.Default, 2048, true))
 				await writer.WriteAsync(value);
 

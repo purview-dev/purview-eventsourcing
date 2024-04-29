@@ -2,25 +2,9 @@
 using NSubstitute.ReturnsExtensions;
 using Purview.EventSourcing.Aggregates.Persistence;
 using Purview.EventSourcing.AzureStorage.Table;
-using Purview.EventSourcing.AzureStorage.Table.Options;
+using Purview.EventSourcing.ChangeFeed;
 using Purview.EventSourcing.CosmosDb.Snapshot;
-using Purview.EventSourcing.CosmosDb.Snapshot.Options;
-using Purview.EventSourcing.Interfaces.Aggregates;
-using Purview.EventSourcing.Interfaces.AzureStorage.Table;
-using Purview.EventSourcing.Interfaces.ChangeFeed;
-using Purview.EventSourcing.Interfaces.Services;
 using Purview.EventSourcing.Services;
-using Purview.Interfaces.Identity;
-using Purview.Interfaces.Storage;
-using Purview.Interfaces.Storage.AzureStorage.Blob;
-using Purview.Interfaces.Storage.AzureStorage.Table;
-using Purview.Interfaces.Storage.CosmosDb;
-using Purview.Interfaces.Tracking;
-using Purview.Options.Storage.AzureStorage;
-using Purview.Storage.AzureStorage.Blob;
-using Purview.Storage.AzureStorage.Table;
-using Purview.Storage.CosmosDb;
-using Purview.Testing;
 
 namespace Purview.EventSourcing.SnapshotOnly.CosmosDb;
 
@@ -36,13 +20,7 @@ public sealed class CosmosDbSnapshotEventStoreContext
 	string? _blobContainerName;
 	string? _cosmosDbContainerName;
 
-	ITableClient _tableClient = default!;
-	IBlobClient _blobClient = default!;
-	CosmosDbClient _cosmosDbClient = default!;
-
-	ICorrelationIdProvider _correlationIdProvider = default!;
 	ITableEventStoreTelemetry _logs = default!;
-	IStorageClientFactory _storageFactory = default!;
 	IAggregateEventNameMapper _eventNameMapper = default!;
 	IAggregateChangeFeedNotifier<PersistenceAggregate> _aggregateChangeNotifier = default!;
 
@@ -51,14 +29,10 @@ public sealed class CosmosDbSnapshotEventStoreContext
 
 	public Guid RunId { get; } = Guid.NewGuid();
 
-	public CosmosDbClient CosmosDbClient => _cosmosDbClient;
-
 	public CosmosDbSnapshotEventStore<PersistenceAggregate> EventStore => _eventStore;
 
 	public void CreateCosmosDbEventStore(int correlationIdsToGenerate = 1)
 	{
-		_storageFactory = CreateStorageFactory();
-
 		var tableEventStore = CreateTableEventStore(correlationIdsToGenerate);
 
 		CosmosDbSnapshotEventStore<PersistenceAggregate> eventStore = new(

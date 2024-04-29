@@ -67,7 +67,7 @@ partial class TableEventStore<T>
 			var eventType = _eventNameMapper.GetTypeName<T>(eventEntity.EventType);
 			if (eventType == null)
 			{
-				_eventStoreLog.MissingEventType(_aggregateTypeFullName, eventEntity.EventType);
+				_eventStoreTelemetry.MissingEventType(_aggregateTypeFullName, eventEntity.EventType);
 
 				return ReturnUnknownEvent(eventEntity, aggregateVersion);
 			}
@@ -80,14 +80,14 @@ partial class TableEventStore<T>
 				var exists = await _blobClient.ExistsAsync(blobName, cancellationToken);
 				if (!exists)
 				{
-					_eventStoreLog.SkippedMissingBlobEvent(eventEntity.PartitionKey, eventEntity.RowKey, blobPointer.SerializedEventType, blobName);
+					_eventStoreTelemetry.SkippedMissingBlobEvent(eventEntity.PartitionKey, eventEntity.RowKey, blobPointer.SerializedEventType, blobName);
 					return null;
 				}
 
 				var blobEventTypeName = _eventNameMapper.GetTypeName<T>(blobPointer.SerializedEventType);
 				if (string.IsNullOrWhiteSpace(blobEventTypeName))
 				{
-					_eventStoreLog.SkippedMissingBlobEventName(eventEntity.PartitionKey, eventEntity.RowKey, blobPointer.SerializedEventType, blobName);
+					_eventStoreTelemetry.SkippedMissingBlobEventName(eventEntity.PartitionKey, eventEntity.RowKey, blobPointer.SerializedEventType, blobName);
 					return ReturnUnknownEvent(eventEntity, aggregateVersion);
 					//throw new ArgumentNullException($"Unable to locate blob event type name {blobPointer.SerializedEventType}");
 				}
@@ -95,7 +95,7 @@ partial class TableEventStore<T>
 				var blobEvent = Type.GetType(blobEventTypeName, throwOnError: false);
 				if (blobEvent == null)
 				{
-					_eventStoreLog.MissingBlobEventType(_aggregateTypeFullName, eventEntity.EventType, blobPointer.SerializedEventType, blobEventTypeName);
+					_eventStoreTelemetry.MissingBlobEventType(_aggregateTypeFullName, eventEntity.EventType, blobPointer.SerializedEventType, blobEventTypeName);
 					return ReturnUnknownEvent(eventEntity, aggregateVersion);
 				}
 				//throw new ArgumentNullException($"Unable to locate blob event type {blobEventTypeName}");
@@ -116,7 +116,7 @@ partial class TableEventStore<T>
 		}
 		catch (Exception ex)
 		{
-			_eventStoreLog.EventDeserializationFailed(eventEntity.PartitionKey, _aggregateTypeFullName, ex);
+			_eventStoreTelemetry.EventDeserializationFailed(eventEntity.PartitionKey, _aggregateTypeFullName, ex);
 
 			return ReturnUnknownEvent(eventEntity, aggregateVersion);
 		}

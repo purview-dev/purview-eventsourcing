@@ -10,7 +10,7 @@ partial class CosmosDbSnapshotEventStoreTests
 	public async Task RestoreAsync_GivenExistingAggregateMarkedAsDeletedAndDoesNotExistInCosmosDbWhenRestore_SnapshotCreatedInCosmosDb()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
 
 		string aggregateId = Guid.NewGuid().ToString();

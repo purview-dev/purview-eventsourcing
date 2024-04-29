@@ -20,7 +20,7 @@ partial class MongoDbSnapshotEventStoreTests
 		const int numberOfEvents = 10;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = SubstituteBuilder.CreateCancellationTokenSource();
+		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
 		using MongoDbSnapshotTestContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
 		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = context.EventStore;

@@ -10,7 +10,7 @@ partial class TableEventStore<T>
 
 		operationContext ??= EventStoreOperationContext.DefaultContext;
 
-		_eventStoreLog.GetAggregateAtSpecificVersionStart(aggregateId, version, _aggregateTypeFullName);
+		_eventStoreTelemetry.GetAggregateAtSpecificVersionStart(aggregateId, version, _aggregateTypeFullName);
 		var getStopwatch = Stopwatch.StartNew();
 		try
 		{
@@ -37,13 +37,13 @@ partial class TableEventStore<T>
 		}
 		catch (Exception ex)
 		{
-			_eventStoreLog.GetAggregateAtSpecificVersionFailed(aggregateId, _aggregateTypeFullName, version, ex);
+			_eventStoreTelemetry.GetAggregateAtSpecificVersionFailed(aggregateId, _aggregateTypeFullName, version, ex);
 			throw;
 		}
 		finally
 		{
 			getStopwatch.Stop();
-			_eventStoreLog.GetAggregateAtSpecificVersionComplete(aggregateId, _aggregateTypeFullName, version, getStopwatch.ElapsedMilliseconds);
+			_eventStoreTelemetry.GetAggregateAtSpecificVersionComplete(aggregateId, _aggregateTypeFullName, version, getStopwatch.ElapsedMilliseconds);
 		}
 	}
 }
