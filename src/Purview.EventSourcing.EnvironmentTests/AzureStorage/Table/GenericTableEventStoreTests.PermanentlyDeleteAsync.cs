@@ -87,7 +87,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 			.Should()
 			.BeTrue();
 
-		aggregate
+		aggregate!
 			.Details
 			.IsDeleted
 			.Should()

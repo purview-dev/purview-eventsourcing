@@ -1,6 +1,4 @@
-﻿using Purview.EventSourcing.Helpers;
-
-namespace Purview.EventSourcing.SnapshotOnly.CosmosDb;
+﻿namespace Purview.EventSourcing.SnapshotOnly.CosmosDb;
 
 public class CosmosDbSnapshotEventStoreFixture : IAsyncLifetime
 {
@@ -15,11 +13,14 @@ public class CosmosDbSnapshotEventStoreFixture : IAsyncLifetime
 
 	public CosmosDbSnapshotEventStoreContext CreateContext(int correlationIdsToGenerate = 1)
 	{
-		CosmosDbSnapshotEventStoreContext context = new(_cosmosDbContainer.GetConnectionString(), _cosmosDbContainer.HttpClient, _azuriteContainer.GetConnectionString());
+		CosmosDbSnapshotEventStoreContext eventStoreContext = new(
+			_cosmosDbContainer.GetConnectionString(),
+			_cosmosDbContainer.HttpClient,
+			_azuriteContainer.GetConnectionString());
 
-		context.CreateCosmosDbEventStore(correlationIdsToGenerate: correlationIdsToGenerate);
+		eventStoreContext.CreateCosmosDbEventStore(correlationIdsToGenerate: correlationIdsToGenerate);
 
-		return context;
+		return eventStoreContext;
 	}
 
 	public async Task DisposeAsync()

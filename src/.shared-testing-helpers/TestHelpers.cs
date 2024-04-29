@@ -27,6 +27,20 @@ static class TestHelpers
 		return $"{prefix}{GenName(value)}".ToLowerInvariant();
 	}
 
+	public static string GenAzureCosmosDbContainerName(Guid? value = null, string? prefix = null)
+	{
+		prefix ??= "EnvTest_";
+
+		return $"{prefix}{GenName(value)}";
+	}
+
+	public static string GenMongoDbCollectionName(Guid? value = null, string? prefix = null)
+	{
+		prefix ??= "EnvTest_";
+
+		return $"{prefix}{GenName(value)}";
+	}
+
 	public static CancellationTokenSource CancellationTokenSource(bool throwOnCall = false)
 	{
 		CancellationTokenSource cancellationTokenSource = new();

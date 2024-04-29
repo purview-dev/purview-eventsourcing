@@ -20,13 +20,14 @@ public sealed partial class CosmosDbSnapshotEventStore<T> : ICosmosDbSnapshotEve
 	public CosmosDbSnapshotEventStore(
 		// Explicitly request a non-queryable event store.
 		INonQueryableEventStore<T> eventStore,
-		IOptions<CosmosDbEventStoreOptions> cosmosDbEventStoreOptions)
+		IOptions<CosmosDbEventStoreOptions> cosmosDbEventStoreOptions,
+		CosmosClient? cosmosClient = null)
 	{
 		_eventStore = eventStore;
 		_cosmosDbEventStoreOptions = cosmosDbEventStoreOptions;
 		_partitionKey = new PartitionKey(GetAggregateTypeName());
 
-		_cosmosDbClient = new CosmosDbClient(_cosmosDbEventStoreOptions.Value);
+		_cosmosDbClient = new CosmosDbClient(_cosmosDbEventStoreOptions.Value, cosmosClient: cosmosClient);
 	}
 
 	/// <summary>

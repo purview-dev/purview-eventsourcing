@@ -19,6 +19,19 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Include="SnapshotOnly\CosmosDb\CosmosDbSnapshotEventStoreContext.cs" />
+	  <Compile Include="SnapshotOnly\CosmosDb\CosmosDbSnapshotEventStoreFixture.cs" />
+	  <Compile Include="SnapshotOnly\CosmosDb\CosmosDbSnapshotEventStoreTests.cs" />
+	  <Compile Include="SnapshotOnly\CosmosDb\CosmosDbSnapshotEventStoreTests.DeleteAsync.cs" />
+	  <Compile Include="SnapshotOnly\CosmosDb\CosmosDbSnapshotEventStoreTests.FirstOrDefaultAsync.cs" />
+	  <Compile Include="SnapshotOnly\CosmosDb\CosmosDbSnapshotEventStoreTests.QueryAsync.cs" />
+	  <Compile Include="SnapshotOnly\CosmosDb\CosmosDbSnapshotEventStoreTests.RestoreAsync.cs" />
+	  <Compile Include="SnapshotOnly\CosmosDb\CosmosDbSnapshotEventStoreTests.SaveAsync.cs" />
+	  <Compile Include="SnapshotOnly\CosmosDb\CosmosDbSnapshotEventStoreTests.SingleOrDefaultAsync.cs" />
+	  <Compile Include="SnapshotOnly\CosmosDb\CosmosDbSnapshotEventStoreTests.WithStringValues.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Testcontainers.Azurite" />
 		<PackageReference Include="Testcontainers.CosmosDb" />
 		<PackageReference Include="Testcontainers.MongoDb" />

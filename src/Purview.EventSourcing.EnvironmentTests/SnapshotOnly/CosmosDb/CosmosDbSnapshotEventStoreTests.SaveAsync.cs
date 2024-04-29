@@ -10,11 +10,11 @@ partial class CosmosDbSnapshotEventStoreTests
 	public async Task SaveAsync_GivenNewAggregateWithChanges_SavesAggregate()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		await using var context = fixture.CreateContext();
 
-		string aggregateId = Guid.NewGuid().ToString();
-		PersistenceAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = Guid.NewGuid().ToString();
+		var aggregate = CreateAggregate(id: aggregateId);
 		aggregate.IncrementInt32Value();
 
 		PartitionKey partitionKey = new(aggregate.AggregateType);
@@ -33,7 +33,7 @@ partial class CosmosDbSnapshotEventStoreTests
 			.BeFalse();
 
 		// Verify by re-getting the aggregate, knowing that the cache is disabled.
-		PersistenceAggregate? aggregateFromCosmosDb = await context.CosmosDbClient.GetAsync<PersistenceAggregate>(aggregateId, partitionKey, cancellationToken: tokenSource.Token);
+		var aggregateFromCosmosDb = await context.CosmosDbClient.GetAsync<PersistenceAggregate>(aggregateId, partitionKey, cancellationToken: tokenSource.Token);
 
 		aggregateFromCosmosDb.Should().NotBeNull();
 

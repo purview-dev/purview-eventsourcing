@@ -25,7 +25,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 			.When(m => m.BeforeSaveAsync(Arg.Is(aggregate), Arg.Is(true), Arg.Any<CancellationToken>()))
 			.Do(callInfo =>
 			{
-				TAggregate a = callInfo.ArgAt<TAggregate>(0);
+				var a = callInfo.ArgAt<TAggregate>(0);
 				a.AppendString(nameof(aggregateChangeNotifier.AfterSaveAsync));
 
 				beforeWasCalled = true;

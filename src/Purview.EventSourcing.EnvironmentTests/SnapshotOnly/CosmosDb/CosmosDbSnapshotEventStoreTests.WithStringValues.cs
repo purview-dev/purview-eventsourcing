@@ -14,15 +14,15 @@ partial class CosmosDbSnapshotEventStoreTests
 	public async Task CanQuery_GivenAggregatesContainsDictionaryWithStringValuesAsValue_QueryAsExpected(int numberOfAggregates)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		await using var context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
-		string aggregateType = CreateAggregate().AggregateType;
+		var aggregateType = CreateAggregate().AggregateType;
 		PartitionKey partitionKey = new(aggregateType);
 
-		for (int aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
+		for (var aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
+			var aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
 			aggregate.AddKVPs(new[] {
 							new KeyValuePair<string, StringValues> ( "name-1", "value-1" ),
 							new KeyValuePair<string, StringValues> ( "name-2", new[] { "value-100", "value-200" })
@@ -56,15 +56,15 @@ partial class CosmosDbSnapshotEventStoreTests
 	public async Task CanQuery_GivenAggregatesContainsDictionaryWithStringsAsValues_QueryAsExpected(int numberOfAggregates)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		await using var context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
-		string aggregateType = CreateAggregate().AggregateType;
+		var aggregateType = CreateAggregate().AggregateType;
 		PartitionKey partitionKey = new(aggregateType);
 
-		for (int aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
+		for (var aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
+			var aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
 			aggregate.AddKVPs(new[] {
 							new KeyValuePair<string, string> ( "name-1", "value-1" ),
 							new KeyValuePair<string, string> ( "name-2", "value-100" )

@@ -18,14 +18,14 @@ partial class CosmosDbSnapshotEventStoreTests
 	public async Task CanQuery_GivenAggregatesExist_QueryAsExpected(int numberOfAggregates, int numberOfEvents)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		await using var context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
-		for (int aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
+		for (var aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
+			var aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
 
-			for (int eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
+			for (var eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
 			{
 				aggregate.IncrementInt32Value();
 			}
@@ -49,14 +49,14 @@ partial class CosmosDbSnapshotEventStoreTests
 	public async Task CanQuery_GivenAggregateType_QueryAsExpected(int numberOfAggregates)
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		await using var context = fixture.CreateContext(correlationIdsToGenerate: numberOfAggregates);
 
-		string aggregateType = CreateAggregate().AggregateType;
+		var aggregateType = CreateAggregate().AggregateType;
 
-		for (int aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
+		for (var aggregateIndex = 0; aggregateIndex < numberOfAggregates; aggregateIndex++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
+			var aggregate = CreateAggregate($"{aggregateIndex}_{context.RunId}");
 			aggregate.IncrementInt32Value();
 
 			bool saveResult = await context.EventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);

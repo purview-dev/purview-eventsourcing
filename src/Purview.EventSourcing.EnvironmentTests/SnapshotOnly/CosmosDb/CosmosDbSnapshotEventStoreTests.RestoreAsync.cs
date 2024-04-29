@@ -10,11 +10,11 @@ partial class CosmosDbSnapshotEventStoreTests
 	public async Task RestoreAsync_GivenExistingAggregateMarkedAsDeletedAndDoesNotExistInCosmosDbWhenRestore_SnapshotCreatedInCosmosDb()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		await using var context = fixture.CreateContext();
 
-		string aggregateId = Guid.NewGuid().ToString();
-		PersistenceAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = Guid.NewGuid().ToString();
+		var aggregate = CreateAggregate(id: aggregateId);
 		aggregate.IncrementInt32Value();
 
 		PartitionKey partitionKey = new(aggregate.AggregateType);
@@ -24,12 +24,12 @@ partial class CosmosDbSnapshotEventStoreTests
 			.Should()
 			.BeTrue();
 
-		PersistenceAggregate? aggregateFromCosmosDb = await context.CosmosDbClient.GetAsync<PersistenceAggregate>(aggregateId, partitionKey, cancellationToken: tokenSource.Token);
+		var aggregateFromCosmosDb = await context.CosmosDbClient.GetAsync<PersistenceAggregate>(aggregateId, partitionKey, cancellationToken: tokenSource.Token);
 		aggregateFromCosmosDb
 			.Should()
 			.NotBeNull();
 
-		bool deleteResult = await context.EventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
+		var deleteResult = await context.EventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
 		deleteResult
 			.Should()
 			.BeTrue();
@@ -40,7 +40,7 @@ partial class CosmosDbSnapshotEventStoreTests
 			.BeNull();
 
 		// Act
-		bool restoreResult = await context.EventStore.RestoreAsync(aggregate, cancellationToken: tokenSource.Token);
+		var restoreResult = await context.EventStore.RestoreAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		aggregateFromCosmosDb = await context.CosmosDbClient.GetAsync<PersistenceAggregate>(aggregateId, partitionKey, cancellationToken: tokenSource.Token);
 

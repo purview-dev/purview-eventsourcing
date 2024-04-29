@@ -1,6 +1,5 @@
 ﻿using Microsoft.Azure.Cosmos;
 using Purview.EventSourcing.Aggregates.Persistence;
-using Purview.EventSourcing.SnapshotOnly.CosmosDb;
 
 namespace Purview.EventSourcing.CosmosDb.Snapshot;
 
@@ -10,11 +9,11 @@ partial class CosmosDbSnapshotEventStoreTests
 	public async Task DeleteAsync_GivenExistingAggregateMarkedAsDeleted_DeletesFromCosmosDb()
 	{
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		await using var context = fixture.CreateContext();
 
-		string aggregateId = Guid.NewGuid().ToString();
-		PersistenceAggregate aggregate = CreateAggregate(id: aggregateId);
+		var aggregateId = Guid.NewGuid().ToString();
+		var aggregate = CreateAggregate(id: aggregateId);
 		aggregate.IncrementInt32Value();
 
 		PartitionKey partitionKey = new(aggregate.AggregateType);
@@ -22,11 +21,11 @@ partial class CosmosDbSnapshotEventStoreTests
 		bool saveResult = await context.EventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 		saveResult.Should().BeTrue();
 
-		PersistenceAggregate? aggregateFromCosmosDb = await context.CosmosDbClient.GetAsync<PersistenceAggregate>(aggregateId, partitionKey, cancellationToken: tokenSource.Token);
+		var aggregateFromCosmosDb = await context.CosmosDbClient.GetAsync<PersistenceAggregate>(aggregateId, partitionKey, cancellationToken: tokenSource.Token);
 		aggregateFromCosmosDb.Should().NotBeNull();
 
 		// Act
-		bool deleteResult = await context.EventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
+		var deleteResult = await context.EventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		aggregateFromCosmosDb = await context.CosmosDbClient.GetAsync<PersistenceAggregate>(aggregateId, partitionKey, cancellationToken: tokenSource.Token);
 

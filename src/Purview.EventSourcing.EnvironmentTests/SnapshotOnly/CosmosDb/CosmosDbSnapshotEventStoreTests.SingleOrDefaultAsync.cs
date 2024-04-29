@@ -12,18 +12,18 @@ partial class CosmosDbSnapshotEventStoreTests
 		const int matchingIncrement = 10;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		await using var context = fixture.CreateContext();
 
-		for (int i = 0; i < matchingIncrement; i++)
+		for (var i = 0; i < matchingIncrement; i++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate();
-			for (int x = 0; x < matchingIncrement; x++)
+			var aggregate = CreateAggregate();
+			for (var x = 0; x < matchingIncrement; x++)
 			{
 				aggregate.IncrementInt32Value();
 			}
 
-			SaveResult<PersistenceAggregate> saveResult = await context.EventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
+			var saveResult = await context.EventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 			saveResult.ToBoolean().Should().BeTrue();
 			saveResult.Skipped.Should().BeFalse();
@@ -45,12 +45,12 @@ partial class CosmosDbSnapshotEventStoreTests
 		const int matchingIncrement = 10;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		await using var context = fixture.CreateContext();
 
-		string aggregateId = Guid.NewGuid().ToString();
-		PersistenceAggregate aggregate = CreateAggregate(id: aggregateId);
-		for (int x = 0; x < matchingIncrement; x++)
+		var aggregateId = Guid.NewGuid().ToString();
+		var aggregate = CreateAggregate(id: aggregateId);
+		for (var x = 0; x < matchingIncrement; x++)
 		{
 			aggregate.IncrementInt32Value();
 		}
@@ -59,7 +59,7 @@ partial class CosmosDbSnapshotEventStoreTests
 		saveResult.Should().BeTrue();
 
 		// Act
-		PersistenceAggregate? result = await context.EventStore.SingleOrDefaultAsync(m => m.IncrementInt32 == matchingIncrement, cancellationToken: tokenSource.Token);
+		var result = await context.EventStore.SingleOrDefaultAsync(m => m.IncrementInt32 == matchingIncrement, cancellationToken: tokenSource.Token);
 
 		// Assert
 		result?.Id().Should().Be(aggregateId);
@@ -72,13 +72,13 @@ partial class CosmosDbSnapshotEventStoreTests
 		const int eventsToCreate = 10;
 
 		// Arrange
-		using CancellationTokenSource tokenSource = TestHelpers.CancellationTokenSource();
-		await using CosmosDbSnapshotEventStoreContext context = fixture.CreateContext();
+		using var tokenSource = TestHelpers.CancellationTokenSource();
+		await using var context = fixture.CreateContext();
 
-		for (int i = 0; i < aggregatesToCreate; i++)
+		for (var i = 0; i < aggregatesToCreate; i++)
 		{
-			PersistenceAggregate aggregate = CreateAggregate();
-			for (int x = 0; x < eventsToCreate; x++)
+			var aggregate = CreateAggregate();
+			for (var x = 0; x < eventsToCreate; x++)
 			{
 				aggregate.IncrementInt32Value();
 			}
@@ -88,7 +88,7 @@ partial class CosmosDbSnapshotEventStoreTests
 		}
 
 		// Act
-		PersistenceAggregate? result = await context.EventStore.SingleOrDefaultAsync(m => m.IncrementInt32 == -1, cancellationToken: tokenSource.Token);
+		var result = await context.EventStore.SingleOrDefaultAsync(m => m.IncrementInt32 == -1, cancellationToken: tokenSource.Token);
 
 		// Assert
 		result.Should().BeNull();

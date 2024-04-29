@@ -7,7 +7,7 @@ namespace Purview.EventSourcing.CosmosDb.Snapshot;
 [NCrunch.Framework.Category("CosmosDb")]
 [NCrunch.Framework.Category("Storage")]
 [NCrunch.Framework.Serial]
-[CollectionDefinition("CosmosDb", DisableParallelization = true)]
+[CollectionDefinition("CosmosDb")]
 public partial class CosmosDbSnapshotEventStoreTests(CosmosDbSnapshotEventStoreFixture fixture) : IClassFixture<CosmosDbSnapshotEventStoreFixture>
 {
 	static PersistenceAggregate CreateAggregate(string? id = null, Action<PersistenceAggregate>? action = null)

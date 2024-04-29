@@ -57,8 +57,7 @@ public sealed class TableEventStoreFixture : IAsyncLifetime
 		_eventNameMapper = new AggregateEventNameMapper();
 
 		var aggregateRequirementsManager = Substitute.For<IAggregateRequirementsManager>();
-
-		var azureStorageOptions = new Options.AzureStorageEventStoreOptions
+		Options.AzureStorageEventStoreOptions azureStorageOptions = new()
 		{
 			ConnectionString = _azuriteContainer.GetConnectionString(),
 			Table = _tableName,

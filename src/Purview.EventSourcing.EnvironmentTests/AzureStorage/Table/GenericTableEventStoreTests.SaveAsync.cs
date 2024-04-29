@@ -299,7 +299,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 
 		// Delete the snapshot to ensure the events are replayed.
 		var blobName = eventStore.GenerateSnapshotBlobName(aggregateId);
-		bool deleteResult = await fixture.BlobClient.DeleteBlobIfExistsAsync(blobName, cancellationToken: tokenSource.Token);
+		var deleteResult = await fixture.BlobClient.DeleteBlobIfExistsAsync(blobName, cancellationToken: tokenSource.Token);
 
 		deleteResult
 			.Should()
