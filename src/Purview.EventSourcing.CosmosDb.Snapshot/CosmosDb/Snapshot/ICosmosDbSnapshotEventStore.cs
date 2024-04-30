@@ -11,5 +11,5 @@ public interface ICosmosDbSnapshotEventStore<T> : IQueryableEventStore<T>
 	/// <param name="aggregate">The aggregate to upsert.</param>
 	/// <param name="cancellationToken">A cancellation token.</param>
 	/// <returns>A task.</returns>
-	Task ForceSnapshotAsync(T aggregate, CancellationToken cancellationToken = default);
+	Task SnapshotAsync(T aggregate, CancellationToken cancellationToken = default);
 }

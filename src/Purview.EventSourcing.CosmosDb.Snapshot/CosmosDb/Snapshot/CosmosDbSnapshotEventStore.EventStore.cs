@@ -22,7 +22,7 @@ partial class CosmosDbSnapshotEventStore<T>
 
 		var result = await _eventStore.SaveAsync(aggregate, operationContext, cancellationToken);
 		if (result)
-			await ForceSnapshotAsync(aggregate, cancellationToken);
+			await SnapshotAsync(aggregate, cancellationToken);
 
 		return result;
 	}
@@ -50,7 +50,7 @@ partial class CosmosDbSnapshotEventStore<T>
 
 		var result = await _eventStore.RestoreAsync(aggregate, operationContext, cancellationToken);
 		if (result)
-			await ForceSnapshotAsync(aggregate, cancellationToken);
+			await SnapshotAsync(aggregate, cancellationToken);
 
 		return result;
 	}

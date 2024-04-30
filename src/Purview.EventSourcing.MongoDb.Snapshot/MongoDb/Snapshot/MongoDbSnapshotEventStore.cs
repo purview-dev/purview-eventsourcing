@@ -11,6 +11,9 @@ public partial class MongoDbSnapshotEventStore<T> : IMongoDbSnapshotEventStore<T
 	readonly IEventStore<T> _eventStore;
 	readonly MongoDbClient _mongoDbClient;
 	readonly IOptions<MongoDbEventStoreOptions> _mongoDbOptions;
+	readonly IMongoDbSnapshotEventStoreTelemetry _telemetry;
+
+	readonly string _aggregateName;
 
 	static MongoDbSnapshotEventStore()
 	{
@@ -19,26 +22,30 @@ public partial class MongoDbSnapshotEventStore<T> : IMongoDbSnapshotEventStore<T
 
 	public MongoDbSnapshotEventStore(
 		Internal.INonQueryableEventStore<T> eventStore,
-		IOptions<MongoDbEventStoreOptions> mongoDbOptions)
+		IOptions<MongoDbEventStoreOptions> mongoDbOptions,
+		IMongoDbSnapshotEventStoreTelemetry telemetry)
 	{
 		_eventStore = eventStore;
 		_mongoDbOptions = mongoDbOptions;
+		_telemetry = telemetry;
 
-		var collectionName = $"{TypeNameHelper.GetName(typeof(T), "aggregate")}-store";
+		_aggregateName = TypeNameHelper.GetName(typeof(T), "Aggregate");
+		var collectionName = _mongoDbOptions.Value.Collection ?? $"snapshot-{_aggregateName}-store";
 		_mongoDbClient = new(new()
 		{
 			ConnectionString = _mongoDbOptions.Value.ConnectionString,
 			Database = _mongoDbOptions.Value.Database,
 			Collection = collectionName,
 			ApplicationName = _mongoDbOptions.Value.ApplicationName
-		}, null, collectionName);
+		});
 	}
 
-	async public Task ForceSaveAsync(T aggregate, CancellationToken cancellationToken = default)
+	async public Task SnapshotAsync(T aggregate, CancellationToken cancellationToken = default)
 	{
 		ArgumentNullException.ThrowIfNull(aggregate, nameof(aggregate));
 
-		await _mongoDbClient.UpsertAsync(aggregate, BuildPredicate(aggregate), cancellationToken);
+		if (await _mongoDbClient.UpsertAsync(aggregate, BuildPredicate(aggregate), cancellationToken))
+			_telemetry.SnapshotCreated(_aggregateName);
 	}
 
 	static FilterDefinition<T> BuildPredicate(T aggregate)

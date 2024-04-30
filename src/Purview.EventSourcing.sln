@@ -12,7 +12,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purview.EventSourcing.Cosmo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purview.EventSourcing.MongoDb.Snapshot", "Purview.EventSourcing.MongoDb.Snapshot\Purview.EventSourcing.MongoDb.Snapshot.csproj", "{64F1C0CC-E7D1-4EAD-8752-8743E47C32DE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purview.EventSourcing.EnvironmentTests", "Purview.EventSourcing.EnvironmentTests\Purview.EventSourcing.EnvironmentTests.csproj", "{1AFF2304-4683-42C4-B3B1-D6644FC5B9A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purview.EventSourcing.IntegrationTests", "Purview.EventSourcing.IntegrationTests\Purview.EventSourcing.IntegrationTests.csproj", "{1AFF2304-4683-42C4-B3B1-D6644FC5B9A3}"
 EndProject
 Global
 	GlobalSection(ExtensibilityGlobals) = postSolution

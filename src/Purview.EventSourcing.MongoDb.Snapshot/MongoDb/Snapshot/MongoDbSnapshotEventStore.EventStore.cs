@@ -20,7 +20,7 @@ partial class MongoDbSnapshotEventStore<T>
 	{
 		var result = await _eventStore.SaveAsync(aggregate, operationContext, cancellationToken);
 		if (result)
-			await ForceSaveAsync(aggregate, cancellationToken);
+			await SnapshotAsync(aggregate, cancellationToken);
 
 		return result;
 	}

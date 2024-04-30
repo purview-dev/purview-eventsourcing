@@ -1,72 +1,75 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
+using Purview.EventSourcing.Aggregates;
 using Purview.EventSourcing.Aggregates.Persistence;
 using Purview.EventSourcing.AzureStorage.Table;
 using Purview.EventSourcing.AzureStorage.Table.StorageClients.Blob;
 using Purview.EventSourcing.AzureStorage.Table.StorageClients.Table;
 using Purview.EventSourcing.ChangeFeed;
-using Purview.EventSourcing.MongoDb;
-using Purview.EventSourcing.MongoDb.Snapshot;
+using Purview.EventSourcing.CosmosDb;
+using Purview.EventSourcing.CosmosDb.Snapshot;
 using Purview.EventSourcing.Services;
 
-namespace Purview.EventSourcing.SnapshotOnly.MongoDb;
+namespace Purview.EventSourcing.SnapshotOnly.CosmosDb;
 
-sealed public class MongoDbSnapshotTestContext
+public sealed class CosmosDbSnapshotEventStoreContext(string cosmosDbConnectionString, HttpClient cosmosDbHttpClient, string azuriteConnectionString) : IAsyncDisposable
 {
-	readonly string _mongoDbConnectionString;
-	readonly string _azuriteConnectionString;
-
 	ITableEventStoreTelemetry _telemetry = default!;
 	IAggregateEventNameMapper _eventNameMapper = default!;
 	IAggregateChangeFeedNotifier<PersistenceAggregate> _aggregateChangeNotifier = default!;
 
-	MongoDbClient _mongoDbClient = default!;
+	CosmosDbSnapshotEventStore<PersistenceAggregate> _eventStore = default!;
+
+	CosmosDbClient _cosmosDbClient = default!;
 	AzureTableClient _tableClient = default!;
 	AzureBlobClient _blobClient = default!;
 
 	public Guid RunId { get; } = Guid.NewGuid();
 
-	internal MongoDbClient MongoDbClient => _mongoDbClient;
+	public CosmosDbSnapshotEventStore<PersistenceAggregate> EventStore => _eventStore;
 
 	internal AzureTableClient TableClient => _tableClient;
 
 	internal AzureBlobClient BlobClient => _blobClient;
 
-	public MongoDbSnapshotEventStore<PersistenceAggregate> EventStore { get; init; }
+	internal CosmosDbClient CosmosDbClient => _cosmosDbClient;
 
-	public MongoDbSnapshotTestContext(string mongoDbConnectionString, string azuriteConnectionString, int correlationIdsToGenerate = 1, string? collectionName = null)
-	{
-		_mongoDbConnectionString = mongoDbConnectionString;
-		_azuriteConnectionString = azuriteConnectionString;
-
-		EventStore = CreateMongoDbEventStore(correlationIdsToGenerate, collectionName);
-	}
-
-	public MongoDbSnapshotEventStore<PersistenceAggregate> CreateMongoDbEventStore(int correlationIdsToGenerate = 1, string? collectionName = null)
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Used elsewhere.")]
+	public void CreateCosmosDbEventStore(int correlationIdsToGenerate = 1, string? container = null)
 	{
 		var tableEventStore = CreateTableEventStore(correlationIdsToGenerate);
 
-		MongoDbEventStoreOptions config = new()
+		CosmosDbEventStoreOptions config = new()
 		{
-			ConnectionString = _mongoDbConnectionString,
+			Container = container ?? TestHelpers.GenAzureCosmosDbContainerName(),
+			ConnectionString = cosmosDbConnectionString,
 			Database = GetType().Name,
-			Collection = collectionName ?? TestHelpers.GenMongoDbCollectionName()
+			RequestTimeoutInSeconds = 30,
+			IgnoreSSLWarnings = true,
+			ConnectionMode = Microsoft.Azure.Cosmos.ConnectionMode.Gateway
 		};
 
-		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = new(
-			tableEventStore,
-			Microsoft.Extensions.Options.Options.Create(config)
+		Microsoft.Azure.Cosmos.CosmosClient cosmosClient = new(config.ConnectionString, clientOptions: new Microsoft.Azure.Cosmos.CosmosClientOptions()
+		{
+			HttpClientFactory = () => cosmosDbHttpClient,
+			ConnectionMode = config.ConnectionMode,
+			LimitToEndpoint = true
+		});
+
+		_cosmosDbClient = new(
+			config,
+			$"/{nameof(IAggregate.AggregateType)}",
+			null,
+			cosmosClient
 		);
 
-		_mongoDbClient = new(new()
-		{
-			ConnectionString = config.ConnectionString,
-			Database = config.Database,
-			Collection = config.Collection
-		},
-			config.Database,
-			collectionName ?? config.Collection);
+		CosmosDbSnapshotEventStore<PersistenceAggregate> eventStore = new(
+			tableEventStore,
+			Microsoft.Extensions.Options.Options.Create(config),
+			Substitute.For<ICosmosDbSnapshotEventStoreTelemetry>(),
+			cosmosClient
+		);
 
-		return eventStore;
+		_eventStore = eventStore;
 	}
 
 	TableEventStore<PersistenceAggregate> CreateTableEventStore(int correlationIdsToGenerate = 1)
@@ -79,7 +82,7 @@ sealed public class MongoDbSnapshotTestContext
 
 		AzureStorage.Table.Options.AzureStorageEventStoreOptions azureStorageOptions = new()
 		{
-			ConnectionString = _azuriteConnectionString,
+			ConnectionString = azuriteConnectionString,
 			Table = TestHelpers.GenAzureTableName(RunId),
 			Container = TestHelpers.GenAzureBlobContainerName(RunId),
 			TimeoutInSeconds = 10,
@@ -101,4 +104,7 @@ sealed public class MongoDbSnapshotTestContext
 
 		return eventStore;
 	}
+
+	public async ValueTask DisposeAsync()
+		=> await _cosmosDbClient.DeleteContainerAsync();
 }

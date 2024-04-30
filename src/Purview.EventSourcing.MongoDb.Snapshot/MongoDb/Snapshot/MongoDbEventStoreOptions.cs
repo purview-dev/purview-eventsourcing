@@ -14,6 +14,5 @@ sealed public class MongoDbEventStoreOptions
 	[Required]
 	public string Database { get; set; } = default!;
 
-	[Required]
-	public string Collection { get; set; } = default!;
+	public string? Collection { get; set; }
 }

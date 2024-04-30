@@ -8,14 +8,17 @@ namespace Purview;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class MongoDbSnapshotIEventStoreServiceCollectionExtensions
 {
-	public static IServiceCollection AddMongoDbSnapshotQueryableEventStore(this IServiceCollection services)
+	public static IServiceCollection AddMongoDbSnapshotQueryableEventStore(this IServiceCollection services, bool registerAsIEventStore = false)
 	{
 		services.AddEventSourcing();
 
 		services
-			.AddScoped(typeof(IQueryableEventStore<>), typeof(MongoDbSnapshotEventStore<>))
-			.AddScoped(typeof(IEventStore<>), typeof(MongoDbSnapshotEventStore<>))
-			.AddTransient(typeof(IMongoDbSnapshotEventStore<>), typeof(MongoDbSnapshotEventStore<>));
+			.AddTransient(typeof(IQueryableEventStore<>), typeof(MongoDbSnapshotEventStore<>))
+			.AddTransient(typeof(IMongoDbSnapshotEventStore<>), typeof(MongoDbSnapshotEventStore<>))
+			.AddMongoDbSnapshotEventStoreTelemetry();
+
+		if (registerAsIEventStore)
+			services.AddTransient(typeof(IEventStore<>), typeof(MongoDbSnapshotEventStore<>));
 
 		services
 			.AddOptions<MongoDbEventStoreOptions>()
@@ -25,7 +28,8 @@ public static class MongoDbSnapshotIEventStoreServiceCollectionExtensions
 
 				if (options.ConnectionString == null)
 					options.ConnectionString = configuration.GetConnectionString("EventStore_MongoDb") ?? configuration.GetConnectionString("MongoDb");
-			});
+			})
+			.ValidateOnStart();
 
 		return services;
 	}

@@ -36,20 +36,22 @@ partial class MongoDbClient
 		return await collection.AsQueryable().Take(1).SingleOrDefaultAsync(predicate, cancellationToken);
 	}
 
-	public Task UpsertAsync<T>(T document, Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+	async public Task<bool> UpsertAsync<T>(T document, Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
 		where T : class
 	{
 		var collection = GetCollection<T>();
 
-		return collection.ReplaceOneAsync(predicate, document, new ReplaceOptions { IsUpsert = true }, cancellationToken);
+		var result = await collection.ReplaceOneAsync(predicate, document, new ReplaceOptions { IsUpsert = true }, cancellationToken);
+		return result.IsAcknowledged;
 	}
 
-	public Task UpsertAsync<T>(T document, FilterDefinition<T> predicate, CancellationToken cancellationToken = default)
+	async public Task<bool> UpsertAsync<T>(T document, FilterDefinition<T> predicate, CancellationToken cancellationToken = default)
 		where T : class
 	{
 		var collection = GetCollection<T>();
 
-		return collection.ReplaceOneAsync(predicate, document, new ReplaceOptions { IsUpsert = true }, cancellationToken);
+		var result = await collection.ReplaceOneAsync(predicate, document, new ReplaceOptions { IsUpsert = true }, cancellationToken);
+		return result.IsAcknowledged;
 	}
 
 	public Task InsertAsync<T>(T document, CancellationToken cancellationToken = default)

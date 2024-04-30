@@ -9,25 +9,33 @@ public sealed partial class CosmosDbSnapshotEventStore<T> : ICosmosDbSnapshotEve
 	where T : class, IAggregate, new()
 {
 	readonly IEventStore<T> _eventStore;
+	readonly IOptions<CosmosDbEventStoreOptions> _cosmosDbEventStoreOptions;
+	readonly ICosmosDbSnapshotEventStoreTelemetry _telemetry;
+
 	readonly CosmosDbClient _cosmosDbClient;
+
 	readonly PartitionKey _partitionKey;
 
-	readonly IOptions<CosmosDbEventStoreOptions> _cosmosDbEventStoreOptions;
 	readonly Type _aggregateType = typeof(T);
+	readonly string _aggregateName;
 
-	static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, string> _aggregateTypeNames = new();
+	static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, string> AggregateTypeNames = new();
 
 	public CosmosDbSnapshotEventStore(
 		// Explicitly request a non-queryable event store.
 		INonQueryableEventStore<T> eventStore,
 		IOptions<CosmosDbEventStoreOptions> cosmosDbEventStoreOptions,
+		ICosmosDbSnapshotEventStoreTelemetry telemetry,
 		CosmosClient? cosmosClient = null)
 	{
 		_eventStore = eventStore;
 		_cosmosDbEventStoreOptions = cosmosDbEventStoreOptions;
-		_partitionKey = new PartitionKey(GetAggregateTypeName());
+		_telemetry = telemetry;
+
+		_partitionKey = new(GetAggregateTypeName());
 
 		_cosmosDbClient = new CosmosDbClient(_cosmosDbEventStoreOptions.Value, cosmosClient: cosmosClient);
+		_aggregateName = TypeNameHelper.GetName(_aggregateType, "Aggregate");
 	}
 
 	/// <summary>
@@ -35,13 +43,15 @@ public sealed partial class CosmosDbSnapshotEventStore<T> : ICosmosDbSnapshotEve
 	/// </summary>
 	/// <param name="aggregate"></param>
 	/// <param name="cancellationToken"></param>
-	public Task ForceSnapshotAsync(T aggregate, CancellationToken cancellationToken = default)
+	async public Task SnapshotAsync(T aggregate, CancellationToken cancellationToken = default)
 	{
 		ArgumentNullException.ThrowIfNull(aggregate, nameof(aggregate));
 
-		return _cosmosDbClient.UpsertAsync(aggregate, _partitionKey, cancellationToken);
+		var result = await _cosmosDbClient.UpsertAsync(aggregate, _partitionKey, cancellationToken);
+		if (result.IsSuccessStatusCode)
+			_telemetry.SnapshotCreated(_aggregateName);
 	}
 
 	string GetAggregateTypeName()
-		=> _aggregateTypeNames.GetOrAdd(_aggregateType, _ => new T().AggregateType);
+		=> AggregateTypeNames.GetOrAdd(_aggregateType, _ => new T().AggregateType);
 }

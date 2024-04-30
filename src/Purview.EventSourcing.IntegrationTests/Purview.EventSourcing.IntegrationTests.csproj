@@ -7,7 +7,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Include="..\.shared-testing-helpers\**\*" LinkBase="Helpers" />
+		<Compile Include="..\.shared-testing-helpers\**\*" LinkBase="" />
 	</ItemGroup>
 
 	<ItemGroup>

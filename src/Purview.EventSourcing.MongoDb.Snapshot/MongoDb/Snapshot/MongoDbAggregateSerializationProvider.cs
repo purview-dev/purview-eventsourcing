@@ -4,7 +4,7 @@ using Purview.EventSourcing.Aggregates;
 
 namespace Purview.EventSourcing.MongoDb.Snapshot;
 
-internal class MongoDbAggregateSerializationProvider : IBsonSerializationProvider
+sealed class MongoDbAggregateSerializationProvider : IBsonSerializationProvider
 {
 	static readonly Type _aggregateInterfaceType = typeof(IAggregate);
 	static readonly ConcurrentDictionary<Type, IBsonSerializer> _serializers = new();

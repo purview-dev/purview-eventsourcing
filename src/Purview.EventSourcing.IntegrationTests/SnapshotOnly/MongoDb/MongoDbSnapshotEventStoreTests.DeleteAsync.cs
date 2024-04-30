@@ -18,12 +18,9 @@ partial class MongoDbSnapshotEventStoreTests
 		var mongoDbEventStore = context.EventStore;
 
 		bool saveResult = await mongoDbEventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
-		saveResult
-			.Should()
-			.BeTrue();
+		saveResult.Should().BeTrue();
 
 		var predicate = PredicateId(aggregateId);
-
 		var aggregateFromMongoDb = await context.MongoDbClient.GetAsync(predicate, cancellationToken: tokenSource.Token);
 		aggregateFromMongoDb
 			.Should()

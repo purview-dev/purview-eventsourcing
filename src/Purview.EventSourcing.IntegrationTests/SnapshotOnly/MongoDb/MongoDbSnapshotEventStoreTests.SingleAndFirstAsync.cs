@@ -184,31 +184,22 @@ partial class MongoDbSnapshotEventStoreTests
 			firstId ??= aggregate.Id();
 
 			for (var eventIndex = 0; eventIndex < numberOfEvents; eventIndex++)
-			{
 				aggregate.IncrementInt32Value();
-			}
 
 			aggregate.SetInt32Value(aggregateIndex + 1);
 
 			bool saveResult = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
-			saveResult
-				.Should()
-				.BeTrue();
+			saveResult.Should().BeTrue();
 		}
 
 		// Act
 		var aggregateResult = await eventStore.FirstOrDefaultAsync(m => m.IncrementInt32 == numberOfEvents, m => m.OrderBy(m => m.Int32Value), cancellationToken: tokenSource.Token);
 
 		// Assert
-		aggregateResult
-			.Should()
-			.NotBeNull();
+		aggregateResult.Should().NotBeNull();
 
-		aggregateResult!
-			.Int32Value
-			.Should()
-			.Be(1);
+		aggregateResult!.Int32Value.Should().Be(1);
 	}
 }
 
