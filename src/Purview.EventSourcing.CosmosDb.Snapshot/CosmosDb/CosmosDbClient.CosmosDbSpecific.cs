@@ -272,7 +272,4 @@ partial class CosmosDbClient
 
 		_ = _createdContainers.TryRemove(_containerCreatedKey, out _);
 	}
-
-	static CosmosException CreateExceptionFromResponse(ResponseMessage response)
-		=> new CosmosException(response.ErrorMessage, response.StatusCode, 0, response.Headers.ActivityId, response.Headers.RequestCharge);
 }

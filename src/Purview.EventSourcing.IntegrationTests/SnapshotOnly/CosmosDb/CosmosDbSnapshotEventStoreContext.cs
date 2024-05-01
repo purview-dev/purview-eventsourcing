@@ -15,23 +15,16 @@ public sealed class CosmosDbSnapshotEventStoreContext(string cosmosDbConnectionS
 {
 	ITableEventStoreTelemetry _telemetry = default!;
 	IAggregateEventNameMapper _eventNameMapper = default!;
-	IAggregateChangeFeedNotifier<PersistenceAggregate> _aggregateChangeNotifier = default!;
-
-	CosmosDbSnapshotEventStore<PersistenceAggregate> _eventStore = default!;
-
-	CosmosDbClient _cosmosDbClient = default!;
-	AzureTableClient _tableClient = default!;
-	AzureBlobClient _blobClient = default!;
 
 	public Guid RunId { get; } = Guid.NewGuid();
 
-	public CosmosDbSnapshotEventStore<PersistenceAggregate> EventStore => _eventStore;
+	public CosmosDbSnapshotEventStore<PersistenceAggregate> EventStore { get; private set; } = default!;
 
-	internal AzureTableClient TableClient => _tableClient;
+	internal AzureTableClient TableClient { get; private set; } = default!;
 
-	internal AzureBlobClient BlobClient => _blobClient;
+	internal AzureBlobClient BlobClient { get; private set; } = default!;
 
-	internal CosmosDbClient CosmosDbClient => _cosmosDbClient;
+	internal CosmosDbClient CosmosDbClient { get; private set; } = default!;
 
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Used elsewhere.")]
 	public void CreateCosmosDbEventStore(int correlationIdsToGenerate = 1, string? container = null)
@@ -55,7 +48,7 @@ public sealed class CosmosDbSnapshotEventStoreContext(string cosmosDbConnectionS
 			LimitToEndpoint = true
 		});
 
-		_cosmosDbClient = new(
+		CosmosDbClient = new(
 			config,
 			$"/{nameof(IAggregate.AggregateType)}",
 			null,
@@ -69,7 +62,7 @@ public sealed class CosmosDbSnapshotEventStoreContext(string cosmosDbConnectionS
 			cosmosClient
 		);
 
-		_eventStore = eventStore;
+		EventStore = eventStore;
 	}
 
 	TableEventStore<PersistenceAggregate> CreateTableEventStore(int correlationIdsToGenerate = 1)
@@ -78,7 +71,6 @@ public sealed class CosmosDbSnapshotEventStoreContext(string cosmosDbConnectionS
 
 		_eventNameMapper = new AggregateEventNameMapper();
 		_telemetry = Substitute.For<ITableEventStoreTelemetry>();
-		_aggregateChangeNotifier = Substitute.For<IAggregateChangeFeedNotifier<PersistenceAggregate>>();
 
 		AzureStorage.Table.Options.AzureStorageEventStoreOptions azureStorageOptions = new()
 		{
@@ -99,12 +91,12 @@ public sealed class CosmosDbSnapshotEventStoreContext(string cosmosDbConnectionS
 			aggregateRequirementsManager: Substitute.For<IAggregateRequirementsManager>()
 		);
 
-		_tableClient = new(azureStorageOptions, eventStore.TableName);
-		_blobClient = new(azureStorageOptions, eventStore.ContainerName);
+		TableClient = new(azureStorageOptions, eventStore.TableName);
+		BlobClient = new(azureStorageOptions, eventStore.ContainerName);
 
 		return eventStore;
 	}
 
 	public async ValueTask DisposeAsync()
-		=> await _cosmosDbClient.DeleteContainerAsync();
+		=> await CosmosDbClient.DeleteContainerAsync();
 }

@@ -17,19 +17,14 @@ sealed public class MongoDbSnapshotTestContext
 
 	ITableEventStoreTelemetry _telemetry = default!;
 	IAggregateEventNameMapper _eventNameMapper = default!;
-	IAggregateChangeFeedNotifier<PersistenceAggregate> _aggregateChangeNotifier = default!;
-
-	MongoDbClient _mongoDbClient = default!;
-	AzureTableClient _tableClient = default!;
-	AzureBlobClient _blobClient = default!;
 
 	public Guid RunId { get; } = Guid.NewGuid();
 
-	internal MongoDbClient MongoDbClient => _mongoDbClient;
+	internal MongoDbClient MongoDbClient { get; private set; } = default!;
 
-	internal AzureTableClient TableClient => _tableClient;
+	internal AzureTableClient TableClient { get; private set; } = default!;
 
-	internal AzureBlobClient BlobClient => _blobClient;
+	internal AzureBlobClient BlobClient { get; private set; } = default!;
 
 	public MongoDbSnapshotEventStore<PersistenceAggregate> EventStore { get; init; }
 
@@ -58,7 +53,7 @@ sealed public class MongoDbSnapshotTestContext
 			Substitute.For<IMongoDbSnapshotEventStoreTelemetry>()
 		);
 
-		_mongoDbClient = new(new()
+		MongoDbClient = new(new()
 		{
 			ConnectionString = config.ConnectionString,
 			ApplicationName = "purview-integration-tests",
@@ -75,7 +70,6 @@ sealed public class MongoDbSnapshotTestContext
 
 		_eventNameMapper = new AggregateEventNameMapper();
 		_telemetry = Substitute.For<ITableEventStoreTelemetry>();
-		_aggregateChangeNotifier = Substitute.For<IAggregateChangeFeedNotifier<PersistenceAggregate>>();
 
 		AzureStorage.Table.Options.AzureStorageEventStoreOptions azureStorageOptions = new()
 		{
@@ -96,8 +90,8 @@ sealed public class MongoDbSnapshotTestContext
 			aggregateRequirementsManager: Substitute.For<IAggregateRequirementsManager>()
 		);
 
-		_tableClient = new(azureStorageOptions, eventStore.TableName);
-		_blobClient = new(azureStorageOptions, eventStore.ContainerName);
+		TableClient = new(azureStorageOptions, eventStore.TableName);
+		BlobClient = new(azureStorageOptions, eventStore.ContainerName);
 
 		return eventStore;
 	}

@@ -15,13 +15,7 @@ public sealed class TableEventStoreFixture : IAsyncLifetime
 	string _containerName = default!;
 	string _tableName = default!;
 
-	IDistributedCache _distributedCache = default!;
-	ITableEventStoreTelemetry _telemetry = default!;
 	IAggregateEventNameMapper _eventNameMapper = default!;
-
-	AzureTableClient _tableClient = default!;
-	AzureBlobClient _blobClient = default!;
-
 	IDisposable? _eventStoreAsDisposable;
 
 	public TableEventStoreFixture()
@@ -29,13 +23,13 @@ public sealed class TableEventStoreFixture : IAsyncLifetime
 		_azuriteContainer = ContainerHelper.CreateAzurite();
 	}
 
-	public IDistributedCache Cache => _distributedCache;
+	public IDistributedCache Cache { get; private set; } = default!;
 
-	public ITableEventStoreTelemetry Telemetry => _telemetry;
+	public ITableEventStoreTelemetry Telemetry { get; private set; } = default!;
 
-	internal AzureTableClient TableClient => _tableClient;
+	internal AzureTableClient TableClient { get; private set; } = default!;
 
-	internal AzureBlobClient BlobClient => _blobClient;
+	internal AzureBlobClient BlobClient { get; private set; } = default!;
 
 	public TableEventStore<TAggregate> CreateEventStore<TAggregate>(
 		IAggregateChangeFeedNotifier<TAggregate>? aggregateChangeNotifier = null,
@@ -52,8 +46,8 @@ public sealed class TableEventStoreFixture : IAsyncLifetime
 		_tableName = TestHelpers.GenAzureTableName(runId);
 		_containerName = TestHelpers.GenAzureBlobContainerName(runId);
 
-		_distributedCache = CreateDistributedCache();
-		_telemetry = Substitute.For<ITableEventStoreTelemetry>();
+		Cache = CreateDistributedCache();
+		Telemetry = Substitute.For<ITableEventStoreTelemetry>();
 		_eventNameMapper = new AggregateEventNameMapper();
 
 		var aggregateRequirementsManager = Substitute.For<IAggregateRequirementsManager>();
@@ -70,14 +64,14 @@ public sealed class TableEventStoreFixture : IAsyncLifetime
 		TableEventStore<TAggregate> eventStore = new(
 			eventNameMapper: _eventNameMapper,
 			azureStorageOptions: Microsoft.Extensions.Options.Options.Create(azureStorageOptions),
-			distributedCache: _distributedCache,
+			distributedCache: Cache,
 			aggregateChangeNotifier: aggregateChangeNotifier ?? Substitute.For<IAggregateChangeFeedNotifier<TAggregate>>(),
-			eventStoreTelemetry: _telemetry,
+			eventStoreTelemetry: Telemetry,
 			aggregateRequirementsManager: aggregateRequirementsManager
 		);
 
-		_tableClient = new(azureStorageOptions, eventStore.TableName);
-		_blobClient = new(azureStorageOptions, eventStore.ContainerName);
+		TableClient = new(azureStorageOptions, eventStore.TableName);
+		BlobClient = new(azureStorageOptions, eventStore.ContainerName);
 
 		_eventStoreAsDisposable = eventStore as IDisposable;
 

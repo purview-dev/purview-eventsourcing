@@ -26,8 +26,14 @@ public static class AzureStorageEventStoreIServiceCollectionExtensions
 			{
 				configuration.GetSection(AzureStorageEventStoreOptions.AzureStorageEventStore).Bind(options);
 
-				if (options.ConnectionString == null)
-					options.ConnectionString = configuration.GetConnectionString("EventStore_AzureStorage") ?? configuration.GetConnectionString("AzureStorage");
+				if (string.IsNullOrWhiteSpace(options.ConnectionString))
+				{
+					options.ConnectionString =
+						configuration.GetConnectionString("EventStore_AzureStorage")
+						?? configuration.GetConnectionString("AzureStorage")
+						// This will get picked up by the validation.
+						?? default!;
+				}
 			})
 			.ValidateOnStart();
 

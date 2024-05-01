@@ -27,7 +27,13 @@ public static class MongoDbSnapshotIEventStoreServiceCollectionExtensions
 				configuration.GetSection(MongoDbEventStoreOptions.MongoDbEventStore).Bind(options);
 
 				if (options.ConnectionString == null)
-					options.ConnectionString = configuration.GetConnectionString("EventStore_MongoDb") ?? configuration.GetConnectionString("MongoDb");
+				{
+					options.ConnectionString =
+						configuration.GetConnectionString("EventStore_MongoDb")
+						?? configuration.GetConnectionString("MongoDb")
+						// This will get picked up by the validation.
+						?? default!;
+				}
 			})
 			.ValidateOnStart();
 

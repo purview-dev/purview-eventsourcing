@@ -26,7 +26,13 @@ public static class CosmosDbSnapshotIEventStoreServiceCollectionExtensions
 				configuration.GetSection(CosmosDbEventStoreOptions.CosmosDbEventStore).Bind(options);
 
 				if (options.ConnectionString == null)
-					options.ConnectionString = configuration.GetConnectionString("EventStore_CosmosDb") ?? configuration.GetConnectionString("CosmosDb");
+				{
+					options.ConnectionString =
+						configuration.GetConnectionString("EventStore_CosmosDb")
+						?? configuration.GetConnectionString("CosmosDb")
+						// This will get picked up by the validation.
+						?? default!;
+				}
 			})
 			.ValidateOnStart();
 
