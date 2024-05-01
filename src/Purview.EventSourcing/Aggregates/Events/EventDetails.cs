@@ -28,11 +28,6 @@ public sealed class EventDetails
 	public string? UserId { get; set; }
 
 	/// <summary>
-	/// If the user is being impersonated, this will be the user Id of the user doing the impersonation.
-	/// </summary>
-	public string? ImpersonatedByUserId { get; set; }
-
-	/// <summary>
 	/// Generates a hash-code based on the properties of the <see cref="EventDetails"/>.
 	/// </summary>
 	/// <returns></returns>
@@ -41,6 +36,6 @@ public sealed class EventDetails
 			IdempotencyId,
 			AggregateVersion,
 			When,
-			UserId,
-			ImpersonatedByUserId);
+			UserId
+		);
 }

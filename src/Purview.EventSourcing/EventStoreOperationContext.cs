@@ -1,10 +1,14 @@
-﻿namespace Purview.EventSourcing;
+﻿using System.ComponentModel;
+using System.Security.Claims;
+using Microsoft.Extensions.Caching.Distributed;
+
+namespace Purview.EventSourcing;
 
 /// <summary>
 /// Options to influence Event Store operations.
 /// </summary>
 [System.Diagnostics.DebuggerStepThrough]
-public record class EventStoreOperationContext
+public sealed record class EventStoreOperationContext
 {
 	static EventStoreOperationContext _default = new();
 
@@ -19,9 +23,9 @@ public record class EventStoreOperationContext
 	}
 
 	/// <summary>
-	/// Gets/ sets the default value for <see cref="RequiredValidPrincipalIdentifier"/>.
+	/// Gets/ sets the default value for <see cref="RequiresValidPrincipalIdentifier"/>.
 	/// </summary>
-	public static bool RequiredValidPrincipalIdentifierDefault { get; set; } = true;
+	public static bool RequiresValidPrincipalIdentifierDefault { get; set; } = true;
 
 	/// <summary>
 	/// Gets or sets the default value for the <see cref="ValidateIdempotencyMarker"/>. Defaults to false.
@@ -39,9 +43,16 @@ public record class EventStoreOperationContext
 	public LockHandlingMode LockMode { get; set; } = LockHandlingMode.ThrowsException;
 
 	/// <summary>
-	/// Manages caching operations for the event store.
+	/// Gets/ sets a value indicating how the <see cref="IEventStore{T}"/>
+	/// uses the <see cref="IDistributedCache"/> during it's operations. Defaults to <see cref="EventStoreCachingOptions.GetAndStore"/>.
 	/// </summary>
-	public EventStoreCacheOptions CacheOptions { get; set; } = new();
+	[DefaultValue(EventStoreCachingOptions.GetAndStore)]
+	public EventStoreCachingOptions CacheMode { get; set; } = EventStoreCachingOptions.GetAndStore;
+
+	/// <summary>
+	/// Manages caching operations for the operation.
+	/// </summary>
+	public DistributedCacheEntryOptions? CacheOptions { get; set; }
 
 	/// <summary>
 	/// <para>If true, the event store will skip getting the snapshot and instead attempt to reconstitute the aggregate entirely from it's events.</para>
@@ -74,8 +85,13 @@ public record class EventStoreOperationContext
 	public bool ValidateIdempotencyMarker { get; set; } = ValidateIdempotencyMarkerDefault;
 
 	/// <summary>
-	/// If true, a valid identifier must be returned from <see cref="IPrincipalService.Identifier()"/> or
+	/// If true, a valid <see cref="ClaimIdentifier"/> must be returned from <see cref="ClaimsPrincipal"/> or
 	/// an exception is thrown.
 	/// </summary>
-	public bool RequiredValidPrincipalIdentifier { get; set; } = RequiredValidPrincipalIdentifierDefault;
+	public bool RequiresValidPrincipalIdentifier { get; set; } = RequiresValidPrincipalIdentifierDefault;
+
+	/// <summary>
+	/// The claim identifier to use when retrieving the Id from the <see cref="ClaimsPrincipal"/>.
+	/// </summary>
+	public string ClaimIdentifier { get; set; } = "sub";
 }

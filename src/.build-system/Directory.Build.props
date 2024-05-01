@@ -46,15 +46,6 @@
 
 	</PropertyGroup>
 
-	<!-- Web Projects -->
-	<PropertyGroup Label="Web Project Properties" Condition="'$(IsWebSdkProject)' == 'true'">
-
-		<ServerGarbageCollection>true</ServerGarbageCollection>
-		<IncludeOpenAPIAnalyzers>true</IncludeOpenAPIAnalyzers>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-
-	</PropertyGroup>
-
 	<ItemGroup>
 
 		<Using Include="$(RootNamespace)" />
@@ -63,18 +54,11 @@
 
 	<ItemGroup Label="C# Project Item Groups" Condition="'$(IsCSharpProject)' == 'true' AND $(IsTestProject) == 'false'">
 
-		<PackageReference Include="Purview.Telemetry.SourceGenerator" />
+		<PackageReference Include="Purview.Telemetry.SourceGenerator"/>
 
 		<!-- Embedded Resources -->
 		<None Remove="Resources/**/*" />
 		<EmbeddedResource Include="Resources/**/*" />
-
-	</ItemGroup>
-
-	<ItemGroup Label="Include Grpc Protobuf files">
-
-		<Protobuf Include="Protos/Servers/**/*.proto" GrpcServices="Server" />
-		<Protobuf Include="Protos/Clients/**/*.proto" GrpcServices="Client" />
 
 	</ItemGroup>
 
@@ -111,11 +95,6 @@
 	<PropertyGroup Label="Testing Project Properties" Condition="'$(IsTestProject)' == 'true'">
 
 		<NoWarn>$(NoWarn);CA1707</NoWarn>
-
-		<!-- <NoWarn>CA1701;CA1702;CA1705;CA1707;CA1806;CA2000;$(NoWarn)</NoWarn>
-		<NoWarn>IDE0001;IDE0007;$(NoWarn)</NoWarn>
-		<NoWarn>RCS1001;RCS1003;RCS1010;RCS1018;$(NoWarn)</NoWarn>
-		<NoWarn>VSTHRD200;$(NoWarn)</NoWarn> -->
 
 		<CollectCoverage>true</CollectCoverage>
 		<CoverletOutput Condition=" '$(OutputPath)' != '' ">$(OutputPath)/</CoverletOutput>
@@ -154,7 +133,6 @@
 		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 		<PackageReference Include="Microsoft.CodeCoverage" />
 
-		<PackageReference Include="AutoFixture" />
 		<PackageReference Include="FluentAssertions" />
 		<PackageReference Include="NCrunch.Framework" />
 		<PackageReference Include="NSubstitute" />

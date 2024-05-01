@@ -13,53 +13,53 @@ public interface IEventStore<T>
 	where T : class, IAggregate, new()
 {
 	/// <summary>
-	/// <para>Creates a new <see cref="IAggregate"/> of <typeparamref name="T"/> with the given <paramref name="id"/> as it's Id.</para>
+	/// <para>Creates a new <see cref="IAggregate"/> of <typeparamref name="T"/> with the given <paramref name="aggregateId"/> as it's Id.</para>
 	/// <para>
-	/// If <paramref name="id"/> is not valid, then <see cref="Services.IAggregateIdFactory.CreateAsync{T}(CancellationToken)"/>
+	/// If <paramref name="aggregateId"/> is not valid, then <see cref="Services.IAggregateIdFactory.CreateAsync{T}(CancellationToken)"/>
 	/// is called to generate a new id based on the <typeparamref name="T"/> provided.
 	/// </para>
 	/// </summary>
-	/// <param name="id">Optional, the Id of the <typeparamref name="T">aggregate.</typeparamref>.</param>
+	/// <param name="aggregateId">Optional, the Id of the <typeparamref name="T">aggregate.</typeparamref>.</param>
 	/// <param name="cancellationToken">The stopping token.</param>
 	/// <returns>A new <see cref="IAggregate"/> of <typeparamref name="T"/>.</returns>
-	Task<T> CreateAsync(string? id = null, CancellationToken cancellationToken = default);
+	Task<T> CreateAsync(string? aggregateId = null, CancellationToken cancellationToken = default);
 
 	/// <summary>
-	/// <para>Attempts to get the <see cref="IAggregate"/> of <typeparamref name="T"/> based on the <paramref name="id"/>.</para>
+	/// <para>Attempts to get the <see cref="IAggregate"/> of <typeparamref name="T"/> based on the <paramref name="aggregateId"/>.</para>
 	/// <para>
 	/// If the id is not valid (null, empty or whitespace for example), or the aggregate does not exist,
 	/// a call to <see cref="CreateAsync(string?, CancellationToken)"/> is
 	/// made to attempt to create a new aggregate with the either the specified id or a generated one.
 	/// </para>
 	/// </summary>
-	/// <param name="id">Optional, the id of the aggregate to get, or used as the id of the aggregate to create.</param>
+	/// <param name="aggregateId">Optional, the id of the aggregate to get, or used as the id of the aggregate to create.</param>
 	/// <param name="operationContext">The operational context, controlling things such as if and when exceptions are thrown.</param>
 	/// <param name="cancellationToken">The stopping token.</param>
 	/// <returns>A existing or new aggregate, or null.</returns>
 	/// <remarks>Null can be returned if the aggregate exists, but is in a deleted state. This is controlled by the <paramref name="operationContext"/>.</remarks>
-	Task<T?> GetOrCreateAsync(string? id, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default);
+	Task<T?> GetOrCreateAsync(string? aggregateId, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default);
 
 	/// <summary>
-	/// Gets a <see cref="IAggregate"/> of <typeparamref name="T"/> based on the given <paramref name="id"/>.
+	/// Gets a <see cref="IAggregate"/> of <typeparamref name="T"/> based on the given <paramref name="aggregateId"/>.
 	/// </summary>
-	/// <param name="id">The id of the <see cref="IAggregate"/>.</param>
+	/// <param name="aggregateId">The id of the <see cref="IAggregate"/>.</param>
 	/// <param name="operationContext">The <see cref="EventStoreOperationContext"/> that controls how the aggregate is retrieved.</param>
 	/// <param name="cancellationToken">The stopping token.</param>
-	/// <returns>The requested <see cref="IAggregate"/> of <typeparamref name="T"/> based on the <paramref name="id"/>, or null.</returns>
-	Task<T?> GetAsync(string id, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default);
+	/// <returns>The requested <see cref="IAggregate"/> of <typeparamref name="T"/> based on the <paramref name="aggregateId"/>, or null.</returns>
+	Task<T?> GetAsync(string aggregateId, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default);
 
 	/// <summary>
-	/// Gets a <see cref="IAggregate"/> of <typeparamref name="T"/> based on the given <paramref name="id"/>, up to a specific version.
+	/// Gets a <see cref="IAggregate"/> of <typeparamref name="T"/> based on the given <paramref name="aggregateId"/>, up to a specific version.
 	/// </summary>
-	/// <param name="id">The id of the <see cref="IAggregate"/>.</param>
+	/// <param name="aggregateId">The id of the <see cref="IAggregate"/>.</param>
 	/// <param name="version">The version of the aggregate to get.</param>
 	/// <param name="operationContext">The <see cref="EventStoreOperationContext"/> that controls how the aggregate is retrieved.</param>
 	/// <param name="cancellationToken">The stopping token.</param>
-	/// <returns>The requested <see cref="IAggregate"/> of <typeparamref name="T"/> based on the <paramref name="id"/>, or null.</returns>
+	/// <returns>The requested <see cref="IAggregate"/> of <typeparamref name="T"/> based on the <paramref name="aggregateId"/>, or null.</returns>
 	/// <remarks><para>The resulting aggregate, if any, will be in a locked state preventing any modifications.</para>
 	/// <para>This includes applying new events, or attempting to save, delete or restore the aggregate.</para>
 	/// </remarks>
-	Task<T?> GetAtAsync(string id, int version, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default);
+	Task<T?> GetAtAsync(string aggregateId, int version, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default);
 
 	/// <summary>
 	/// Saves the given <paramref name="aggregate"/>.
@@ -73,22 +73,22 @@ public interface IEventStore<T>
 	Task<SaveResult<T>> SaveAsync(T aggregate, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default);
 
 	/// <summary>
-	/// Determines if the <see cref="IAggregate"/> of type <typeparamref name="T"/> as specified by <paramref name="id"/> exists
+	/// Determines if the <see cref="IAggregate"/> of type <typeparamref name="T"/> as specified by <paramref name="aggregateId"/> exists
 	/// in the deleted state.
 	/// </summary>
-	/// <param name="id">The Id of the <see cref="IAggregate"/> to check.</param>
+	/// <param name="aggregateId">The Id of the <see cref="IAggregate"/> to check.</param>
 	/// <param name="cancellationToken">The stopping token.</param>
 	/// <returns>Returns true if the aggregate exists in the deleted state, otherwise, returns false.</returns>
-	Task<bool> IsDeletedAsync(string id, CancellationToken cancellationToken = default);
+	Task<bool> IsDeletedAsync(string aggregateId, CancellationToken cancellationToken = default);
 
 	/// <summary>
-	/// Gets an <see cref="IAggregate"/> of <typeparamref name="T"/> given the specified <paramref name="id"/>.
+	/// Gets an <see cref="IAggregate"/> of <typeparamref name="T"/> given the specified <paramref name="aggregateId"/>.
 	/// </summary>
-	/// <param name="id">The Id of the deleted aggregate to get.</param>
+	/// <param name="aggregateId">The Id of the deleted aggregate to get.</param>
 	/// <param name="cancellationToken">The stopping token.</param>
 	/// <returns>If the aggregate is not found, returns null. If the aggregate was found, but is not deleted am
 	/// exception is thrown. Otherwise, returns the aggregate.</returns>
-	Task<T?> GetDeletedAsync(string id, CancellationToken cancellationToken = default);
+	Task<T?> GetDeletedAsync(string aggregateId, CancellationToken cancellationToken = default);
 
 	/// <summary>
 	/// Deletes an <see cref="IAggregate"/> from the store.
@@ -122,11 +122,11 @@ public interface IEventStore<T>
 	/// <summary>
 	/// Determines if the aggregate specified exists. This includes checking deleted states.
 	/// </summary>
-	/// <param name="id">The id of the aggregate to check.</param>
+	/// <param name="aggregateId">The id of the aggregate to check.</param>
 	/// <param name="cancellationToken">The stopping token.</param>
 	/// <returns>A <see cref="ExistsState"/> that determines the existence (in either a deleted or non-deleted state),
 	/// or if it exists at all. If the aggregate does exist, it's version is also returned.</returns>
-	Task<ExistsState> ExistsAsync(string id, CancellationToken cancellationToken = default);
+	Task<ExistsState> ExistsAsync(string aggregateId, CancellationToken cancellationToken = default);
 
 	/// <summary>
 	/// Fulfils any requirements of the <paramref name="aggregate"/> implemented by all <see cref="IRequirement{T}"/>s.

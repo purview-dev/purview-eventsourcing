@@ -1,8 +1,0 @@
-﻿{
-  "profiles": {
-    "SG Debug": {
-      "commandName": "DebugRoslynComponent",
-      "targetProject": "../EventSourcingRoslynTestHarness/EventSourcingRoslynTestHarness.csproj"
-    }
-  }
-}

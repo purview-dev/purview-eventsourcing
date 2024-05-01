@@ -29,9 +29,9 @@ public static partial class TypeNameHelper
 	/// </summary>
 	/// <param name="objectType">The <see cref="Type"/> to use for it's <see cref="Reflection.MemberInfo.Name"/>.</param>
 	/// <param name="trimPart">The suffix to trim.</param>
-	/// <param name="fallThroughToFullTypeName">If the resulting value is invalid, then this
-	/// parameter controls if the <see cref="Type.FullName"/> is returned, or the
-	/// <see cref="Reflection.MemberInfo.Name"/> is returned. Defaults to false.</param>
+	/// <param name="fallThroughToFullTypeName">If the resulting value is invalid, and this parameter is true then this
+	/// the <see cref="Type.FullName"/> is returned, other the
+	/// <see cref="Type.Name"/> is returned. This is also true if the full name is not valid. Defaults to false.</param>
 	/// <returns>The converted string based on the <paramref name="objectType"/> and <paramref name="trimPart"/>.</returns>
 	public static string GetName(Type objectType, string trimPart, bool fallThroughToFullTypeName = false)
 	{
@@ -47,7 +47,7 @@ public static partial class TypeNameHelper
 		}
 
 		return fallThroughToFullTypeName
-			? objectType.FullName.OrDefault(() => objectType.Name)
+			? objectType.FullName ?? objectType.Name
 			: name;
 	}
 }
