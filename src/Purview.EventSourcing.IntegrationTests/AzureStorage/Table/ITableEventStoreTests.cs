@@ -1,5 +1,5 @@
 ﻿
-namespace Purview.EventSourcing.AzureStorage.Table;
+namespace Purview.EventSourcing.AzureStorage;
 
 public interface ITableEventStoreTests
 {

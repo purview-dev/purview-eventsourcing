@@ -1,8 +1,8 @@
 ﻿using Purview.EventSourcing.Aggregates.Persistence.Events;
-using Purview.EventSourcing.AzureStorage.Table.Exceptions;
-using Purview.EventSourcing.AzureStorage.Table.StorageClients.Table;
+using Purview.EventSourcing.AzureStorage.Exceptions;
+using Purview.EventSourcing.AzureStorage.StorageClients.Table;
 
-namespace Purview.EventSourcing.AzureStorage.Table;
+namespace Purview.EventSourcing.AzureStorage;
 
 partial class GenericTableEventStoreTests<TAggregate>
 {

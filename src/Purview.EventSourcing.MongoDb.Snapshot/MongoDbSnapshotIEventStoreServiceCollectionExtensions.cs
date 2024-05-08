@@ -29,7 +29,9 @@ public static class MongoDbSnapshotIEventStoreServiceCollectionExtensions
 				if (options.ConnectionString == null)
 				{
 					options.ConnectionString =
-						configuration.GetConnectionString("EventStore_MongoDb")
+						configuration.GetConnectionString("EventStore_MongoDbSnapshot")
+						?? configuration.GetConnectionString("MongoDbSnapshot")
+						?? configuration.GetConnectionString("EventStore_MongoDb")
 						?? configuration.GetConnectionString("MongoDb")
 						// This will get picked up by the validation.
 						?? default!;

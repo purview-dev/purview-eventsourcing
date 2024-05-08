@@ -1,6 +1,6 @@
 ﻿using Purview.EventSourcing.ChangeFeed;
 
-namespace Purview.EventSourcing.AzureStorage.Table;
+namespace Purview.EventSourcing.AzureStorage;
 
 partial class GenericTableEventStoreTests<TAggregate>
 {

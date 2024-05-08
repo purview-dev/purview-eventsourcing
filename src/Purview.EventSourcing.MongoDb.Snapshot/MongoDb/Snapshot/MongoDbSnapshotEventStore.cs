@@ -2,6 +2,7 @@
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using Purview.EventSourcing.Aggregates;
+using Purview.EventSourcing.MongoDb.StorageClients;
 
 namespace Purview.EventSourcing.MongoDb.Snapshot;
 

@@ -1,4 +1,4 @@
-﻿namespace Purview.EventSourcing.AzureStorage.Table;
+﻿namespace Purview.EventSourcing.AzureStorage;
 
 partial class TableEventStoreTests
 {

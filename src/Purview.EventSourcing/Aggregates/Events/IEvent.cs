@@ -1,6 +1,4 @@
-﻿using Purview.EventSourcing.Aggregates;
-
-namespace Purview.EventSourcing.Aggregates.Events;
+﻿namespace Purview.EventSourcing.Aggregates.Events;
 
 /// <summary>
 /// Represents details about an aggregate event, expressed through the

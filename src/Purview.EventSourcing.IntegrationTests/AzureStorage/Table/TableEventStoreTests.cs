@@ -1,4 +1,4 @@
-﻿namespace Purview.EventSourcing.AzureStorage.Table;
+﻿namespace Purview.EventSourcing.AzureStorage;
 
 [Collection("AzureStorage")]
 [NCrunch.Framework.Category("AzureStorage")]

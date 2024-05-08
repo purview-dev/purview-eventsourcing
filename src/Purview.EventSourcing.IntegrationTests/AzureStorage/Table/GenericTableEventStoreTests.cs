@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using Purview.EventSourcing.Aggregates;
 
-namespace Purview.EventSourcing.AzureStorage.Table;
+namespace Purview.EventSourcing.AzureStorage;
 
 public partial class GenericTableEventStoreTests<TAggregate>(TableEventStoreFixture fixture) : ITableEventStoreTests, IClassFixture<TableEventStoreFixture>
 	where TAggregate : class, IAggregateTest, new()

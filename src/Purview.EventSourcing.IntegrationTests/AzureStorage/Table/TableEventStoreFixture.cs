@@ -1,12 +1,12 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
 using NSubstitute.ReturnsExtensions;
 using Purview.EventSourcing.Aggregates;
-using Purview.EventSourcing.AzureStorage.Table.StorageClients.Blob;
-using Purview.EventSourcing.AzureStorage.Table.StorageClients.Table;
+using Purview.EventSourcing.AzureStorage.StorageClients.Blob;
+using Purview.EventSourcing.AzureStorage.StorageClients.Table;
 using Purview.EventSourcing.ChangeFeed;
 using Purview.EventSourcing.Services;
 
-namespace Purview.EventSourcing.AzureStorage.Table;
+namespace Purview.EventSourcing.AzureStorage;
 
 public sealed class TableEventStoreFixture : IAsyncLifetime
 {
@@ -51,7 +51,7 @@ public sealed class TableEventStoreFixture : IAsyncLifetime
 		_eventNameMapper = new AggregateEventNameMapper();
 
 		var aggregateRequirementsManager = Substitute.For<IAggregateRequirementsManager>();
-		Options.AzureStorageEventStoreOptions azureStorageOptions = new()
+		AzureStorageEventStoreOptions azureStorageOptions = new()
 		{
 			ConnectionString = _azuriteContainer.GetConnectionString(),
 			Table = _tableName,

@@ -1,9 +1,9 @@
 ﻿using System.Text;
 using Azure.Data.Tables;
 using Purview.EventSourcing.Aggregates;
-using Purview.EventSourcing.AzureStorage.Table.Entities;
+using Purview.EventSourcing.AzureStorage.Entities;
 
-namespace Purview.EventSourcing.AzureStorage.Table;
+namespace Purview.EventSourcing.AzureStorage;
 
 partial class GenericTableEventStoreTests<TAggregate>
 {

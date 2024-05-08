@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<ItemGroup>
-		<ProjectReference Include="..\Purview.EventSourcing.AzureStorage.Table\Purview.EventSourcing.AzureStorage.Table.csproj" />
+		<ProjectReference Include="..\Purview.EventSourcing.AzureStorage\Purview.EventSourcing.AzureStorage.csproj" />
 		<ProjectReference Include="..\Purview.EventSourcing.CosmosDb.Snapshot\Purview.EventSourcing.CosmosDb.Snapshot.csproj" />
 		<ProjectReference Include="..\Purview.EventSourcing.MongoDb.Snapshot\Purview.EventSourcing.MongoDb.Snapshot.csproj" />
 	</ItemGroup>

@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
 using Purview.EventSourcing.Aggregates.Persistence;
-using Purview.EventSourcing.AzureStorage.Table;
-using Purview.EventSourcing.AzureStorage.Table.StorageClients.Blob;
-using Purview.EventSourcing.AzureStorage.Table.StorageClients.Table;
+using Purview.EventSourcing.AzureStorage;
+using Purview.EventSourcing.AzureStorage.StorageClients.Blob;
+using Purview.EventSourcing.AzureStorage.StorageClients.Table;
 using Purview.EventSourcing.ChangeFeed;
-using Purview.EventSourcing.MongoDb;
 using Purview.EventSourcing.MongoDb.Snapshot;
+using Purview.EventSourcing.MongoDb.StorageClients;
 using Purview.EventSourcing.Services;
 
 namespace Purview.EventSourcing.SnapshotOnly.MongoDb;
@@ -71,7 +71,7 @@ sealed public class MongoDbSnapshotTestContext
 		_eventNameMapper = new AggregateEventNameMapper();
 		_telemetry = Substitute.For<ITableEventStoreTelemetry>();
 
-		AzureStorage.Table.Options.AzureStorageEventStoreOptions azureStorageOptions = new()
+		AzureStorageEventStoreOptions azureStorageOptions = new()
 		{
 			ConnectionString = _azuriteConnectionString,
 			Table = TestHelpers.GenAzureTableName(RunId),

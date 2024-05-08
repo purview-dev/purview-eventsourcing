@@ -1,8 +1,4 @@
-﻿using Purview.EventSourcing.Aggregates;
-using Purview.EventSourcing.Aggregates.Persistence;
-using Purview.EventSourcing.SnapshotOnly.CosmosDb;
-
-namespace Purview.EventSourcing.CosmosDb.Snapshot;
+﻿namespace Purview.EventSourcing.CosmosDb.Snapshot;
 
 partial class CosmosDbSnapshotEventStoreTests
 {

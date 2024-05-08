@@ -13,6 +13,7 @@
 
 	<ItemGroup>
 		<Compile Include="..\.shared-extensions\**\*" LinkBase="" />
+		<Compile Include="..\Purview.EventSourcing.MongoDb.Events\MongoDb\StorageClients\**\*" LinkBase="MongoDb\StorageClients\" />
 	</ItemGroup>
 
 	<ItemGroup>

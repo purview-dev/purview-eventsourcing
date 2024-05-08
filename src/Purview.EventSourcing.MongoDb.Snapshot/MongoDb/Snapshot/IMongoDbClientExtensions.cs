@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using Purview.EventSourcing.MongoDb.StorageClients;
 
 namespace Purview.EventSourcing.MongoDb.Snapshot;
 
