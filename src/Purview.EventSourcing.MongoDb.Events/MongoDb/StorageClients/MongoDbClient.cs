@@ -21,4 +21,12 @@ sealed partial class MongoDbClient
 		_database = _client.GetDatabase(databaseOverride ?? configuration.Database);
 		_collectionName = collectionOverride ?? configuration.Collection;
 	}
+
+	static FilterDefinition<T> BuildPredicate<T>(string id)
+	{
+		var predicate = new FilterDefinitionBuilder<T>()
+			.Eq("_id", id);
+
+		return predicate;
+	}
 }

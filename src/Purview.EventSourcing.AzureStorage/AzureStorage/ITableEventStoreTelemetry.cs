@@ -54,13 +54,13 @@ public interface ITableEventStoreTelemetry
 	[Log(LogLevel.Debug)]
 	void SaveCalled(string aggregateId, string aggregateTypeFullName, string aggregateType);
 
-	[Log(LogLevel.Debug)]
+	[Log(LogLevel.Error)]
 	void SaveFailedAtStorage(string aggregateId, string aggregateTypeFullName, int httpStatusCode, Exception exception);
 
 	[Log(LogLevel.Debug)]
 	void EventsAlreadyApplied(string aggregateId, string idempotencyId);
 
-	[Log(LogLevel.Debug)]
+	[Log(LogLevel.Error)]
 	void SaveFailed(string aggregateId, string aggregateTypeFullName, Exception exception);
 
 	[Log(LogLevel.Warning)]

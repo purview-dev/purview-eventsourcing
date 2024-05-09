@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using Purview.EventSourcing.Aggregates.Events;
+using Purview.EventSourcing.MongoDb.Entities;
 
 namespace Purview.EventSourcing.MongoDb;
 
@@ -26,7 +27,7 @@ partial class MongoDbEventStore<T>
 		var entities = GetEventRangeEntitiesAsync(aggregateId, versionFrom, versionTo, cancellationToken);
 		await foreach (var entity in entities)
 		{
-			var item = await DeserializeEventAsync(entity, aggregateVersion, cancellationToken);
+			var item = DeserializeEvent(entity, aggregateVersion);
 			if (item != null)
 				yield return (item, entity.EventType);
 
@@ -36,17 +37,19 @@ partial class MongoDbEventStore<T>
 
 	internal async IAsyncEnumerable<EventEntity> GetEventRangeEntitiesAsync(string aggregateId, int versionFrom, int? versionTo, [EnumeratorCancellation] CancellationToken cancellationToken)
 	{
-		// This query can't be done with LINQ, so don't try.
-		var filter = $"({nameof(ITableEntity.PartitionKey)} eq '{aggregateId}') and (({nameof(ITableEntity.RowKey)} ge '{CreateEventRowKey(versionFrom)}') and ({nameof(ITableEntity.RowKey)} le '{CreateEventRowKey(versionTo ?? int.MaxValue)}'))";
-		var query = _tableClient.QueryEnumerableAsync<EventEntity>(filter, cancellationToken: cancellationToken);
+		versionTo ??= int.MaxValue;
+
+		var query = _client.QueryEnumerableAsync<EventEntity>(m => m.AggregateId == aggregateId
+			&& m.EntityType == EntityTypes.EventType
+			&& m.Version >= versionFrom && m.Version <= versionTo,
+			cancellationToken: cancellationToken);
+
 		await foreach (var eventEntity in query)
 			yield return eventEntity!;
 	}
 
-	async Task<IEvent?> DeserializeEventAsync(EventEntity eventEntity, int aggregateVersion, CancellationToken cancellationToken)
+	IEvent? DeserializeEvent(EventEntity eventEntity, int aggregateVersion)
 	{
-		cancellationToken.ThrowIfCancellationRequested();
-
 		static UnknownEvent ReturnUnknownEvent(EventEntity eventEntity, int aggregateVersion)
 		{
 			return new UnknownEvent
@@ -72,49 +75,12 @@ partial class MongoDbEventStore<T>
 
 			var runtimeEventType = Type.GetType(eventType, throwOnError: false) ?? throw new ApplicationException($"Unable to load event type: {eventType}");
 			var @event = DeserializeEvent(eventEntity.Payload, runtimeEventType);
-			if (@event is Events.LargeEventPointerEvent blobPointer)
-			{
-				var blobName = GenerateEventBlobName(eventEntity.PartitionKey, eventEntity.RowKey);
-				var exists = await _blobClient.ExistsAsync(blobName, cancellationToken);
-				if (!exists)
-				{
-					_eventStoreTelemetry.SkippedMissingBlobEvent(eventEntity.PartitionKey, eventEntity.RowKey, blobPointer.SerializedEventType, blobName);
-					return null;
-				}
-
-				var blobEventTypeName = _eventNameMapper.GetTypeName<T>(blobPointer.SerializedEventType);
-				if (string.IsNullOrWhiteSpace(blobEventTypeName))
-				{
-					_eventStoreTelemetry.SkippedMissingBlobEventName(eventEntity.PartitionKey, eventEntity.RowKey, blobPointer.SerializedEventType, blobName);
-					return ReturnUnknownEvent(eventEntity, aggregateVersion);
-					//throw new ArgumentNullException($"Unable to locate blob event type name {blobPointer.SerializedEventType}");
-				}
-
-				var blobEvent = Type.GetType(blobEventTypeName, throwOnError: false);
-				if (blobEvent == null)
-				{
-					_eventStoreTelemetry.MissingBlobEventType(_aggregateTypeFullName, eventEntity.EventType, blobPointer.SerializedEventType, blobEventTypeName);
-					return ReturnUnknownEvent(eventEntity, aggregateVersion);
-				}
-				//throw new ArgumentNullException($"Unable to locate blob event type {blobEventTypeName}");
-
-				var eventStream = await _blobClient.GetStreamAsync(blobName, cancellationToken);
-				if (eventStream == null)
-				{
-					return ReturnUnknownEvent(eventEntity, aggregateVersion);
-				}
-
-				using StreamReader reader = new(eventStream);
-				var eventContent = await reader.ReadToEndAsync(cancellationToken);
-
-				return DeserializeEvent(eventContent, blobEvent);
-			}
 
 			return @event;
 		}
 		catch (Exception ex)
 		{
-			_eventStoreTelemetry.EventDeserializationFailed(eventEntity.PartitionKey, _aggregateTypeFullName, ex);
+			_eventStoreTelemetry.EventDeserializationFailed(eventEntity.AggregateId, _aggregateTypeFullName, ex);
 
 			return ReturnUnknownEvent(eventEntity, aggregateVersion);
 		}

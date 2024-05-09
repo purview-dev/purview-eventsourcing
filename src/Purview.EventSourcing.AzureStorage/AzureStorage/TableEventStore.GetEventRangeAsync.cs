@@ -51,7 +51,7 @@ partial class TableEventStore<T>
 
 		static UnknownEvent ReturnUnknownEvent(EventEntity eventEntity, int aggregateVersion)
 		{
-			return new UnknownEvent
+			return new()
 			{
 				Details = {
 					When = eventEntity.Timestamp!.Value,
@@ -102,12 +102,11 @@ partial class TableEventStore<T>
 
 				var eventStream = await _blobClient.GetStreamAsync(blobName, cancellationToken);
 				if (eventStream == null)
-				{
 					return ReturnUnknownEvent(eventEntity, aggregateVersion);
-				}
 
-				using StreamReader reader = new(eventStream);
-				var eventContent = await reader.ReadToEndAsync(cancellationToken);
+				string? eventContent;
+				using (StreamReader reader = new(eventStream))
+					eventContent = await reader.ReadToEndAsync(cancellationToken);
 
 				return DeserializeEvent(eventContent, blobEvent);
 			}

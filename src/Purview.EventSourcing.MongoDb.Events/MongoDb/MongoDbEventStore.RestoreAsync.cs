@@ -14,7 +14,7 @@ partial class MongoDbEventStore<T>
 
 		operationContext ??= EventStoreOperationContext.DefaultContext;
 
-		var restoreAggregateEvent = new RestoreEvent
+		RestoreEvent restoreAggregateEvent = new()
 		{
 			Details =
 			{

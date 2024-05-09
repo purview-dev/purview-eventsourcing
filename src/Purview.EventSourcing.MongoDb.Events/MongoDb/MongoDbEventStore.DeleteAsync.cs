@@ -1,4 +1,5 @@
 ﻿using Purview.EventSourcing.Aggregates.Events;
+using Purview.EventSourcing.MongoDb.Entities;
 
 namespace Purview.EventSourcing.MongoDb;
 
@@ -18,7 +19,7 @@ partial class MongoDbEventStore<T>
 			return false;
 
 		if (operationContext.PermanentlyDelete)
-			return await PermanentlyDeleteAsync(aggregate, cancellationToken);
+			return await PermanentlyDeleteAsync(aggregate, operationContext, cancellationToken);
 
 		DeleteEvent deleteAggregateEvent = new()
 		{
@@ -34,7 +35,7 @@ partial class MongoDbEventStore<T>
 		return result.Saved;
 	}
 
-	async Task<bool> PermanentlyDeleteAsync(T aggregate, CancellationToken cancellationToken = default)
+	async Task<bool> PermanentlyDeleteAsync(T aggregate, EventStoreOperationContext operationContext, CancellationToken cancellationToken = default)
 	{
 		if (aggregate == null)
 			throw NullAggregate(aggregate);
@@ -46,35 +47,21 @@ partial class MongoDbEventStore<T>
 
 		_eventStoreTelemetry.PermanentDeleteRequested(aggregateId);
 
-		const int entitiesInEachBatch = 20;
 		try
 		{
-			List<TableEntity> entitiesToDelete = [];
-			var results = _tableClient.QueryEnumerableAsync<TableEntity>(m => m.PartitionKey == aggregate.Details.Id, fields: [nameof(TableEntity.PartitionKey), nameof(TableEntity.RowKey)], cancellationToken: cancellationToken);
-			await foreach (var entity in results)
-				entitiesToDelete.Add(entity);
+			var ids = Enumerable.Range(0, streamVersion.Version).Select(id => CreateEventId(aggregateId, id));
 
-			var batches = entitiesToDelete.Chunk(entitiesInEachBatch).Select(m =>
+			List<string> entitiesToDelete = [.. ids];
+			entitiesToDelete.Add(streamVersion.Id);
+
+			if (operationContext.UseIdempotencyMarker)
 			{
-				BatchOperation batch = new();
-				foreach (var entity in m)
-					batch.Delete(entity);
+				var results = _client.QueryEnumerableAsync<IdempotencyMarkerEntity>(m => m.AggregateId == aggregateId, cancellationToken: cancellationToken);
+				await foreach (var entity in results)
+					entitiesToDelete.Add(entity.Id);
+			}
 
-				return batch;
-			});
-
-			foreach (var batch in batches)
-				await _tableClient.SubmitBatchAsync(batch, cancellationToken);
-
-			var prefix = GenerateSnapshotBlobPath(aggregateId);
-
-			var blobs = await _blobClient.GetBlobsAsync(prefix, cancellationToken);
-			List<BlobItem> blobsToDelete = [];
-			await foreach (var blob in blobs)
-				blobsToDelete.Add(blob);
-
-			foreach (var blob in blobsToDelete)
-				await _blobClient.DeleteBlobIfExistsAsync(blob.Name, cancellationToken);
+			await _client.SubmitDeleteBatchAsync(entitiesToDelete, cancellationToken);
 
 			_eventStoreTelemetry.PermanentDeleteComplete(aggregateId);
 
@@ -94,23 +81,4 @@ partial class MongoDbEventStore<T>
 			ClearCacheFireAndForget(aggregate);
 		}
 	}
-
-	//		async Task<TableEntity?> GetIdempotencyMarkerAsync(string aggregateId, string idempotencyId, CancellationToken cancellationToken = default)
-	//		{
-	//			try
-	//			{
-	//				var tableClient = _tableClient.Value;
-	//				var result = await tableClient.GetAsync<TableEntity>(aggregateId, CreateIdempotencyCheckRowKey(idempotencyId), cancellationToken);
-
-	//				return result;
-	//			}
-	//#pragma warning disable CA1031 // Do not catch general exception types
-	//			catch (Exception ex)
-	//			{
-	//				_eventStoreLog.GetIdempotencyMarkerFailed(aggregateId, idempotencyId, ex);
-	//			}
-	//#pragma warning restore CA1031 // Do not catch general exception types
-
-	//			return null;
-	//		}
 }

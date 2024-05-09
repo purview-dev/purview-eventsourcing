@@ -1,18 +1,76 @@
 ﻿using System.Linq.Expressions;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
+using Purview.EventSourcing.MongoDb.Entities;
 
 namespace Purview.EventSourcing.MongoDb.StorageClients;
 
 partial class MongoDbClient
 {
-	static FilterDefinition<T> BuildPredicate<T>(string id)
-		where T : class
+	public async Task SubmitBatchAsync(BatchOperation operation, CancellationToken cancellationToken = default)
 	{
-		var predicate = new FilterDefinitionBuilder<T>()
-			.Eq("_id", id);
+		var collection = GetCollection<IEntity>().WithWriteConcern(WriteConcern.WMajority);
+		using var session = await _client.StartSessionAsync(cancellationToken: cancellationToken);
 
-		return predicate;
+		TransactionOptions transactionOptions = new(writeConcern: WriteConcern.WMajority);
+		await session.WithTransactionAsync(async (s, ct) =>
+		{
+			try
+			{
+				foreach (var op in operation.GetActions())
+				{
+					switch (op.ActionType)
+					{
+						case TransactionActionType.Add:
+							await collection.InsertOneAsync(session, op.Document, cancellationToken: cancellationToken);
+							break;
+						case TransactionActionType.Update:
+							await collection.ReplaceOneAsync(session, BuildPredicate<IEntity>(op.Document.Id), op.Document, new ReplaceOptions() { IsUpsert = false }, cancellationToken: cancellationToken);
+							break;
+						case TransactionActionType.Delete:
+							await collection.DeleteOneAsync(session, BuildPredicate<IEntity>(op.Document.Id), cancellationToken: cancellationToken);
+							break;
+					}
+				}
+			}
+			catch (MongoWriteException)
+			{
+				// Do something in response to the exception
+				throw; // NOTE: You must rethrow the exception otherwise an infinite loop can occur.
+			}
+
+			return true;
+		},
+		   transactionOptions,
+			cancellationToken
+		);
+	}
+
+	public async Task SubmitDeleteBatchAsync(IEnumerable<string> entityIds, CancellationToken cancellationToken = default)
+	{
+		var collection = GetCollection<BsonDocument>().WithWriteConcern(WriteConcern.WMajority);
+		using var session = await _client.StartSessionAsync(cancellationToken: cancellationToken);
+
+		TransactionOptions transactionOptions = new(writeConcern: WriteConcern.WMajority);
+		await session.WithTransactionAsync(async (s, ct) =>
+		{
+			try
+			{
+				foreach (var id in entityIds)
+					await collection.DeleteOneAsync(session, BuildPredicate<BsonDocument>(id), cancellationToken: cancellationToken);
+			}
+			catch (MongoWriteException)
+			{
+				// Do something in response to the exception
+				throw; // NOTE: You must rethrow the exception otherwise an infinite loop can occur.
+			}
+
+			return true;
+		},
+		   transactionOptions,
+			cancellationToken
+		);
 	}
 
 	public async Task<T?> GetAsync<T>(FilterDefinition<T> predicate, CancellationToken cancellationToken = default)

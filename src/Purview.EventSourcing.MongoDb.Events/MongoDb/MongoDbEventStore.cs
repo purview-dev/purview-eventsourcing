@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using LinqKit;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Purview.EventSourcing.Aggregates;
+using Purview.EventSourcing.MongoDb.Entities;
 using Purview.EventSourcing.Services;
 
 namespace Purview.EventSourcing.MongoDb;
@@ -10,10 +12,7 @@ namespace Purview.EventSourcing.MongoDb;
 public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 	where T : class, IAggregate, new()
 {
-	const int _serializationBufferSize = 4096;
-	const int _maxEventSize = 32000;
-
-	readonly Purview.EventSourcing.MongoDb.StorageClients.MongoDbClient _client;
+	readonly StorageClients.MongoDbClient _client;
 
 	readonly IAggregateEventNameMapper _eventNameMapper;
 	readonly IOptions<MongoDbEventStoreOptions> _eventStoreOptions;
@@ -29,7 +28,7 @@ public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 
 	public MongoDbEventStore(
 		IAggregateEventNameMapper eventNameMapper,
-		[NotNull] IOptions<MongoDbEventStoreOptions> mongoDBOptions,
+		[NotNull] IOptions<MongoDbEventStoreOptions> mongoDbOptions,
 		IDistributedCache distributedCache,
 		IMongoDbEventStoreTelemetry eventStoreTelemetry,
 		ChangeFeed.IAggregateChangeFeedNotifier<T> aggregateChangeNotifier,
@@ -38,23 +37,13 @@ public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 		IAggregateIdFactory? aggregateIdFactory = null)
 	{
 		_eventNameMapper = eventNameMapper;
-		_eventStoreOptions = mongoDBOptions;
+		_eventStoreOptions = mongoDbOptions;
 		_validator = validator;
 		_aggregateIdFactory = aggregateIdFactory;
 		_distributedCache = distributedCache;
 		_eventStoreTelemetry = eventStoreTelemetry;
 		_aggregateChangeNotifier = aggregateChangeNotifier;
 		_aggregateRequirementsManager = aggregateRequirementsManager;
-
-		var name = typeof(T).Name;
-
-		_client = new(new StorageClients.MongoDbConfiguration
-		{
-			ApplicationName = mongoDBOptions.Value.ApplicationName,
-			Database = mongoDBOptions.Value.Database,
-			Collection = mongoDBOptions.Value.Collection ?? "es-" + name,
-			ConnectionString = mongoDBOptions.Value.ConnectionString
-		});
 
 
 		_aggregateTypeShortName = typeof(T).Name;
@@ -64,6 +53,14 @@ public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 		if (!aggregateName.Contains('.', StringComparison.InvariantCulture))
 			// Could do with validating that this is a valid blob container name.
 			_aggregateTypeShortName = aggregateName;
+
+		_client = new(new StorageClients.MongoDbConfiguration
+		{
+			ApplicationName = mongoDbOptions.Value.ApplicationName,
+			Database = mongoDbOptions.Value.Database,
+			Collection = mongoDbOptions.Value.Collection ?? $"es-{_aggregateTypeShortName}-events",
+			ConnectionString = mongoDbOptions.Value.ConnectionString
+		});
 	}
 
 	public T FulfilRequirements(T aggregate)
@@ -105,21 +102,21 @@ public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 
 	public async IAsyncEnumerable<string> GetAggregateIdsAsync(bool includeDeleted, [EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{
-		List<string> tableColumns = [nameof(ITableEntity.PartitionKey)];
+		var whereClause = PredicateBuilder.New<StreamVersionEntity>(m => m.AggregateType == _aggregateTypeShortName && m.EntityType == EntityTypes.StreamVersionType);
 		if (!includeDeleted)
-			tableColumns.Add(nameof(StreamVersionEntity.IsDeleted));
+			whereClause = PredicateBuilder.And<StreamVersionEntity>(whereClause, m => !m.IsDeleted);
 
-		var query = _tableClient.QueryEnumerableAsync<StreamVersionEntity>(m => m.RowKey == TableEventStoreConstants.StreamVersionRowKey, fields: tableColumns, cancellationToken: cancellationToken);
+		var query = _client.QueryEnumerableAsync<StreamVersionEntity>(whereClause, cancellationToken: cancellationToken);
 		await foreach (var entity in query)
 		{
 			if (includeDeleted || !entity.IsDeleted)
-				yield return entity.PartitionKey;
+				yield return entity.Id;
 		}
 	}
 
 	async Task<StreamVersionEntity?> GetStreamVersionAsync(string aggregateId, bool expectedToExist, CancellationToken cancellationToken)
 	{
-		_eventStoreTelemetry.GetStreamVersionStart(aggregateId, TableEventStoreConstants.StreamVersionRowKey);
+		_eventStoreTelemetry.GetStreamVersionStart(aggregateId);
 
 		var elapsedMilliseconds = 0L;
 		StreamVersionEntity? result = null;
@@ -127,7 +124,7 @@ public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 		{
 			var sw = System.Diagnostics.Stopwatch.StartNew();
 
-			result = await _tableClient.GetAsync<StreamVersionEntity>(aggregateId, TableEventStoreConstants.StreamVersionRowKey, cancellationToken);
+			result = await _client.GetAsync<StreamVersionEntity>(CreateStreamVersionId(aggregateId), cancellationToken);
 			sw.Stop();
 
 			elapsedMilliseconds = sw.ElapsedMilliseconds;
@@ -144,10 +141,10 @@ public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 		}
 		catch (Exception ex)
 		{
-			_eventStoreTelemetry.GetStreamVersionFailed(aggregateId, TableEventStoreConstants.StreamVersionRowKey, ex);
+			_eventStoreTelemetry.GetStreamVersionFailed(aggregateId, ex);
 		}
 
-		_eventStoreTelemetry.GetStreamVersionComplete(aggregateId, TableEventStoreConstants.StreamVersionRowKey, elapsedMilliseconds);
+		_eventStoreTelemetry.GetStreamVersionComplete(aggregateId, elapsedMilliseconds);
 
 		return result;
 	}
@@ -167,21 +164,14 @@ public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 
 		return true;
 	}
+	string CreateStreamVersionId(string aggregateId)
+		=> $"s_{_aggregateTypeShortName}_{aggregateId}";
 
-	string CreateEventRowKey(int version)
-		=> $"{_eventStoreOptions.Value.EventPrefix}_{$"{version}".PadLeft(_eventStoreOptions.Value.EventSuffixLength, '0')}";
+	string CreateEventId(string aggregateId, int version)
+		=> $"e_{_aggregateTypeShortName}_{aggregateId}_{$"{version}".PadLeft(_eventStoreOptions.Value.EventSuffixLength, '0')}";
 
-	static string CreateIdempotencyCheckRowKey(string idempotencyId)
-		=> $"{TableEventStoreConstants.IdempotencyCheckRowKeyPrefix}{idempotencyId}";
-
-	string GenerateEventBlobName(string aggregateId, string eventId)
-		=> $"{_aggregateTypeShortName}/{aggregateId}/{eventId}.json".ToLowerSafe();
-
-	public string GenerateSnapshotBlobName(string aggregateId)
-		=> $"{GenerateSnapshotBlobPath(aggregateId)}/{TableEventStoreConstants.SnapshotFilename}".ToLowerSafe();
-
-	public string GenerateSnapshotBlobPath(string aggregateId)
-		=> $"{_aggregateTypeShortName}/{aggregateId}".ToLowerSafe();
+	string CreateIdempotencyCheckId(string aggregateId, string idempotencyId)
+		=> $"i_{_aggregateTypeShortName}_{aggregateId}_{idempotencyId}";
 
 	public string CreateCacheKey(string aggregateId)
 		=> $"{_aggregateTypeShortName}:{aggregateId}".ToLowerSafe();

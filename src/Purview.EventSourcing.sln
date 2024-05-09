@@ -14,7 +14,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purview.EventSourcing.Mongo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purview.EventSourcing.IntegrationTests", "Purview.EventSourcing.IntegrationTests\Purview.EventSourcing.IntegrationTests.csproj", "{1AFF2304-4683-42C4-B3B1-D6644FC5B9A3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purview.EventSourcing.MongoDb.Events", "Purview.EventSourcing.MongoDb.Events\Purview.EventSourcing.MongoDb.Events.csproj", "{4A8173C3-11B2-49DD-96FD-4CAAC35172FD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Purview.EventSourcing.MongoDb.Events", "Purview.EventSourcing.MongoDb.Events\Purview.EventSourcing.MongoDb.Events.csproj", "{7884C0D3-378B-4C10-BBA2-82F1C406CDFC}"
 EndProject
 Global
 	GlobalSection(ExtensibilityGlobals) = postSolution
@@ -29,10 +29,6 @@ Global
 		{1AFF2304-4683-42C4-B3B1-D6644FC5B9A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1AFF2304-4683-42C4-B3B1-D6644FC5B9A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1AFF2304-4683-42C4-B3B1-D6644FC5B9A3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4A8173C3-11B2-49DD-96FD-4CAAC35172FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4A8173C3-11B2-49DD-96FD-4CAAC35172FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4A8173C3-11B2-49DD-96FD-4CAAC35172FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4A8173C3-11B2-49DD-96FD-4CAAC35172FD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4BC85B4D-2731-48EA-A37C-5C869784A33F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4BC85B4D-2731-48EA-A37C-5C869784A33F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4BC85B4D-2731-48EA-A37C-5C869784A33F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -41,6 +37,10 @@ Global
 		{64F1C0CC-E7D1-4EAD-8752-8743E47C32DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{64F1C0CC-E7D1-4EAD-8752-8743E47C32DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{64F1C0CC-E7D1-4EAD-8752-8743E47C32DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7884C0D3-378B-4C10-BBA2-82F1C406CDFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7884C0D3-378B-4C10-BBA2-82F1C406CDFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7884C0D3-378B-4C10-BBA2-82F1C406CDFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7884C0D3-378B-4C10-BBA2-82F1C406CDFC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8962E348-5255-4A4E-A662-1C150231EFB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8962E348-5255-4A4E-A662-1C150231EFB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8962E348-5255-4A4E-A662-1C150231EFB7}.Release|Any CPU.ActiveCfg = Release|Any CPU

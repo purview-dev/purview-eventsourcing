@@ -1,12 +1,13 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Net;
+using System.Globalization;
 using System.Security.Claims;
-using System.Text;
 using FluentValidation.Results;
-using Newtonsoft.Json;
+using MongoDB.Driver;
 using Purview.EventSourcing.Aggregates;
 using Purview.EventSourcing.Aggregates.Events;
+using Purview.EventSourcing.MongoDb.Entities;
+using Purview.EventSourcing.MongoDb.StorageClients;
 using Purview.EventSourcing.Services;
 
 namespace Purview.EventSourcing.MongoDb;
@@ -23,7 +24,7 @@ partial class MongoDbEventStore<T>
 
 		FulfilRequirements(aggregate);
 
-		var idempotencyId = Activity.Current?.Id ?? $"{Guid.NewGuid()}";
+		var idempotencyId = operationContext.CorrelationId ?? Activity.Current?.Id ?? $"{Guid.NewGuid()}";
 		var validationResult = await GuardAsync(aggregate, cancellationToken);
 
 		static SaveResult<T> ReturnSaveResult(T a, bool success, bool skipped, ValidationResult? validationResult = null) => new(a, validationResult ?? new ValidationResult(), success, skipped);
@@ -56,9 +57,9 @@ partial class MongoDbEventStore<T>
 		if (changeEvents.Length > _eventStoreOptions.Value.MaxEventCountOnSave)
 			throw new ArgumentOutOfRangeException($"The maximum amount of events to save was exceeded. Attempted: {changeEvents.Length}, Maximum: {_eventStoreOptions.Value.MaxEventCountOnSave}");
 
-		if (operationContext.ValidateIdempotencyMarker)
+		if (operationContext.UseIdempotencyMarker)
 		{
-			var exists = await _tableClient.EntityExistsAsync(idempotencyMarkerOperation.PartitionKey, idempotencyMarkerOperation.RowKey, cancellationToken);
+			var exists = (await _client.GetAsync<IdempotencyMarkerEntity>(idempotencyMarkerOperation.Id, cancellationToken)) != null;
 			if (exists)
 			{
 				_eventStoreTelemetry.EventsAlreadyApplied(aggregate.Id(), idempotencyId);
@@ -83,22 +84,20 @@ partial class MongoDbEventStore<T>
 		try
 		{
 			var previousAggregateVersion = aggregate.Details.SavedVersion;
-			var shouldSnapshot = ShouldSnapShot(aggregate, changeEvents);
 			BatchOperation batchOperation = new();
 			streamEntity = new()
 			{
-				PartitionKey = aggregate.Id(),
-				RowKey = TableEventStoreConstants.StreamVersionRowKey,
-				ETag = streamEntity?.ETag ?? ETag.All,
+				Id = CreateStreamVersionId(aggregate.Id()),
 				IsDeleted = aggregate.Details.IsDeleted,
 				AggregateType = aggregate.AggregateType,
-				Version = aggregate.Details.CurrentVersion
+				Version = aggregate.Details.CurrentVersion,
+				Timestamp = DateTimeOffset.UtcNow
 			};
 
 			if (isNew || !hasStreamEntity)
 				batchOperation.Add(streamEntity);
 			else
-				batchOperation.Update(streamEntity, merge: false);
+				batchOperation.Update(streamEntity);
 
 			var userId = ClaimsPrincipal.Current?.FindFirst(operationContext.ClaimIdentifier)?.Value;
 			if (operationContext.RequiresValidPrincipalIdentifier && string.IsNullOrWhiteSpace(userId))
@@ -114,39 +113,14 @@ partial class MongoDbEventStore<T>
 				changeEvent.Details.UserId = userId;
 
 				var serializedEvent = SerializeEvent(changeEvent);
-				var eventEntity = CreateSerializedEvent(aggregate.Id(), changeEvent, serializedEvent, idempotencyMarkerOperation.RowKey);
-				if (Encoding.UTF8.GetByteCount(serializedEvent) >= _maxEventSize)
-				{
-					LargeEventPointerEvent largeEventPointer = new()
-					{
-						SerializedEventType = _eventNameMapper.GetName<T>(changeEvent)
-					};
-					var serializedEventPointer = CreateSerializedEvent(aggregate.Id(), changeEvent, SerializeEvent(largeEventPointer), idempotencyMarkerOperation.RowKey);
+				var eventEntity = CreateSerializedEvent(aggregate.Id(), changeEvent, serializedEvent, idempotencyMarkerOperation.Id);
 
-					serializedEventPointer.EventType = _eventNameMapper.GetName<T>(largeEventPointer);
-
-					batchOperation.Add(serializedEventPointer);
-					largeChangeEvents.Add(eventEntity.RowKey, changeEvent);
-				}
-				else
-					batchOperation.Add(eventEntity);
+				batchOperation.Add(eventEntity);
 			}
 
-			batchOperation.Add(idempotencyMarkerOperation, recordAt: 0);
+			batchOperation.Add(idempotencyMarkerOperation);
 
 			await SubmitBatchOperationsAsync(aggregate, idempotencyId, batchOperation, cancellationToken);
-
-			if (largeChangeEvents.Count > 0)
-			{
-				// Always snapshot when there's a large event.
-				shouldSnapshot = true;
-
-				await WriteLargeEventEntitiesAsync(aggregate, [.. largeChangeEvents], idempotencyId, idempotencyMarkerOperation.RowKey, cancellationToken);
-			}
-
-			// We create a snapshot if it's been deleted or restored, could make searching easier later on.
-			if (shouldSnapshot)
-				await CreateSnapshotAsync(aggregate, cancellationToken);
 
 			if (changeEvents.OfType<DeleteEvent>().Any())
 				_eventStoreTelemetry.AggregateDeleted(aggregate.Id(), _aggregateTypeFullName, aggregate.AggregateType);
@@ -180,19 +154,6 @@ partial class MongoDbEventStore<T>
 		return ReturnSaveResult(aggregate, true, false);
 	}
 
-	//static T CloneForNotification(T aggregate)
-	//{
-	//	T clonedAggregate;
-	//	if (aggregate is ICloneable cloneable)
-	//		clonedAggregate = (T)cloneable.Clone();
-	//	else
-	//		clonedAggregate = DeserializeSnapshot(SerializeSnapshot(aggregate));
-
-	//	clonedAggregate.Details.Locked = true;
-
-	//	return clonedAggregate;
-	//}
-
 	async Task<ValidationResult> GuardAsync(T aggregate, CancellationToken cancellationToken = default)
 	{
 		ArgumentNullException.ThrowIfNull(aggregate, nameof(aggregate));
@@ -204,111 +165,39 @@ partial class MongoDbEventStore<T>
 		return validationResult;
 	}
 
-	bool ShouldSnapShot(T aggregate, IEvent[] events)
+	IdempotencyMarkerEntity CreateIdempotencyMarkerOperation(T aggregate, string idempotencyId, IEvent[] changeEvents)
 	{
-		if (aggregate.Details.IsDeleted || events.OfType<RestoreEvent>().Any())
-			return true;
-
-		return (aggregate.Details.CurrentVersion - aggregate.Details.SnapshotVersion) >= _eventStoreOptions.Value.SnapshotInterval;
-	}
-
-	async Task WriteLargeEventEntitiesAsync(T aggregate, KeyValuePair<string, IEvent>[] largeChangeEvents, string idempotencyId, string compoundIdempotencyId, CancellationToken cancellationToken)
-	{
-		var aggregateId = aggregate.Id();
-		for (var i = 0; i < largeChangeEvents.Length; i++)
+		IdempotencyMarkerEntity marker = new()
 		{
-			var largeEvent = largeChangeEvents[i];
-			var blobName = GenerateEventBlobName(aggregateId, largeEvent.Key);
-			var largeEventContent = SerializeEvent(largeEvent.Value);
-			using MemoryStream stream = new();
-			using (StreamWriter writer = new(stream, Encoding.UTF8, _serializationBufferSize, true))
-				await writer.WriteAsync(largeEventContent);
-
-			stream.Position = 0;
-
-			await _blobClient.UploadAsync(blobName, stream, metadata: new Dictionary<string, string> {
-				{ "AggregateId", aggregateId },
-				{ "EventType", _eventNameMapper.GetName<T>(largeEvent.Value) },
-				{ "IdempotencyId", idempotencyId },
-				{ "CompoundIdempotencyId", compoundIdempotencyId },
-			}, overwrite: true, cancellationToken: cancellationToken);
-
-			_eventStoreTelemetry.WritingLargeEvent(aggregateId, blobName, stream.Length, largeEvent.Value.GetType().FullName ?? largeEvent.Value.GetType().Name);
-		}
-	}
-
-	static IdempotencyMarkerEntity CreateIdempotencyMarkerOperation(T aggregate, string idempotencyId, IEvent[] changeEvents)
-	{
-		var compoundIdempotencyId = GenerateIdempotencyId(idempotencyId, changeEvents);
-		var rowKey = CreateIdempotencyCheckRowKey(compoundIdempotencyId);
-		IdempotencyMarkerEntity marker = new(aggregate.Id(), rowKey);
-		IdempotencyMarkerEventPayload eventObject = new()
-		{
-			EventIds = [.. changeEvents.Select(m => m.Details.AggregateVersion).OrderBy(m => m)]
+			Id = CreateIdempotencyCheckId(aggregate.Id(), idempotencyId),
+			AggregateId = aggregate.Id(),
+			EventVersions = [.. changeEvents.Select(m => m.Details.AggregateVersion).OrderBy(m => m)],
+			Timestamp = DateTimeOffset.UtcNow
 		};
 
-		marker.Events = JsonConvert.SerializeObject(eventObject, Formatting.None);
-
 		return marker;
-	}
-
-	static string GenerateIdempotencyId(string idempotencyId, IEvent[] changeEvents)
-	{
-		HashCode hash = new();
-		for (var i = 0; i < changeEvents.Length; i++)
-		{
-			var @event = changeEvents[i];
-			hash.Add(@event);
-		}
-
-		return $"{idempotencyId}_{hash.ToHashCode()}";
 	}
 
 	async Task SubmitBatchOperationsAsync(T aggregate, string idempotencyId, BatchOperation batchOperation, CancellationToken cancellationToken)
 	{
 		try
 		{
-			// idx 0: IdempotencyMarker - Add
-			// idx 1: StreamEntity - Add or Update (merge: false)
-			// idx x: Events - Add
-
-			var batchResults = await _tableClient.SubmitBatchAsync(batchOperation, cancellationToken);
-
-			aggregate.Details.Etag = batchResults.Responses[1].Headers.ETag?.ToString();
+			await _client.SubmitBatchAsync(batchOperation, cancellationToken);
 
 			var currentVersion = aggregate.Details.CurrentVersion;
 
 			aggregate.ClearUnsavedEvents();
 
 			aggregate.Details.CurrentVersion = aggregate.Details.SavedVersion = currentVersion;
+			aggregate.Details.Etag = currentVersion.ToString(CultureInfo.InvariantCulture);
 		}
-		catch (RequestFailedException ex)
+		catch (MongoWriteException ex)
 		{
-			_eventStoreTelemetry.SaveFailedAtStorage(aggregate.Id(), _aggregateTypeFullName, ex.Status, ex);
-
-			var statusCode = (HttpStatusCode)ex.Status;
+			_eventStoreTelemetry.SaveFailedAtStorage(aggregate.Id(), _aggregateTypeFullName, ex);
 
 			ClearCacheFireAndForget(aggregate);
 
-			if (statusCode == HttpStatusCode.PreconditionFailed)
-				throw new Exceptions.ConcurrencyException(aggregate.Id(), idempotencyId, aggregate.Details.CurrentVersion, aggregate.Details.SavedVersion);
-
-			if (statusCode == HttpStatusCode.Conflict)
-			{
-				var errorEntity = batchOperation.FailedEntity;
-				if (errorEntity != null)
-				{
-					if (errorEntity.RowKey.StartsWith(TableEventStoreConstants.IdempotencyCheckRowKeyPrefix, StringComparison.Ordinal))
-						// Idempotency marker already exists, that means transaction with this idempotencyId already succeeded, so we don't care anymore
-						return;
-
-					if (errorEntity.RowKey.Equals(TableEventStoreConstants.StreamVersionRowKey, StringComparison.Ordinal))
-						// Stream version Etag check or initial insert has failed, so somebody modified aggregate before us and whole transaction has to be retried.
-						throw new Exceptions.ConcurrencyException(aggregate.Id(), idempotencyId, aggregate.Details.CurrentVersion, aggregate.Details.SavedVersion);
-				}
-			}
-
-			throw new Exceptions.CommitException(ex.Status, aggregate.Id(), idempotencyId, aggregate.Details.CurrentVersion, aggregate.Details.SavedVersion, ex.Message);
+			throw new Exceptions.CommitException(aggregate.Id(), idempotencyId, aggregate.Details.CurrentVersion, aggregate.Details.SavedVersion, ex);
 		}
 		catch (Exception ex)
 		{
@@ -320,31 +209,16 @@ partial class MongoDbEventStore<T>
 		}
 	}
 
-	async Task CreateSnapshotAsync(T aggregate, CancellationToken cancellationToken)
-	{
-		// Set the snapshot version to the current version...
-		aggregate.Details.SnapshotVersion = aggregate.Details.CurrentVersion;
-
-		var snapshot = SerializeSnapshot(aggregate);
-		var snapshotName = GenerateSnapshotBlobName(aggregate.Id());
-
-		using MemoryStream content = new();
-		using (StreamWriter writer = new(content, Encoding.UTF8, _serializationBufferSize, leaveOpen: true))
-			await writer.WriteAsync(snapshot);
-
-		content.Position = 0;
-
-		await _blobClient.UploadAsync(snapshotName, content, overwrite: true, cancellationToken: cancellationToken);
-	}
-
-	EventEntity CreateSerializedEvent(string aggregateId, IEvent @event, string serializedEvent, string compoundIdempotencyId)
+	EventEntity CreateSerializedEvent(string aggregateId, IEvent @event, string serializedEvent, string idempotencyId)
 		=> new()
 		{
-			PartitionKey = aggregateId,
-			RowKey = CreateEventRowKey(@event.Details.AggregateVersion),
+			Id = CreateEventId(aggregateId, @event.Details.AggregateVersion),
+			AggregateId = aggregateId,
+			Version = @event.Details.AggregateVersion,
 			Payload = serializedEvent,
 			EventType = _eventNameMapper.GetName<T>(@event),
-			IdempotencyId = compoundIdempotencyId
+			IdempotencyId = idempotencyId,
+			Timestamp = DateTimeOffset.UtcNow
 		};
 
 	void ClearCacheFireAndForget(T aggregate)

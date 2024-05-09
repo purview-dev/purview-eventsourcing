@@ -60,7 +60,7 @@ partial class TableEventStore<T>
 		if (changeEvents.Length > _eventStoreOptions.Value.MaxEventCountOnSave)
 			throw new ArgumentOutOfRangeException($"The maximum amount of events to save was exceeded. Attempted: {changeEvents.Length}, Maximum: {_eventStoreOptions.Value.MaxEventCountOnSave}");
 
-		if (operationContext.ValidateIdempotencyMarker)
+		if (operationContext.UseIdempotencyMarker)
 		{
 			var exists = await _tableClient.EntityExistsAsync(idempotencyMarkerOperation.PartitionKey, idempotencyMarkerOperation.RowKey, cancellationToken);
 			if (exists)

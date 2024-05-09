@@ -28,9 +28,14 @@ public sealed record class EventStoreOperationContext
 	public static bool RequiresValidPrincipalIdentifierDefault { get; set; } = true;
 
 	/// <summary>
-	/// Gets or sets the default value for the <see cref="ValidateIdempotencyMarker"/>. Defaults to false.
+	/// Gets or sets the default value for the <see cref="UseIdempotencyMarker"/>. Defaults to false.
 	/// </summary>
-	public static bool ValidateIdempotencyMarkerDefault { get; set; }
+	public static bool UseIdempotencyMarkerDefault { get; set; }
+
+	/// <summary>
+	/// Used during the saving of aggregates.
+	/// </summary>
+	public string? CorrelationId { get; set; }
 
 	/// <summary>
 	/// Controls how to handle aggregates marked as deleted during get and save/ restore operations.
@@ -77,12 +82,12 @@ public sealed record class EventStoreOperationContext
 	public bool PermanentlyDelete { get; set; }
 
 	/// <summary>
-	/// Validates the idempotency marker from <see cref="ICorrelationIdProvider"/> to see if the events have already been written.
+	/// Validates the idempotency marker to see if the events have already been written.
 	/// </summary>
 	/// <remarks><para>If the marker exists, the call to <see cref="IEventStore{T}.SaveAsync(T, EventStoreOperationContext?, CancellationToken)"/> will return true without processing any of the events.</para>
 	/// <para>In the case where this property is set to false, and the idempotency marker exists and internal exception is caught and ignored, and the operation requested will still set to true.</para>
 	/// <para>If you're satisfied that the call is unique, then you can leave this as false (the default) for the sake of performance, otherwise set this to true.</para></remarks>
-	public bool ValidateIdempotencyMarker { get; set; } = ValidateIdempotencyMarkerDefault;
+	public bool UseIdempotencyMarker { get; set; } = UseIdempotencyMarkerDefault;
 
 	/// <summary>
 	/// If true, a valid <see cref="ClaimIdentifier"/> must be returned from <see cref="ClaimsPrincipal"/> or
