@@ -1,8 +1,9 @@
 ﻿using System.Text;
+using Purview.EventSourcing.MongoDB.Entities;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-partial class GenericMongoDbEventStoreTests<TAggregate>
+partial class GenericMongoDBEventStoreTests<TAggregate>
 {
 	public async Task DeleteAsync_GivenAggregateExists_PermanentlyDeletesAllData()
 	{
@@ -43,7 +44,7 @@ partial class GenericMongoDbEventStoreTests<TAggregate>
 			.Should()
 			.BeTrue();
 
-		await ValidateEntitiesDeletedAsync(aggregate, eventStore, tokenSource.Token);
+		await ValidateEntitiesDeletedAsync(aggregate, tokenSource.Token);
 	}
 
 	public async Task DeleteAsync_GivenAggregateExistsWithLargeEvent_PermanentlyDeletesAllData()
@@ -82,41 +83,23 @@ partial class GenericMongoDbEventStoreTests<TAggregate>
 		}, cancellationToken: tokenSource.Token);
 
 		// Assert
-		result
-			.Should()
-			.BeTrue();
+		result.Should().BeTrue();
 
-		aggregate!
-			.Details
-			.IsDeleted
-			.Should()
-			.BeTrue();
+		aggregate!.Details.IsDeleted.Should().BeTrue();
 
-		aggregate
-			.Details
-			.Locked
-			.Should()
-			.BeTrue();
+		aggregate.Details.Locked.Should().BeTrue();
 
-		await ValidateEntitiesDeletedAsync(aggregate, eventStore, tokenSource.Token);
+		await ValidateEntitiesDeletedAsync(aggregate, tokenSource.Token);
 	}
 
-	async Task ValidateEntitiesDeletedAsync(TAggregate aggregate, TableEventStore<TAggregate> eventStore, CancellationToken cancellationToken)
+	async Task ValidateEntitiesDeletedAsync(TAggregate aggregate, CancellationToken cancellationToken)
 	{
-		var results = await fixture.TableClient.QueryAsync<TableEntity>(m => m.PartitionKey == aggregate.Details.Id, cancellationToken: cancellationToken);
+		var count = await fixture.EventClient.CountAsync<EventEntity>(m => m.AggregateId == aggregate.Id(), cancellationToken: cancellationToken);
 
-		results
-			.Results
-			.Should()
-			.BeEmpty();
+		count.Should().Be(0);
 
-		var prefix = eventStore.GenerateSnapshotBlobPath(aggregate.Id());
+		var snapshotEntity = await fixture.SnapshotClient.GetAsync<SnapshotEntity>(m => m.Id == aggregate.Id(), cancellationToken: cancellationToken);
 
-		var blobResults = await fixture.BlobClient.GetBlobsAsync(prefix, cancellationToken: cancellationToken);
-		var blobsToDelete = blobResults.ToBlockingEnumerable(cancellationToken: cancellationToken);
-
-		blobsToDelete
-			.Should()
-			.BeEmpty();
+		snapshotEntity.Should().BeNull();
 	}
 }

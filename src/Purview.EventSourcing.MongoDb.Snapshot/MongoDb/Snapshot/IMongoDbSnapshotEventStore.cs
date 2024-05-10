@@ -1,8 +1,8 @@
 ﻿using Purview.EventSourcing.Aggregates;
 
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+namespace Purview.EventSourcing.MongoDB.Snapshot;
 
-public interface IMongoDbSnapshotEventStore<T> : IQueryableEventStore<T>
+public interface IMongoDBSnapshotEventStore<T> : IQueryableEventStore<T>
 	where T : class, IAggregate, new()
 {
 	Task SnapshotAsync(T aggregate, CancellationToken cancellationToken = default);

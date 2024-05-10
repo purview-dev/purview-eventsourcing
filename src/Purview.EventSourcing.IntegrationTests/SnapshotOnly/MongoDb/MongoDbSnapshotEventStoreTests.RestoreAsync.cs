@@ -1,11 +1,11 @@
 ﻿using Purview.EventSourcing.Aggregates.Persistence;
 
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+namespace Purview.EventSourcing.MongoDB.Snapshot;
 
-partial class MongoDbSnapshotEventStoreTests
+partial class MongoDBSnapshotEventStoreTests
 {
 	[Fact]
-	public async Task RestoreAsync_GivenExistingAggregateMarkedAsDeletedAndDoesNotExistInMongoDbWhenRestore_SnapshotCreatedInMongoDb()
+	public async Task RestoreAsync_GivenExistingAggregateMarkedAsDeletedAndDoesNotExistInMongoDBWhenRestore_SnapshotCreatedInMongoDB()
 	{
 		// Arrange
 		using var tokenSource = TestHelpers.CancellationTokenSource();
@@ -24,7 +24,7 @@ partial class MongoDbSnapshotEventStoreTests
 
 		var predicate = PredicateId(aggregateId);
 
-		var aggregateFromMongo = await context.MongoDbClient.GetAsync(predicate, cancellationToken: tokenSource.Token);
+		var aggregateFromMongo = await context.MongoDBClient.GetAsync(predicate, cancellationToken: tokenSource.Token);
 		aggregateFromMongo
 			.Should()
 			.NotBeNull();
@@ -34,7 +34,7 @@ partial class MongoDbSnapshotEventStoreTests
 			.Should()
 			.BeTrue();
 
-		aggregateFromMongo = await context.MongoDbClient.GetAsync<PersistenceAggregate>(aggregateId, cancellationToken: tokenSource.Token);
+		aggregateFromMongo = await context.MongoDBClient.GetAsync<PersistenceAggregate>(aggregateId, cancellationToken: tokenSource.Token);
 		aggregateFromMongo
 			.Should()
 			.BeNull();
@@ -42,7 +42,7 @@ partial class MongoDbSnapshotEventStoreTests
 		// Act
 		var restoreResult = await mongoDbEventStore.RestoreAsync(aggregate, cancellationToken: tokenSource.Token);
 
-		aggregateFromMongo = await context.MongoDbClient.GetAsync<PersistenceAggregate>(aggregateId, cancellationToken: tokenSource.Token);
+		aggregateFromMongo = await context.MongoDBClient.GetAsync<PersistenceAggregate>(aggregateId, cancellationToken: tokenSource.Token);
 
 		// Assert
 		restoreResult

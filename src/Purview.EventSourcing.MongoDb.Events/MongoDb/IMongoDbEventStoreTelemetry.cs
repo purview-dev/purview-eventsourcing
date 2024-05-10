@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Purview.Telemetry.Logging;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
 [Logger]
-public interface IMongoDbEventStoreTelemetry
+public interface IMongoDBEventStoreTelemetry
 {
 	[Log(LogLevel.Debug)]
 	void AggregateRetrievedFromCache(string aggregateId, string aggregateTypeFullName);

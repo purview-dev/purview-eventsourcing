@@ -1,9 +1,9 @@
 ﻿using MongoDB.Driver;
 using Purview.EventSourcing.Aggregates.Persistence;
 
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+namespace Purview.EventSourcing.MongoDB.Snapshot;
 
-partial class MongoDbSnapshotEventStoreTests
+partial class MongoDBSnapshotEventStoreTests
 {
 	[Theory]
 	[InlineData(1, 1)]

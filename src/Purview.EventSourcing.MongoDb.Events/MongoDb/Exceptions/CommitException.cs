@@ -1,4 +1,4 @@
-﻿namespace Purview.EventSourcing.MongoDb.Exceptions;
+﻿namespace Purview.EventSourcing.MongoDB.Exceptions;
 
 #pragma warning disable CA1032 // Implement standard exception constructors
 public class CommitException(string aggregateId, string idempotencyId, int versionAttempted, int version, Exception exception)

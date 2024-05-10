@@ -1,8 +1,11 @@
 ﻿using Purview.EventSourcing.Aggregates.Persistence.Events;
+using Purview.EventSourcing.MongoDB.Entities;
+using Purview.EventSourcing.MongoDB.Exceptions;
+using Purview.EventSourcing.MongoDB.StorageClients;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-partial class GenericMongoDbEventStoreTests<TAggregate>
+partial class GenericMongoDBEventStoreTests<TAggregate>
 {
 	public async Task GetAsync_GivenAggregateIsDeletedAndDeletedModeIsSetToThrow_ThrowsEventStoreAggregateDeletedException()
 	{
@@ -45,20 +48,15 @@ partial class GenericMongoDbEventStoreTests<TAggregate>
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Act
-		var blobName = eventStore.GenerateSnapshotBlobName(aggregateId);
-		var exists = await fixture.BlobClient.ExistsAsync(blobName, cancellationToken: tokenSource.Token);
+		var snapshotEntity = await fixture.SnapshotClient.GetAsync<SnapshotEntity>(aggregateId, EntityTypes.SnapshotType, cancellationToken: tokenSource.Token);
 
-		exists
-			.Should()
-			.BeTrue();
+		snapshotEntity.Should().NotBeNull();
 
-		await fixture.BlobClient.DeleteBlobIfExistsAsync(blobName, cancellationToken: tokenSource.Token);
+		await fixture.SnapshotClient.DeleteAsync<SnapshotEntity>(m => m.Id == aggregateId, cancellationToken: tokenSource.Token);
 
-		exists = await fixture.BlobClient.ExistsAsync(blobName, cancellationToken: tokenSource.Token);
+		snapshotEntity = await fixture.SnapshotClient.GetAsync<SnapshotEntity>(aggregateId, EntityTypes.SnapshotType, cancellationToken: tokenSource.Token);
 
-		exists
-			.Should()
-			.BeFalse();
+		snapshotEntity.Should().BeNull();
 
 		// Assert
 		var result = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
@@ -127,31 +125,15 @@ partial class GenericMongoDbEventStoreTests<TAggregate>
 		// Assert
 		var result = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
 
-		result
-			.Should()
-			.NotBeNull();
+		result.Should().NotBeNull();
 
-		result!
-			.IsNew()
-			.Should()
-			.BeFalse();
+		result!.IsNew().Should().BeFalse();
 
-		result!
-			.IncrementInt32
-			.Should()
-			.Be(eventsToCreate);
+		result!.IncrementInt32.Should().Be(eventsToCreate);
 
-		result!
-			.Details
-			.SavedVersion
-			.Should()
-			.Be(eventsToCreate);
+		result!.Details.SavedVersion.Should().Be(eventsToCreate);
 
-		result!
-			.Details
-			.SnapshotVersion
-			.Should()
-			.Be(expectedSnapshotVersion);
+		result!.Details.SnapshotVersion.Should().Be(expectedSnapshotVersion);
 	}
 
 	// This is testing that the aggregate is still correct after having an event type removed (in this case,
@@ -260,10 +242,10 @@ partial class GenericMongoDbEventStoreTests<TAggregate>
 		{
 			eventToUpdate.EventType = unknownEventType;
 
-			batch.Update(eventToUpdate, merge: false);
+			batch.Update(eventToUpdate);
 		}
 
-		await fixture.TableClient.SubmitBatchAsync(batch, tokenSource.Token);
+		await fixture.EventClient.SubmitBatchAsync(batch, tokenSource.Token);
 
 		// Get without using the snapshot, just from the event record.
 		var result = await eventStore.GetAsync(aggregateId, new EventStoreOperationContext

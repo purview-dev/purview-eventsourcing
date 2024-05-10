@@ -1,16 +1,44 @@
-﻿using MongoDB.Driver;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Conventions;
+using MongoDB.Bson.Serialization.IdGenerators;
+using MongoDB.Bson.Serialization.Serializers;
+using MongoDB.Driver;
+using Purview.EventSourcing.MongoDB.Entities;
 
-namespace Purview.EventSourcing.MongoDb.StorageClients;
+namespace Purview.EventSourcing.MongoDB.StorageClients;
 
-sealed partial class MongoDbClient
+sealed partial class MongoDBClient
 {
-	readonly MongoDbConfiguration _configuration;
+	readonly MongoDBConfiguration _configuration;
 	readonly MongoClient _client;
 	readonly IMongoDatabase _database;
 
 	readonly string _collectionName;
 
-	public MongoDbClient(MongoDbConfiguration configuration, string? databaseOverride = null, string? collectionOverride = null)
+	static MongoDBClient()
+	{
+		//BsonClassMap.RegisterClassMap<IEntity>(cm =>
+		//{
+		//	cm.AutoMap();
+		//	cm.IdMemberMap
+		//		.SetIdGenerator(StringObjectIdGenerator.Instance)
+		//		.SetSerializer(new StringSerializer(BsonType.ObjectId));
+		//});
+
+		BsonSerializer.RegisterSerializationProvider(new MongoDBAggregateSerializationProvider());
+
+		var iEntityType = typeof(IEntity);
+
+		BsonSerializer.RegisterSerializer(new ObjectSerializer(iEntityType.IsAssignableFrom));
+
+		//ConventionPack cp = [new StringObjectIdIdGeneratorConventionThatWorks()];
+
+		//ConventionRegistry.Register("TreatAllStringIdsProperly", cp, _ => true);
+
+	}
+
+	public MongoDBClient(MongoDBConfiguration configuration, string? databaseOverride = null, string? collectionOverride = null)
 	{
 		_configuration = configuration;
 
@@ -22,11 +50,33 @@ sealed partial class MongoDbClient
 		_collectionName = collectionOverride ?? configuration.Collection;
 	}
 
-	static FilterDefinition<T> BuildPredicate<T>(string id)
+	static FilterDefinition<T> BuildPredicate<T>(string id, int? entityType)
 	{
-		var predicate = new FilterDefinitionBuilder<T>()
-			.Eq("_id", id);
+		var predicate = new FilterDefinitionBuilder<T>();
+		predicate.Eq("_id", id);
 
-		return predicate;
+		if (entityType == null)
+			return predicate.Eq("_id", id);
+
+		predicate.Eq("_id", id);
+
+		return predicate.And(predicate.Eq(nameof(IEntity.EntityType), entityType));
+	}
+
+	sealed class StringObjectIdIdGeneratorConventionThatWorks : ConventionBase, IPostProcessingConvention
+	{
+		public void PostProcess(BsonClassMap classMap)
+		{
+			var idMemberMap = classMap.IdMemberMap;
+			if (idMemberMap == null || idMemberMap.IdGenerator != null)
+				return;
+
+			if (idMemberMap.MemberType == typeof(string))
+			{
+				idMemberMap
+					.SetIdGenerator(StringObjectIdGenerator.Instance)
+					.SetSerializer(new StringSerializer(BsonType.ObjectId));
+			}
+		}
 	}
 }

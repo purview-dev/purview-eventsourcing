@@ -1,4 +1,4 @@
-﻿namespace Purview.EventSourcing.MongoDb.StorageClients;
+﻿namespace Purview.EventSourcing.MongoDB.StorageClients;
 
 enum TransactionActionType
 {

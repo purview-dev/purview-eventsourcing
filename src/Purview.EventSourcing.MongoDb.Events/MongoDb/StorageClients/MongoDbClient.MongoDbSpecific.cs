@@ -2,11 +2,11 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
-using Purview.EventSourcing.MongoDb.Entities;
+using Purview.EventSourcing.MongoDB.Entities;
 
-namespace Purview.EventSourcing.MongoDb.StorageClients;
+namespace Purview.EventSourcing.MongoDB.StorageClients;
 
-partial class MongoDbClient
+partial class MongoDBClient
 {
 	public async Task SubmitBatchAsync(BatchOperation operation, CancellationToken cancellationToken = default)
 	{
@@ -26,10 +26,10 @@ partial class MongoDbClient
 							await collection.InsertOneAsync(session, op.Document, cancellationToken: cancellationToken);
 							break;
 						case TransactionActionType.Update:
-							await collection.ReplaceOneAsync(session, BuildPredicate<IEntity>(op.Document.Id), op.Document, new ReplaceOptions() { IsUpsert = false }, cancellationToken: cancellationToken);
+							await collection.ReplaceOneAsync(session, BuildPredicate<IEntity>(op.Document.Id, op.Document.EntityType), op.Document, new ReplaceOptions() { IsUpsert = false }, cancellationToken: cancellationToken);
 							break;
 						case TransactionActionType.Delete:
-							await collection.DeleteOneAsync(session, BuildPredicate<IEntity>(op.Document.Id), cancellationToken: cancellationToken);
+							await collection.DeleteOneAsync(session, BuildPredicate<IEntity>(op.Document.Id, op.Document.EntityType), cancellationToken: cancellationToken);
 							break;
 					}
 				}
@@ -58,7 +58,7 @@ partial class MongoDbClient
 			try
 			{
 				foreach (var id in entityIds)
-					await collection.DeleteOneAsync(session, BuildPredicate<BsonDocument>(id), cancellationToken: cancellationToken);
+					await collection.DeleteOneAsync(session, BuildPredicate<BsonDocument>(id, null), cancellationToken: cancellationToken);
 			}
 			catch (MongoWriteException)
 			{
@@ -82,9 +82,9 @@ partial class MongoDbClient
 		return await findResult.SingleOrDefaultAsync(cancellationToken);
 	}
 
-	public Task<T?> GetAsync<T>(string id, CancellationToken cancellationToken = default)
+	public Task<T?> GetAsync<T>(string id, int? entityType, CancellationToken cancellationToken = default)
 		where T : class
-		=> GetAsync(BuildPredicate<T>(id), cancellationToken);
+		=> GetAsync(BuildPredicate<T>(id, entityType), cancellationToken);
 
 	public async Task<T?> GetAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
 		where T : class

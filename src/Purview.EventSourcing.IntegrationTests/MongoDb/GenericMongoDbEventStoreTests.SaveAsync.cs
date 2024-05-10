@@ -1,10 +1,10 @@
 ﻿using System.Text;
-using Azure.Data.Tables;
 using Purview.EventSourcing.Aggregates;
+using Purview.EventSourcing.MongoDB.Entities;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-partial class GenericMongoDbEventStoreTests<TAggregate>
+partial class GenericMongoDBEventStoreTests<TAggregate>
 {
 	public async Task SaveAsync_GivenAggregateWithDataAnnotationsAndInvalidProperties_NoChangesAreMadeAndNotSaved()
 	{
@@ -93,115 +93,30 @@ partial class GenericMongoDbEventStoreTests<TAggregate>
 		var eventStore = fixture.CreateEventStore<TAggregate>();
 
 		// Act
-		bool result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
+		var result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Assert
-		result
-			.Should()
-			.BeTrue();
+		result.Saved.Should().BeTrue();
+		result.Skipped.Should().BeFalse();
 
-		aggregate
-			.IsNew()
-			.Should()
-			.BeFalse();
+		aggregate.IsNew().Should().BeFalse();
 
 		// Verify by re-getting the aggregate, knowing that the cache is disabled.
 		var aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
 
-		aggregateFromEventStore
-			.Should()
-			.NotBeNull();
+		aggregateFromEventStore.Should().NotBeNull();
 
-		aggregateFromEventStore?.Id()
-			.Should()
-			.Be(aggregate.Id());
+		aggregateFromEventStore!.Id().Should().Be(aggregate.Id());
 
-		aggregateFromEventStore?.IncrementInt32
-			.Should()
-			.Be(aggregate.IncrementInt32);
+		aggregateFromEventStore.IncrementInt32.Should().Be(aggregate.IncrementInt32);
 
-		aggregateFromEventStore?.Details.SavedVersion
-			.Should()
-			.Be(aggregate.Details.SavedVersion);
+		aggregateFromEventStore.Details.SavedVersion.Should().Be(aggregate.Details.SavedVersion);
 
-		aggregateFromEventStore?.Details.CurrentVersion
-			.Should()
-			.Be(aggregate.Details.CurrentVersion);
+		aggregateFromEventStore.Details.CurrentVersion.Should().Be(aggregate.Details.CurrentVersion);
 
-		aggregateFromEventStore?.Details.SnapshotVersion
-			.Should()
-			.Be(aggregate.Details.SnapshotVersion);
+		aggregateFromEventStore.Details.SnapshotVersion.Should().Be(aggregate.Details.SnapshotVersion);
 
-		aggregateFromEventStore?.Details.Etag
-			.Should()
-			.Be(aggregate.Details.Etag);
-	}
-
-	public async Task SaveAsync_GivenStreamVersionWithoutVersionSetWhenSaved_StreamVersionHasCorrectEvent(int eventsToGenerate)
-	{
-		// Arrange
-		using var tokenSource = TestHelpers.CancellationTokenSource();
-
-		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
-		for (var i = 0; i < eventsToGenerate; i++)
-		{
-			aggregate.IncrementInt32Value();
-		}
-
-		var eventStore = fixture.CreateEventStore<TAggregate>();
-
-		// Act
-		bool result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
-
-		// Get and update stream version to remove the Version property.
-		var streamVersion = await fixture.TableClient.GetAsync<TableEntity>(aggregateId, TableEventStoreConstants.StreamVersionRowKey, cancellationToken: tokenSource.Token) ?? throw new NullReferenceException();
-		var streamVersionVersion = streamVersion[nameof(StreamVersionEntity.Version)] as int?;
-
-		streamVersion.Remove(nameof(StreamVersionEntity.Version));
-
-		await fixture.TableClient.OperationAsync(TableTransactionActionType.UpdateReplace, streamVersion, cancellationToken: tokenSource.Token);
-
-		// Assert
-		result
-			.Should()
-			.BeTrue();
-
-		aggregate
-			.IsNew()
-			.Should()
-			.BeFalse();
-
-		// Verify by re-getting the aggregate, knowing that the cache is disabled.
-		var aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
-
-		aggregateFromEventStore
-			.Should()
-			.NotBeNull();
-
-		aggregateFromEventStore?.Id()
-			.Should()
-			.Be(aggregate.Id());
-
-		aggregateFromEventStore?.IncrementInt32
-			.Should()
-			.Be(aggregate.IncrementInt32);
-
-		aggregateFromEventStore?.Details.SavedVersion
-			.Should()
-			.Be(aggregate.Details.SavedVersion);
-
-		aggregateFromEventStore?.Details.CurrentVersion
-			.Should()
-			.Be(aggregate.Details.CurrentVersion);
-
-		aggregateFromEventStore?.Details.SnapshotVersion
-			.Should()
-			.Be(aggregate.Details.SnapshotVersion);
-
-		streamVersionVersion
-			.Should()
-			.Be(eventsToGenerate);
+		aggregateFromEventStore.Details.Etag.Should().Be(aggregate.Details.Etag);
 	}
 
 	public async Task SaveAsync_GivenNewAggregateWithLargeChanges_SavesAggregateWithLargeEventRecord()
@@ -297,12 +212,7 @@ partial class GenericMongoDbEventStoreTests<TAggregate>
 			.BeFalse();
 
 		// Delete the snapshot to ensure the events are replayed.
-		var blobName = eventStore.GenerateSnapshotBlobName(aggregateId);
-		var deleteResult = await fixture.BlobClient.DeleteBlobIfExistsAsync(blobName, cancellationToken: tokenSource.Token);
-
-		deleteResult
-			.Should()
-			.BeTrue();
+		await fixture.SnapshotClient.DeleteAsync<SnapshotEntity>(m => m.Id == aggregateId, cancellationToken: tokenSource.Token);
 
 		// Verify by re-getting the aggregate, knowing that the cache is disabled.
 		var aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
@@ -322,76 +232,6 @@ partial class GenericMongoDbEventStoreTests<TAggregate>
 		sizeIsLessThan32K
 			.Should()
 			.BeFalse();
-	}
-
-	public async Task SaveAsync_GivenEventCountIsGreaterThanMaximumNumberOfAllowedInBatchOperation_BatchesEvents(int eventsToGenerate)
-	{
-		// Minus 2 is because we also add the idempotency marker and stream on the first batch.
-		if (eventsToGenerate < (StorageClients.Table.AzureTableClient.MaximumBatchSize - 2))
-			$"'{eventsToGenerate}' should be greater than {StorageClients.Table.AzureTableClient.MaximumBatchSize}.".Should().BeNull();
-
-		// Arrange
-		using var tokenSource = TestHelpers.CancellationTokenSource();
-
-		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
-		for (var i = 0; i < eventsToGenerate; i++)
-			aggregate.IncrementInt32Value();
-
-		var eventStore = fixture.CreateEventStore<TAggregate>();
-
-		// Act
-		bool result = await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
-
-		// Get and update stream version to remove the Version property.
-		var streamVersion = await fixture.TableClient.GetAsync<TableEntity>(aggregateId, TableEventStoreConstants.StreamVersionRowKey, cancellationToken: tokenSource.Token);
-
-		streamVersion
-			.Should()
-			.NotBeNull();
-
-		var streamVersionVersion = streamVersion![nameof(StreamVersionEntity.Version)] as int?;
-
-		// Assert
-		result
-			.Should()
-			.BeTrue();
-
-		aggregate
-			.IsNew()
-			.Should()
-			.BeFalse();
-
-		// Verify by re-getting the aggregate, knowing that the cache is disabled.
-		var aggregateFromEventStore = await eventStore.GetAsync(aggregateId, cancellationToken: tokenSource.Token);
-
-		aggregateFromEventStore
-			.Should()
-			.NotBeNull();
-
-		aggregateFromEventStore?.Id()
-			.Should()
-			.Be(aggregate.Id());
-
-		aggregateFromEventStore?.IncrementInt32
-			.Should()
-			.Be(aggregate.IncrementInt32);
-
-		aggregateFromEventStore?.Details.SavedVersion
-			.Should()
-			.Be(aggregate.Details.SavedVersion);
-
-		aggregateFromEventStore?.Details.CurrentVersion
-			.Should()
-			.Be(aggregate.Details.CurrentVersion);
-
-		aggregateFromEventStore?.Details.SnapshotVersion
-			.Should()
-			.Be(aggregate.Details.SnapshotVersion);
-
-		streamVersionVersion
-			.Should()
-			.Be(eventsToGenerate);
 	}
 
 	public async Task SaveAsync_GivenEventCountIsGreaterThanMaximumNumberOfAllowedEventsInSaveOperation_ThrowsException(int eventsToGenerate)

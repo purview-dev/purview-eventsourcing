@@ -1,9 +1,9 @@
-﻿using Purview.EventSourcing.MongoDb.Exceptions;
+﻿using Purview.EventSourcing.MongoDB.Exceptions;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter")]
-partial class MongoDbEventStore<T>
+partial class MongoDBEventStore<T>
 {
 	static ArgumentNullException NullAggregate(T? aggregate)
 		=> new(nameof(aggregate));

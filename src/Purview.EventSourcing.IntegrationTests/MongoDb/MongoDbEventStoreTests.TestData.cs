@@ -1,6 +1,6 @@
-﻿namespace Purview.EventSourcing.MongoDb;
+﻿namespace Purview.EventSourcing.MongoDB;
 
-partial class MongoDbEventStoreTests
+partial class MongoDBEventStoreTests
 {
 	public static TheoryData<Type, int> TooManyEventCountTestData
 	{
@@ -148,10 +148,10 @@ partial class MongoDbEventStoreTests
 		}
 	}
 
-	public IMongoDbEventStoreTests CreateMongoDbStoreTests(Type aggregateType)
+	public IMongoDBEventStoreTests CreateMongoDBStoreTests(Type aggregateType)
 	{
-		var testType = typeof(GenericMongoDbEventStoreTests<>).MakeGenericType(aggregateType);
+		var testType = typeof(GenericMongoDBEventStoreTests<>).MakeGenericType(aggregateType);
 
-		return (IMongoDbEventStoreTests)Activator.CreateInstance(testType, args: [fixture])!;
+		return (IMongoDBEventStoreTests)Activator.CreateInstance(testType, args: [fixture])!;
 	}
 }

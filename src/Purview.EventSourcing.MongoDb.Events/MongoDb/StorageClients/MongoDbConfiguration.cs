@@ -1,6 +1,6 @@
-﻿namespace Purview.EventSourcing.MongoDb.StorageClients;
+﻿namespace Purview.EventSourcing.MongoDB.StorageClients;
 
-sealed class MongoDbConfiguration
+sealed class MongoDBConfiguration
 {
 	public string ConnectionString { get; set; } = default!;
 

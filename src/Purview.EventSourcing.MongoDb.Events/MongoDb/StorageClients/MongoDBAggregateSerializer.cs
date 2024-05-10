@@ -3,9 +3,9 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using Purview.EventSourcing.Aggregates;
 
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+namespace Purview.EventSourcing.MongoDB.StorageClients;
 
-sealed class MongoDbAggregateSerializer<TAggregate> : SerializerBase<TAggregate>, IBsonDocumentSerializer
+sealed class MongoDBAggregateSerializer<TAggregate> : SerializerBase<TAggregate>, IBsonDocumentSerializer
 	where TAggregate : class, IAggregate, new()
 {
 	public const string BsonDocuemntIdPropertyName = "_id";

@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-partial class MongoDbEventStore<T>
+partial class MongoDBEventStore<T>
 {
 	public async Task<T?> GetAtAsync(string aggregateId, int version, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default)
 	{

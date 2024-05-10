@@ -1,6 +1,6 @@
-﻿namespace Purview.EventSourcing.MongoDb;
+﻿namespace Purview.EventSourcing.MongoDB;
 
-partial class GenericMongoDbEventStoreTests<TAggregate>
+partial class GenericMongoDBEventStoreTests<TAggregate>
 {
 	public async Task GetAggregateIdsAsync_GivenNAggregatesInTheStore_CorrectlyReturnsTheirIds(int aggregateCount)
 	{
@@ -25,13 +25,9 @@ partial class GenericMongoDbEventStoreTests<TAggregate>
 		var returnedTypes = eventStore.GetAggregateIdsAsync(true, cancellationToken: tokenSource.Token).ToBlockingEnumerable(tokenSource.Token);
 
 		// Assert
-		returnedTypes
-			.Should()
-			.HaveCount(aggregateCount);
+		returnedTypes.Should().HaveCount(aggregateCount);
 
-		generatedIds
-			.Should()
-			.BeEquivalentTo(returnedTypes);
+		generatedIds.Should().BeEquivalentTo(returnedTypes);
 	}
 
 	public async Task GetAggregateIdsAsync_GivenNonDeletedAggregatesAndDeletedAggregatesInTheStoreAndRequestingOnlyNonDeleted_CorrectlyReturnsNonDeletedIdsOnly(int nonDeletedAggregateIdCount, int deletedAggregateIdCount)

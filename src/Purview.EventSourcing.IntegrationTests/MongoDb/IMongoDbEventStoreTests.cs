@@ -1,7 +1,7 @@
 ﻿
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-public interface IMongoDbEventStoreTests
+public interface IMongoDBEventStoreTests
 {
 	Task DeleteAsync_GivenAggregateExistsWithLargeEvent_PermanentlyDeletesAllData();
 
@@ -59,9 +59,9 @@ public interface IMongoDbEventStoreTests
 
 	Task SaveAsync_GivenNewAggregateWithLargeChanges_SavesAggregateWithLargeEventRecord();
 
-	Task SaveAsync_GivenStreamVersionWithoutVersionSetWhenSaved_StreamVersionHasCorrectEvent(int eventsToGenerate);
-
 	Task SaveAsync_GivenAggregateWithComplexProperty_SavesEventWithComplexProperty();
+
+	Task SaveAsync_GivenEventCountIsGreaterThanMaximumNumberOfAllowedInBatchOperation_BatchesEvents(int eventsToGenerate);
 
 	Task SaveAsync_GivenEventCountIsGreaterThanMaximumNumberOfAllowedEventsInSaveOperation_ThrowsException(int eventsToGenerate);
 }

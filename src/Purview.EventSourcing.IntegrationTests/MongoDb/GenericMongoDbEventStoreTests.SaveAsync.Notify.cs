@@ -1,9 +1,9 @@
 ﻿using Purview.EventSourcing.Aggregates.Events;
 using Purview.EventSourcing.ChangeFeed;
 
-namespace Purview.EventSourcing.AzureStorage;
+namespace Purview.EventSourcing.MongoDB;
 
-partial class GenericTableEventStoreTests<TAggregate>
+partial class GenericMongoDBEventStoreTests<TAggregate>
 {
 	public async Task SaveAsync_GivenAggregateWithChanges_NotifiesChangeFeed(int eventsToCreate)
 	{

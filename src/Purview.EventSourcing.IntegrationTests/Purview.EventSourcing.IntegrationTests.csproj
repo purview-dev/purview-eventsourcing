@@ -2,9 +2,11 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Purview.EventSourcing.AzureStorage\Purview.EventSourcing.AzureStorage.csproj" />
-		<ProjectReference Include="..\Purview.EventSourcing.MongoDb.Events\Purview.EventSourcing.MongoDb.Events.csproj" />
+		<ProjectReference Include="..\Purview.EventSourcing.MongoDB.Events\Purview.EventSourcing.MongoDB.Events.csproj" />
 		<ProjectReference Include="..\Purview.EventSourcing.CosmosDb.Snapshot\Purview.EventSourcing.CosmosDb.Snapshot.csproj" />
-		<ProjectReference Include="..\Purview.EventSourcing.MongoDb.Snapshot\Purview.EventSourcing.MongoDb.Snapshot.csproj" />
+		<ProjectReference Include="..\Purview.EventSourcing.MongoDB.Snapshot\Purview.EventSourcing.MongoDB.Snapshot.csproj">
+			<Aliases>MongoDBSnapshots</Aliases>
+		</ProjectReference>
 	</ItemGroup>
 
 	<ItemGroup>

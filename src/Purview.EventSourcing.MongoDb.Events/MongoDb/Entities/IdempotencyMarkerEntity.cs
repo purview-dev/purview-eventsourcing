@@ -1,11 +1,12 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
+using Newtonsoft.Json;
 
-namespace Purview.EventSourcing.MongoDb.Entities;
+namespace Purview.EventSourcing.MongoDB.Entities;
 
 public sealed class IdempotencyMarkerEntity : IEntity
 {
 	[BsonId]
-	[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+	[JsonProperty("id")]
 	public string Id { get; set; } = default!;
 
 	public int EntityType { get; set; } = EntityTypes.IdempotencyMarkerType;

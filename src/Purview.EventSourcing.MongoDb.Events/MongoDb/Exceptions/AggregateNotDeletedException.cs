@@ -1,4 +1,4 @@
-﻿namespace Purview.EventSourcing.MongoDb.Exceptions;
+﻿namespace Purview.EventSourcing.MongoDB.Exceptions;
 
 #pragma warning disable CA1032 // Implement standard exception constructors
 public class AggregateNotDeletedException(string aggregateId)

@@ -1,9 +1,9 @@
 ﻿using Purview.Telemetry.Metrics;
 
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+namespace Purview.EventSourcing.MongoDB.Snapshot;
 
 [Meter]
-public interface IMongoDbSnapshotEventStoreTelemetry
+public interface IMongoDBSnapshotEventStoreTelemetry
 {
 	[Counter(AutoIncrement = true)]
 	void SnapshotCreated(string aggregateType);

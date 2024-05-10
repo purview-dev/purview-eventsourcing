@@ -2,9 +2,9 @@
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
-namespace Purview.EventSourcing.MongoDb.StorageClients;
+namespace Purview.EventSourcing.MongoDB.StorageClients;
 
-partial class MongoDbClient
+partial class MongoDBClient
 {
 	public async Task<ContinuationResponse<T>> QueryAsync<T>(Expression<Func<T, bool>> whereClause, Func<IQueryable<T>, IQueryable<T>>? orderByClause, ContinuationRequest request, CancellationToken cancellationToken = default)
 		where T : class

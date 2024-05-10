@@ -2,33 +2,36 @@
 using NSubstitute.ReturnsExtensions;
 using Purview.EventSourcing.Aggregates;
 using Purview.EventSourcing.ChangeFeed;
-using Purview.EventSourcing.MongoDb.StorageClients;
+using Purview.EventSourcing.MongoDB.StorageClients;
 using Purview.EventSourcing.Services;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-public sealed class MongoDbEventStoreFixture : IAsyncLifetime
+public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 {
-	readonly Testcontainers.MongoDb.MongoDbContainer _mongoDbContainer;
+	readonly Testcontainers.MongoDb.MongoDbContainer _mongoDBContainer;
 
 	IAggregateEventNameMapper _eventNameMapper = default!;
 	IDisposable? _eventStoreAsDisposable;
 
-	public MongoDbEventStoreFixture()
+	public MongoDBEventStoreFixture()
 	{
-		_mongoDbContainer = ContainerHelper.CreateMongoDb();
+		_mongoDBContainer = ContainerHelper.CreateMongoDB();
 	}
 
 	public IDistributedCache Cache { get; private set; } = default!;
 
-	public IMongoDbEventStoreTelemetry Telemetry { get; private set; } = default!;
+	public IMongoDBEventStoreTelemetry Telemetry { get; private set; } = default!;
 
-	internal MongoDbClient MongoDbClient { get; private set; } = default!;
+	internal MongoDBClient EventClient { get; private set; } = default!;
 
-	public MongoDbEventStore<TAggregate> CreateEventStore<TAggregate>(
+	internal MongoDBClient SnapshotClient { get; private set; } = default!;
+
+	public MongoDBEventStore<TAggregate> CreateEventStore<TAggregate>(
 		IAggregateChangeFeedNotifier<TAggregate>? aggregateChangeNotifier = null,
 		int correlationIdsToGenerate = 1,
-		bool removeFromCacheOnDelete = false)
+		bool removeFromCacheOnDelete = false,
+		int snapshotRecalculationInterval = 1)
 		where TAggregate : class, IAggregate, new()
 	{
 		var runId = Guid.NewGuid();
@@ -38,30 +41,43 @@ public sealed class MongoDbEventStoreFixture : IAsyncLifetime
 
 
 		Cache = CreateDistributedCache();
-		Telemetry = Substitute.For<IMongoDbEventStoreTelemetry>();
+		Telemetry = Substitute.For<IMongoDBEventStoreTelemetry>();
 
 		_eventNameMapper = new AggregateEventNameMapper();
 
+		var connectionString = _mongoDBContainer.GetConnectionString();
+		connectionString = "mongodb://127.0.0.1:27017/";
+
 		var aggregateRequirementsManager = Substitute.For<IAggregateRequirementsManager>();
-		MongoDbEventStoreOptions mongoDbOptions = new()
+		MongoDBEventStoreOptions mongoDBOptions = new()
 		{
-			ConnectionString = _mongoDbContainer.GetConnectionString(),
+			ApplicationName = nameof(MongoDBEventStoreFixture),
+			ConnectionString = connectionString,
 			Database = $"TestDatabase_{runId}",
-			Collection = $"TestCollection_{runId}",
+			EventCollection = $"TestCollection_Events_{runId}",
+			SnapshotCollection = $"TestCollection_Snapshots_{runId}",
 			TimeoutInSeconds = 10,
 			RemoveDeletedFromCache = removeFromCacheOnDelete,
+			SnapshotInterval = snapshotRecalculationInterval
 		};
 
-		MongoDbEventStore<TAggregate> eventStore = new(
+		MongoDBEventStore<TAggregate> eventStore = new(
 			eventNameMapper: _eventNameMapper,
-			mongoDbOptions: Microsoft.Extensions.Options.Options.Create(mongoDbOptions),
+			mongoDbOptions: Microsoft.Extensions.Options.Options.Create(mongoDBOptions),
 			distributedCache: Cache,
 			aggregateChangeNotifier: aggregateChangeNotifier ?? Substitute.For<IAggregateChangeFeedNotifier<TAggregate>>(),
 			eventStoreTelemetry: Telemetry,
 			aggregateRequirementsManager: aggregateRequirementsManager
 		);
 
-		MongoDbClient = new(mongoDbOptions, mongoDbOptions.Database, mongoDbOptions.Collection);
+		EventClient = new(new()
+		{
+			ConnectionString = mongoDBOptions.ConnectionString
+		}, mongoDBOptions.Database, mongoDBOptions.EventCollection);
+		SnapshotClient = new(new()
+		{
+			ConnectionString = mongoDBOptions.ConnectionString
+		}, mongoDBOptions.Database, mongoDBOptions.SnapshotCollection);
 
 		_eventStoreAsDisposable = eventStore as IDisposable;
 
@@ -78,12 +94,15 @@ public sealed class MongoDbEventStoreFixture : IAsyncLifetime
 		return cache;
 	}
 
-	public Task InitializeAsync() => _mongoDbContainer.StartAsync();
+	public async Task InitializeAsync()
+	{
+		await _mongoDBContainer.StartAsync();
+	}
 
 	public async Task DisposeAsync()
 	{
 		_eventStoreAsDisposable?.Dispose();
 
-		await _mongoDbContainer.DisposeAsync();
+		await _mongoDBContainer.DisposeAsync();
 	}
 }

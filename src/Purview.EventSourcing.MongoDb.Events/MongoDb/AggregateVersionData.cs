@@ -1,6 +1,6 @@
 ﻿using Purview.EventSourcing.Aggregates;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
 public record struct AggregateVersionData(int SavedVersion, int SnapshotVersion, int CurrentVersion)
 {

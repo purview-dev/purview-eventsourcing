@@ -1,6 +1,6 @@
-﻿namespace Purview.EventSourcing.MongoDb;
+﻿namespace Purview.EventSourcing.MongoDB;
 
-partial class MongoDbEventStore<T>
+partial class MongoDBEventStore<T>
 {
 	public async Task<T?> GetOrCreateAsync(string? aggregateId, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default)
 	{

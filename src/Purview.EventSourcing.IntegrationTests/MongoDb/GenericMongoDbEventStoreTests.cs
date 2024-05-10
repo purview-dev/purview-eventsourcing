@@ -1,9 +1,9 @@
 ﻿using System.Security.Cryptography;
 using Purview.EventSourcing.Aggregates;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-public partial class GenericMongoDbEventStoreTests<TAggregate>(MongoDbEventStoreFixture fixture) : IMongoDbEventStoreTests, IClassFixture<MongoDbEventStoreFixture>
+public partial class GenericMongoDBEventStoreTests<TAggregate>(MongoDBEventStoreFixture fixture) : IMongoDBEventStoreTests, IClassFixture<MongoDBEventStoreFixture>
 	where TAggregate : class, IAggregateTest, new()
 {
 	static ComplexTestType CreateComplexTestType()
@@ -20,5 +20,10 @@ public partial class GenericMongoDbEventStoreTests<TAggregate>(MongoDbEventStore
 				Nested = $"Nested_{Guid.NewGuid()}"
 			}
 		};
+	}
+
+	public Task SaveAsync_GivenEventCountIsGreaterThanMaximumNumberOfAllowedInBatchOperation_BatchesEvents(int eventsToGenerate)
+	{
+		throw new NotImplementedException();
 	}
 }

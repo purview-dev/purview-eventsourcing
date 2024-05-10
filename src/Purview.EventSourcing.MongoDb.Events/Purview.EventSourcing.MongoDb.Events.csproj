@@ -6,8 +6,8 @@
 
 	<PropertyGroup Label="NuGet Package Values">
 		<IsPackable>true</IsPackable>
-		<Title>Purview Event Store based on MongoDb</Title>
-		<Description>Event Store using MongoDb for event information.</Description>
+		<Title>Purview Event Store based on MongoDB</Title>
+		<Description>Event Store using MongoDB for event information.</Description>
 		<PackageTags>$(PackageTags);events;event-sourcing;event-store;mongodb;</PackageTags>
 	</PropertyGroup>
 

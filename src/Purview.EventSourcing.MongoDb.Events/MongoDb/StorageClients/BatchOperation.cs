@@ -1,6 +1,6 @@
-﻿using Purview.EventSourcing.MongoDb.Entities;
+﻿using Purview.EventSourcing.MongoDB.Entities;
 
-namespace Purview.EventSourcing.MongoDb.StorageClients;
+namespace Purview.EventSourcing.MongoDB.StorageClients;
 
 sealed class BatchOperation
 {

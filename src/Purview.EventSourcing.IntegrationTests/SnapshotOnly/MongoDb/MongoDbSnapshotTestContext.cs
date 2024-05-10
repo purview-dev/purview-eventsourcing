@@ -1,16 +1,17 @@
-﻿using Microsoft.Extensions.Caching.Distributed;
+﻿extern alias MongoDBSnapshots;
+
+using Microsoft.Extensions.Caching.Distributed;
 using Purview.EventSourcing.Aggregates.Persistence;
 using Purview.EventSourcing.AzureStorage;
 using Purview.EventSourcing.AzureStorage.StorageClients.Blob;
 using Purview.EventSourcing.AzureStorage.StorageClients.Table;
 using Purview.EventSourcing.ChangeFeed;
-using Purview.EventSourcing.MongoDb.Snapshot;
-using Purview.EventSourcing.MongoDb.StorageClients;
+using Purview.EventSourcing.MongoDB.StorageClients;
 using Purview.EventSourcing.Services;
 
-namespace Purview.EventSourcing.SnapshotOnly.MongoDb;
+namespace Purview.EventSourcing.SnapshotOnly.MongoDB;
 
-sealed public class MongoDbSnapshotTestContext
+sealed public class MongoDBSnapshotTestContext
 {
 	readonly string _mongoDbConnectionString;
 	readonly string _azuriteConnectionString;
@@ -20,40 +21,40 @@ sealed public class MongoDbSnapshotTestContext
 
 	public Guid RunId { get; } = Guid.NewGuid();
 
-	internal MongoDbClient MongoDbClient { get; private set; } = default!;
+	internal MongoDBClient MongoDBClient { get; private set; } = default!;
 
 	internal AzureTableClient TableClient { get; private set; } = default!;
 
 	internal AzureBlobClient BlobClient { get; private set; } = default!;
 
-	public MongoDbSnapshotEventStore<PersistenceAggregate> EventStore { get; init; }
+	public MongoDBSnapshots::Purview.EventSourcing.MongoDB.Snapshot.MongoDBSnapshotEventStore<PersistenceAggregate> EventStore { get; init; }
 
-	public MongoDbSnapshotTestContext(string mongoDbConnectionString, string azuriteConnectionString, int correlationIdsToGenerate = 1, string? collectionName = null)
+	public MongoDBSnapshotTestContext(string mongoDbConnectionString, string azuriteConnectionString, int correlationIdsToGenerate = 1, string? collectionName = null)
 	{
 		_mongoDbConnectionString = mongoDbConnectionString;
 		_azuriteConnectionString = azuriteConnectionString;
 
-		EventStore = CreateMongoDbEventStore(correlationIdsToGenerate, collectionName);
+		EventStore = CreateMongoDBEventStore(correlationIdsToGenerate, collectionName);
 	}
 
-	public MongoDbSnapshotEventStore<PersistenceAggregate> CreateMongoDbEventStore(int correlationIdsToGenerate = 1, string? collectionName = null)
+	public MongoDBSnapshots::Purview.EventSourcing.MongoDB.Snapshot.MongoDBSnapshotEventStore<PersistenceAggregate> CreateMongoDBEventStore(int correlationIdsToGenerate = 1, string? collectionName = null)
 	{
 		var tableEventStore = CreateTableEventStore(correlationIdsToGenerate);
 
-		MongoDbEventStoreOptions config = new()
+		MongoDBSnapshots::Purview.EventSourcing.MongoDB.Snapshot.MongoDBEventStoreOptions config = new()
 		{
 			ConnectionString = _mongoDbConnectionString,
 			Database = GetType().Name,
-			Collection = collectionName ?? TestHelpers.GenMongoDbCollectionName()
+			Collection = collectionName ?? TestHelpers.GenMongoDBCollectionName()
 		};
 
-		MongoDbSnapshotEventStore<PersistenceAggregate> eventStore = new(
+		MongoDBSnapshots::Purview.EventSourcing.MongoDB.Snapshot.MongoDBSnapshotEventStore<PersistenceAggregate> eventStore = new(
 			tableEventStore,
 			Microsoft.Extensions.Options.Options.Create(config),
-			Substitute.For<IMongoDbSnapshotEventStoreTelemetry>()
+			Substitute.For<MongoDBSnapshots::Purview.EventSourcing.MongoDB.Snapshot.IMongoDBSnapshotEventStoreTelemetry>()
 		);
 
-		MongoDbClient = new(new()
+		MongoDBClient = new(new()
 		{
 			ConnectionString = config.ConnectionString,
 			ApplicationName = "purview-integration-tests",

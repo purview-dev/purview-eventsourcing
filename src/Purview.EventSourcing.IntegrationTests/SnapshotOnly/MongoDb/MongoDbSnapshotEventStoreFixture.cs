@@ -1,28 +1,28 @@
-﻿namespace Purview.EventSourcing.SnapshotOnly.MongoDb;
+﻿namespace Purview.EventSourcing.SnapshotOnly.MongoDB;
 
-public class MongoDbSnapshotEventStoreFixture : IAsyncLifetime
+public class MongoDBSnapshotEventStoreFixture : IAsyncLifetime
 {
 	readonly Testcontainers.Azurite.AzuriteContainer _azuriteContainer;
-	readonly Testcontainers.MongoDb.MongoDbContainer _mongoDbContainer;
+	readonly Testcontainers.MongoDb.MongoDbContainer _mongoDBContainer;
 
-	public MongoDbSnapshotEventStoreFixture()
+	public MongoDBSnapshotEventStoreFixture()
 	{
 		_azuriteContainer = ContainerHelper.CreateAzurite();
-		_mongoDbContainer = ContainerHelper.CreateMongoDb();
+		_mongoDBContainer = ContainerHelper.CreateMongoDB();
 	}
 
-	public MongoDbSnapshotTestContext CreateContext(int correlationIdsToGenerate = 1, string? collectionName = null)
-		=> new(_mongoDbContainer.GetConnectionString(), _azuriteContainer.GetConnectionString(), correlationIdsToGenerate, collectionName);
+	public MongoDBSnapshotTestContext CreateContext(int correlationIdsToGenerate = 1, string? collectionName = null)
+		=> new(_mongoDBContainer.GetConnectionString(), _azuriteContainer.GetConnectionString(), correlationIdsToGenerate, collectionName);
 
 	public async Task InitializeAsync()
 	{
-		await _mongoDbContainer.StartAsync();
+		await _mongoDBContainer.StartAsync();
 		await _azuriteContainer.StartAsync();
 	}
 
 	public async Task DisposeAsync()
 	{
-		await _mongoDbContainer.DisposeAsync();
+		await _mongoDBContainer.DisposeAsync();
 		await _azuriteContainer.DisposeAsync();
 	}
 }

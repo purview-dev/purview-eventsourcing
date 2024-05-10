@@ -6,13 +6,13 @@ using FluentValidation.Results;
 using MongoDB.Driver;
 using Purview.EventSourcing.Aggregates;
 using Purview.EventSourcing.Aggregates.Events;
-using Purview.EventSourcing.MongoDb.Entities;
-using Purview.EventSourcing.MongoDb.StorageClients;
+using Purview.EventSourcing.MongoDB.Entities;
+using Purview.EventSourcing.MongoDB.StorageClients;
 using Purview.EventSourcing.Services;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-partial class MongoDbEventStore<T>
+partial class MongoDBEventStore<T>
 {
 	[DebuggerStepThrough]
 	public Task<SaveResult<T>> SaveAsync([NotNull] T aggregate, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default)
@@ -59,7 +59,7 @@ partial class MongoDbEventStore<T>
 
 		if (operationContext.UseIdempotencyMarker)
 		{
-			var exists = (await _client.GetAsync<IdempotencyMarkerEntity>(idempotencyMarkerOperation.Id, cancellationToken)) != null;
+			var exists = (await _eventClient.GetAsync<IdempotencyMarkerEntity>(idempotencyMarkerOperation.AggregateId, cancellationToken)) != null;
 			if (exists)
 			{
 				_eventStoreTelemetry.EventsAlreadyApplied(aggregate.Id(), idempotencyId);
@@ -84,10 +84,13 @@ partial class MongoDbEventStore<T>
 		try
 		{
 			var previousAggregateVersion = aggregate.Details.SavedVersion;
+			var shouldSnapshot = ShouldSnapShot(aggregate, changeEvents);
+
 			BatchOperation batchOperation = new();
 			streamEntity = new()
 			{
 				Id = CreateStreamVersionId(aggregate.Id()),
+				AggregateId = aggregate.Id(),
 				IsDeleted = aggregate.Details.IsDeleted,
 				AggregateType = aggregate.AggregateType,
 				Version = aggregate.Details.CurrentVersion,
@@ -113,7 +116,7 @@ partial class MongoDbEventStore<T>
 				changeEvent.Details.UserId = userId;
 
 				var serializedEvent = SerializeEvent(changeEvent);
-				var eventEntity = CreateSerializedEvent(aggregate.Id(), changeEvent, serializedEvent, idempotencyMarkerOperation.Id);
+				var eventEntity = CreateSerializedEvent(aggregate.Id(), changeEvent, serializedEvent, idempotencyMarkerOperation.AggregateId);
 
 				batchOperation.Add(eventEntity);
 			}
@@ -121,6 +124,10 @@ partial class MongoDbEventStore<T>
 			batchOperation.Add(idempotencyMarkerOperation);
 
 			await SubmitBatchOperationsAsync(aggregate, idempotencyId, batchOperation, cancellationToken);
+
+			// We create a snapshot if it's been deleted or restored, could make searching easier later on.
+			if (shouldSnapshot)
+				await CreateSnapshotAsync(aggregate, cancellationToken);
 
 			if (changeEvents.OfType<DeleteEvent>().Any())
 				_eventStoreTelemetry.AggregateDeleted(aggregate.Id(), _aggregateTypeFullName, aggregate.AggregateType);
@@ -165,6 +172,14 @@ partial class MongoDbEventStore<T>
 		return validationResult;
 	}
 
+	bool ShouldSnapShot(T aggregate, IEvent[] events)
+	{
+		if (aggregate.Details.IsDeleted || events.OfType<RestoreEvent>().Any())
+			return true;
+
+		return (aggregate.Details.CurrentVersion - aggregate.Details.SnapshotVersion) >= _eventStoreOptions.Value.SnapshotInterval;
+	}
+
 	IdempotencyMarkerEntity CreateIdempotencyMarkerOperation(T aggregate, string idempotencyId, IEvent[] changeEvents)
 	{
 		IdempotencyMarkerEntity marker = new()
@@ -182,7 +197,7 @@ partial class MongoDbEventStore<T>
 	{
 		try
 		{
-			await _client.SubmitBatchAsync(batchOperation, cancellationToken);
+			await _eventClient.SubmitBatchAsync(batchOperation, cancellationToken);
 
 			var currentVersion = aggregate.Details.CurrentVersion;
 
@@ -207,6 +222,25 @@ partial class MongoDbEventStore<T>
 
 			throw;
 		}
+	}
+
+	async Task CreateSnapshotAsync(T aggregate, CancellationToken cancellationToken)
+	{
+		// Set the snapshot version to the current version...
+		aggregate.Details.SnapshotVersion = aggregate.Details.CurrentVersion;
+
+		var snapshot = SerializeSnapshot(aggregate);
+
+		SnapshotEntity snapshotEntity = new()
+		{
+			Id = aggregate.Id(),
+			AggregateType = _aggregateTypeShortName,
+			AggregateFullType = _aggregateTypeFullName,
+			Timestamp = DateTimeOffset.UtcNow,
+			Payload = snapshot
+		};
+
+		await _snapshotClient.UpsertAsync(snapshotEntity, m => m.Id == snapshotEntity.Id && m.EntityType == EntityTypes.SnapshotType, cancellationToken);
 	}
 
 	EventEntity CreateSerializedEvent(string aggregateId, IEvent @event, string serializedEvent, string idempotencyId)

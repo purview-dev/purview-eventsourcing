@@ -1,6 +1,6 @@
-﻿namespace Purview.EventSourcing.MongoDb;
+﻿namespace Purview.EventSourcing.MongoDB;
 
-partial class GenericMongoDbEventStoreTests<TAggregate>
+partial class GenericMongoDBEventStoreTests<TAggregate>
 {
 	public async Task IsDeletedAsync_GivenDeletedAggregates_ReturnsTrue()
 	{

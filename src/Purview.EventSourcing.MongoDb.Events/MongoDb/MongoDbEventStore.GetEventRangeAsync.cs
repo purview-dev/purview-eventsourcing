@@ -1,10 +1,10 @@
 ﻿using System.Runtime.CompilerServices;
 using Purview.EventSourcing.Aggregates.Events;
-using Purview.EventSourcing.MongoDb.Entities;
+using Purview.EventSourcing.MongoDB.Entities;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-partial class MongoDbEventStore<T>
+partial class MongoDBEventStore<T>
 {
 	/// <summary>
 	/// Gets a range of <see cref="IEvent"/>s for a given aggregate, as specified by it's <paramref name="aggregateId"/>.
@@ -39,7 +39,7 @@ partial class MongoDbEventStore<T>
 	{
 		versionTo ??= int.MaxValue;
 
-		var query = _client.QueryEnumerableAsync<EventEntity>(m => m.AggregateId == aggregateId
+		var query = _eventClient.QueryEnumerableAsync<EventEntity>(m => m.AggregateId == aggregateId
 			&& m.EntityType == EntityTypes.EventType
 			&& m.Version >= versionFrom && m.Version <= versionTo,
 			cancellationToken: cancellationToken);

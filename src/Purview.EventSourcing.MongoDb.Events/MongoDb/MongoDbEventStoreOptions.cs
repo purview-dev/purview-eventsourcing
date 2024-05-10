@@ -1,15 +1,21 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-sealed public class MongoDbEventStoreOptions
+sealed public class MongoDBEventStoreOptions
 {
-	public const string MongoDbEventStore = "EventStore:MongoDb";
+	public const string MongoDBEventStore = "EventStore:MongoDB";
+
+	/// <summary>
+	/// Defines the default snapshot interval, when not set in configuration.
+	/// Defaults to 1, which means snapshot when at least 1 event is saved.
+	/// </summary>
+	/// <seealso cref="SnapshotInterval"/>
+	public static int DefaultSnapshotInterval { get; set; } = 1;
 
 	const bool DefaultRemoveDeletedFromCache = true;
 	const int DefaultEventSuffixLength = 30;
-	const string DefaultEventPrefix = "e";
 
 	[Required]
 	public string ConnectionString { get; set; } = default!;
@@ -17,9 +23,14 @@ sealed public class MongoDbEventStoreOptions
 	public string? ApplicationName { get; set; }
 
 	[Required]
+	// TODO: Regex
 	public string Database { get; set; } = default!;
 
-	public string? Collection { get; set; }
+	// TODO: Regex
+	public string? EventCollection { get; set; }
+
+	// TODO: Regex
+	public string? SnapshotCollection { get; set; }
 
 	[Range(1, 120000)]
 	public int? TimeoutInSeconds { get; set; } = 60;
@@ -31,6 +42,18 @@ sealed public class MongoDbEventStoreOptions
 	public int MaxEventCountOnSave { get; set; } = 1000;
 
 	/// <summary>
+	/// <para>
+	/// Indicates when a snapshot is made of the aggregate, based on the number of events
+	/// applied during a <see cref="IEventStore{T}.SaveAsync(T, EventStoreOperationContext?, CancellationToken)"/> operation.
+	/// </para>
+	/// <para>The default is 1, so a snapshot is made for any change.</para>
+	/// </summary>
+	/// <remarks>The default can be changed statically by setting the <see cref="DefaultSnapshotInterval"/>.</remarks>
+	/// <see cref="IEventStore{T}"/>
+	[Range(1, int.MaxValue)]
+	public int SnapshotInterval { get; set; } = DefaultSnapshotInterval;
+
+	/// <summary>
 	/// <para>Indicates if a deleted aggregate is removed from cache. Defaults to true.</para>
 	/// <para>
 	/// If true, when an aggregate is deleted, it is removed from the cache.
@@ -40,15 +63,6 @@ sealed public class MongoDbEventStoreOptions
 	/// </summary>
 	[DefaultValue(DefaultRemoveDeletedFromCache)]
 	public bool RemoveDeletedFromCache { get; set; } = DefaultRemoveDeletedFromCache;
-
-	/// <summary>
-	/// Sets the suffix for writing events.
-	/// </summary>
-	/// <remarks>Changing this where data already exists will result in incomplete aggregates.</remarks>
-	[Required]
-	[StringLength(100, MinimumLength = 1)]
-	[DefaultValue(DefaultEventPrefix)]
-	public string EventPrefix { get; set; } = DefaultEventPrefix;
 
 	/// <summary>
 	/// The length of the suffix when creating event records.

@@ -1,13 +1,13 @@
 ﻿using MongoDB.Driver;
 using Purview.EventSourcing.Aggregates.Persistence;
-using Purview.EventSourcing.SnapshotOnly.MongoDb;
+using Purview.EventSourcing.SnapshotOnly.MongoDB;
 
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+namespace Purview.EventSourcing.MongoDB.Snapshot;
 
-[Collection("MongoDb")]
-[NCrunch.Framework.Category("MongoDb")]
+[Collection("MongoDB")]
+[NCrunch.Framework.Category("MongoDB")]
 [NCrunch.Framework.Category("Storage")]
-public partial class MongoDbSnapshotEventStoreTests(MongoDbSnapshotEventStoreFixture fixture) : IClassFixture<MongoDbSnapshotEventStoreFixture>
+public partial class MongoDBSnapshotEventStoreTests(MongoDBSnapshotEventStoreFixture fixture) : IClassFixture<MongoDBSnapshotEventStoreFixture>
 {
 	static PersistenceAggregate CreateAggregate(string? id = null, Action<PersistenceAggregate>? action = null)
 	{

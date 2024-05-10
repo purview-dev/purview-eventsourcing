@@ -4,35 +4,37 @@ using LinqKit;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Purview.EventSourcing.Aggregates;
-using Purview.EventSourcing.MongoDb.Entities;
+using Purview.EventSourcing.MongoDB.Entities;
 using Purview.EventSourcing.Services;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
+public sealed partial class MongoDBEventStore<T> : IMongoDBEventStore<T>
 	where T : class, IAggregate, new()
 {
-	readonly StorageClients.MongoDbClient _client;
+	readonly StorageClients.MongoDBClient _eventClient;
+	readonly StorageClients.MongoDBClient _snapshotClient;
 
 	readonly IAggregateEventNameMapper _eventNameMapper;
-	readonly IOptions<MongoDbEventStoreOptions> _eventStoreOptions;
+	readonly IOptions<MongoDBEventStoreOptions> _eventStoreOptions;
 	readonly FluentValidation.IValidator<T>? _validator;
 	readonly IAggregateIdFactory? _aggregateIdFactory;
 	readonly IDistributedCache _distributedCache;
-	readonly IMongoDbEventStoreTelemetry _eventStoreTelemetry;
+	readonly IMongoDBEventStoreTelemetry _eventStoreTelemetry;
 	readonly ChangeFeed.IAggregateChangeFeedNotifier<T> _aggregateChangeNotifier;
 	readonly IAggregateRequirementsManager _aggregateRequirementsManager;
 
 	readonly string _aggregateTypeFullName;
 	readonly string _aggregateTypeShortName;
 
-	public MongoDbEventStore(
+	public MongoDBEventStore(
 		IAggregateEventNameMapper eventNameMapper,
-		[NotNull] IOptions<MongoDbEventStoreOptions> mongoDbOptions,
+		[NotNull] IOptions<MongoDBEventStoreOptions> mongoDbOptions,
 		IDistributedCache distributedCache,
-		IMongoDbEventStoreTelemetry eventStoreTelemetry,
+		IMongoDBEventStoreTelemetry eventStoreTelemetry,
 		ChangeFeed.IAggregateChangeFeedNotifier<T> aggregateChangeNotifier,
 		IAggregateRequirementsManager aggregateRequirementsManager,
+		IMongoDBEventStoreStorageNameBuilder? storageNameBuilder = null,
 		FluentValidation.IValidator<T>? validator = null,
 		IAggregateIdFactory? aggregateIdFactory = null)
 	{
@@ -45,7 +47,6 @@ public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 		_aggregateChangeNotifier = aggregateChangeNotifier;
 		_aggregateRequirementsManager = aggregateRequirementsManager;
 
-
 		_aggregateTypeShortName = typeof(T).Name;
 		_aggregateTypeFullName = typeof(T).FullName ?? _aggregateTypeShortName;
 
@@ -54,11 +55,23 @@ public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 			// Could do with validating that this is a valid blob container name.
 			_aggregateTypeShortName = aggregateName;
 
-		_client = new(new StorageClients.MongoDbConfiguration
+		_eventClient = new(new StorageClients.MongoDBConfiguration
 		{
 			ApplicationName = mongoDbOptions.Value.ApplicationName,
-			Database = mongoDbOptions.Value.Database,
-			Collection = mongoDbOptions.Value.Collection ?? $"es-{_aggregateTypeShortName}-events",
+			Database = storageNameBuilder?.GetDatabaseName<T>() ?? mongoDbOptions.Value.Database,
+			Collection = storageNameBuilder?.GetEventsCollectionName<T>()
+				?? mongoDbOptions.Value.EventCollection
+				?? $"es-{_aggregateTypeShortName}-events",
+			ConnectionString = mongoDbOptions.Value.ConnectionString
+		});
+
+		_snapshotClient = new(new StorageClients.MongoDBConfiguration
+		{
+			ApplicationName = mongoDbOptions.Value.ApplicationName,
+			Database = storageNameBuilder?.GetDatabaseName<T>() ?? mongoDbOptions.Value.Database,
+			Collection = storageNameBuilder?.GetSnapshotCollectionName<T>()
+				?? mongoDbOptions.Value.SnapshotCollection
+				?? $"es-{_aggregateTypeShortName}-snapshots",
 			ConnectionString = mongoDbOptions.Value.ConnectionString
 		});
 	}
@@ -106,11 +119,11 @@ public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 		if (!includeDeleted)
 			whereClause = PredicateBuilder.And<StreamVersionEntity>(whereClause, m => !m.IsDeleted);
 
-		var query = _client.QueryEnumerableAsync<StreamVersionEntity>(whereClause, cancellationToken: cancellationToken);
+		var query = _eventClient.QueryEnumerableAsync<StreamVersionEntity>(whereClause, cancellationToken: cancellationToken);
 		await foreach (var entity in query)
 		{
 			if (includeDeleted || !entity.IsDeleted)
-				yield return entity.Id;
+				yield return entity.AggregateId.ToString();
 		}
 	}
 
@@ -124,7 +137,7 @@ public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 		{
 			var sw = System.Diagnostics.Stopwatch.StartNew();
 
-			result = await _client.GetAsync<StreamVersionEntity>(CreateStreamVersionId(aggregateId), cancellationToken);
+			result = await _eventClient.GetAsync<StreamVersionEntity>(m => m.Id == CreateStreamVersionId(aggregateId) && m.EntityType == EntityTypes.StreamVersionType, cancellationToken);
 			sw.Stop();
 
 			elapsedMilliseconds = sw.ElapsedMilliseconds;
@@ -164,6 +177,7 @@ public sealed partial class MongoDbEventStore<T> : IMongoDbEventStore<T>
 
 		return true;
 	}
+
 	string CreateStreamVersionId(string aggregateId)
 		=> $"s_{_aggregateTypeShortName}_{aggregateId}";
 

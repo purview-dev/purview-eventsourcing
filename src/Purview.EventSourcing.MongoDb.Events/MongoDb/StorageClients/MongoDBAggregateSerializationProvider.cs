@@ -2,9 +2,9 @@
 using MongoDB.Bson.Serialization;
 using Purview.EventSourcing.Aggregates;
 
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+namespace Purview.EventSourcing.MongoDB.StorageClients;
 
-sealed class MongoDbAggregateSerializationProvider : IBsonSerializationProvider
+sealed class MongoDBAggregateSerializationProvider : IBsonSerializationProvider
 {
 	static readonly Type _aggregateInterfaceType = typeof(IAggregate);
 	static readonly ConcurrentDictionary<Type, IBsonSerializer> _serializers = new();
@@ -20,7 +20,7 @@ sealed class MongoDbAggregateSerializationProvider : IBsonSerializationProvider
 	{
 		return _serializers.GetOrAdd(type, t =>
 		{
-			var serializerType = typeof(MongoDbAggregateSerializer<>).MakeGenericType(t);
+			var serializerType = typeof(MongoDBAggregateSerializer<>).MakeGenericType(t);
 			return (IBsonSerializer)Activator.CreateInstance(serializerType)!;
 		});
 	}

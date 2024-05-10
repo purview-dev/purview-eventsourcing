@@ -1,11 +1,11 @@
 ﻿using System.Globalization;
 using Microsoft.Extensions.Caching.Distributed;
 using Purview.EventSourcing.Aggregates.Events;
-using Purview.EventSourcing.MongoDb.Entities;
+using Purview.EventSourcing.MongoDB.Entities;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-partial class MongoDbEventStore<T>
+partial class MongoDBEventStore<T>
 {
 	[System.Diagnostics.DebuggerStepThrough]
 	public Task<T?> GetAsync(string aggregateId, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default)
@@ -42,7 +42,7 @@ partial class MongoDbEventStore<T>
 				return null;
 
 			//** THIS ISN'T CORRECT, SO WE'RE PASSING IN NULL TO ENABLE ALL ADDITIONAL EVENTS **//
-			// It's only odd as in I haven't thought it through completely...
+			// TODO: It's only odd as in I haven't thought it through completely...
 
 			//int? streamVersionIdentifier = streamVersion.Version;
 			//if (streamVersionIdentifier < 1)
@@ -54,8 +54,10 @@ partial class MongoDbEventStore<T>
 			int? streamVersionIdentifier = null;
 			if (!operationContext.SkipSnapshot)
 			{
+				// If there's no snapshot, then this isn't doing a create (as in brand new
+				// never before seen object), we know it exists, it has a stream version...
 				// This is for the case when there is no snapshot, and we need to create the entity and apply the events.
-				aggregate = await GetFromCacheAsync(aggregateId, cancellationToken);
+				aggregate = await GetLatestSnapshotAsync(aggregateId, cancellationToken);
 			}
 
 			aggregate ??= new T
@@ -127,6 +129,24 @@ partial class MongoDbEventStore<T>
 
 		// Make sure we set is deleted too, in-case we're being allowed to get deleted aggregates.
 		aggregate.Details.IsDeleted = streamVersion.IsDeleted;
+	}
+
+	async Task<T?> GetLatestSnapshotAsync(string aggregateId, CancellationToken cancellationToken)
+	{
+		try
+		{
+			var snapshot = await _snapshotClient.GetAsync<SnapshotEntity>(aggregateId, cancellationToken);
+			if (snapshot == null)
+				return null;
+
+			return DeserializeSnapshot(snapshot.Payload);
+		}
+		catch (Exception ex)
+		{
+			_eventStoreTelemetry.SnapshotDeserializationFailed(aggregateId, _aggregateTypeFullName, ex);
+
+			return null;
+		}
 	}
 
 	async Task<T?> GetFromCacheAsync(string aggregateId, CancellationToken cancellationToken)

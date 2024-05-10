@@ -1,9 +1,9 @@
 ﻿using Purview.EventSourcing.Aggregates.Events;
-using Purview.EventSourcing.MongoDb.Entities;
+using Purview.EventSourcing.MongoDB.Entities;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-partial class MongoDbEventStore<T>
+partial class MongoDBEventStore<T>
 {
 	public async Task<bool> DeleteAsync(T aggregate, EventStoreOperationContext? operationContext, CancellationToken cancellationToken = default)
 	{
@@ -49,19 +49,19 @@ partial class MongoDbEventStore<T>
 
 		try
 		{
-			var ids = Enumerable.Range(0, streamVersion.Version).Select(id => CreateEventId(aggregateId, id));
+			var ids = Enumerable.Range(0, streamVersion.Version).Select(id => CreateEventId(aggregateId, id).ToString());
 
 			List<string> entitiesToDelete = [.. ids];
-			entitiesToDelete.Add(streamVersion.Id);
+			entitiesToDelete.Add(streamVersion.AggregateId);
 
 			if (operationContext.UseIdempotencyMarker)
 			{
-				var results = _client.QueryEnumerableAsync<IdempotencyMarkerEntity>(m => m.AggregateId == aggregateId, cancellationToken: cancellationToken);
+				var results = _eventClient.QueryEnumerableAsync<IdempotencyMarkerEntity>(m => m.AggregateId == aggregateId, cancellationToken: cancellationToken);
 				await foreach (var entity in results)
-					entitiesToDelete.Add(entity.Id);
+					entitiesToDelete.Add(entity.AggregateId);
 			}
 
-			await _client.SubmitDeleteBatchAsync(entitiesToDelete, cancellationToken);
+			await _eventClient.SubmitDeleteBatchAsync(entitiesToDelete, cancellationToken);
 
 			_eventStoreTelemetry.PermanentDeleteComplete(aggregateId);
 

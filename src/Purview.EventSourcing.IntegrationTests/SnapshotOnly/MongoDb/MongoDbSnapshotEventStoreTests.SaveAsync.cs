@@ -1,6 +1,6 @@
-﻿namespace Purview.EventSourcing.MongoDb.Snapshot;
+﻿namespace Purview.EventSourcing.MongoDB.Snapshot;
 
-partial class MongoDbSnapshotEventStoreTests
+partial class MongoDBSnapshotEventStoreTests
 {
 	[Fact]
 	public async Task SaveAsync_GivenNewAggregateWithChanges_SavesAggregate()
@@ -32,46 +32,46 @@ partial class MongoDbSnapshotEventStoreTests
 		var builder = PredicateId(aggregateId);
 
 		// Verify by re-getting the aggregate directly from the MongoClient, not via the event store.
-		var aggregateFromMongoDb = await context.MongoDbClient.GetAsync(builder, cancellationToken: tokenSource.Token);
+		var aggregateFromMongoDB = await context.MongoDBClient.GetAsync(builder, cancellationToken: tokenSource.Token);
 
-		aggregateFromMongoDb
+		aggregateFromMongoDB
 			.Should()
 			.NotBeNull();
 
-		aggregateFromMongoDb!
+		aggregateFromMongoDB!
 			.Id()
 			.Should()
 			.Be(aggregate.Id());
 
-		aggregateFromMongoDb!
+		aggregateFromMongoDB!
 			.IncrementInt32
 			.Should()
 			.Be(aggregate.IncrementInt32);
 
-		aggregateFromMongoDb
+		aggregateFromMongoDB
 			.StringProperty
 			.Should()
 			.Be(aggregateId);
 
-		aggregateFromMongoDb
+		aggregateFromMongoDB
 			.Details
 			.SavedVersion
 			.Should()
 			.Be(aggregate.Details.SavedVersion);
 
-		aggregateFromMongoDb
+		aggregateFromMongoDB
 			.Details
 			.CurrentVersion
 			.Should()
 			.Be(aggregate.Details.CurrentVersion);
 
-		aggregateFromMongoDb
+		aggregateFromMongoDB
 			.Details
 			.SnapshotVersion
 			.Should()
 			.Be(aggregate.Details.SnapshotVersion);
 
-		aggregateFromMongoDb
+		aggregateFromMongoDB
 			.Details
 			.Etag
 			.Should()

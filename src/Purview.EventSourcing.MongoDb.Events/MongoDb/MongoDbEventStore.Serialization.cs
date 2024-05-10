@@ -1,9 +1,9 @@
 ﻿using Newtonsoft.Json;
 using Purview.EventSourcing.Aggregates.Events;
 
-namespace Purview.EventSourcing.MongoDb;
+namespace Purview.EventSourcing.MongoDB;
 
-partial class MongoDbEventStore<T>
+partial class MongoDBEventStore<T>
 {
 	static IEvent? DeserializeEvent(string eventContent, Type eventType)
 		=> JsonConvert.DeserializeObject(eventContent, eventType, JsonHelpers.JsonSerializerSettings) as IEvent;

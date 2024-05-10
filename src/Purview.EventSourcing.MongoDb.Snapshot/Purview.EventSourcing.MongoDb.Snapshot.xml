@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <doc>
     <assembly>
-        <name>Purview.EventSourcing.MongoDb.Snapshot</name>
+        <name>Purview.EventSourcing.MongoDB.Snapshot</name>
     </assembly>
     <members>
     </members>

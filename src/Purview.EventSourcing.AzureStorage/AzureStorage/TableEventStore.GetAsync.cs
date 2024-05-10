@@ -41,7 +41,7 @@ partial class TableEventStore<T>
 				return null;
 
 			//** THIS ISN'T CORRECT, SO WE'RE PASSING IN NULL TO ENABLE ALL ADDITIONAL EVENTS **//
-			// It's only odd as in I haven't thought it through completely...
+			// TODO: It's only odd as in I haven't thought it through completely...
 
 			//int? streamVersionIdentifier = streamVersion.Version;
 			//if (streamVersionIdentifier < 1)
