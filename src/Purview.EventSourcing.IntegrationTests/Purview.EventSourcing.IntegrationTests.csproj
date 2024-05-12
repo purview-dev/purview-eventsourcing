@@ -18,5 +18,11 @@
 		<PackageReference Include="Testcontainers.CosmosDb" />
 		<PackageReference Include="Testcontainers.MongoDb" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Resources\**\*">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
 	
 </Project>

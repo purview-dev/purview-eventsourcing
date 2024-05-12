@@ -1,4 +1,5 @@
-﻿using DotNet.Testcontainers.Builders;
+﻿using System.Reflection;
+using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -57,9 +58,12 @@ public static class ContainerHelper
 
 	public static IContainer CreateMongoDBWithReplicaSet(Action<ContainerBuilder>? config = null)
 	{
+		var mntPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Resources/mongodb/");
+
 		var builder = new ContainerBuilder()
 			.WithImage(MongoDbBuilder.MongoDbImage)
 			.WithPortBinding(MongoDbBuilder.MongoDbPort, true)
+			.WithBindMount(mntPath, "/data-keys/")
 			.WithEnvironment("MONGO_INITDB_ROOT_USERNAME", MongoDbBuilder.DefaultUsername)
 			.WithEnvironment("MONGO_INITDB_ROOT_PASSWORD", MongoDbBuilder.DefaultPassword)
 			.WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(MongoDbBuilder.MongoDbPort))
@@ -70,13 +74,25 @@ public static class ContainerHelper
 				//	return false;
 				//}, cancellationToken: cancellationToken);
 
-				//, "chmod 400 repl-key"
-				await container.ExecAsync(["openssl rand -base64 756 > repl-key;"], e =>
+				//, 
+				//await container.ExecAsync(["openssl rand -base64 756 > repl-key;"], e =>
+				//{
+				//	return false;
+				//}, cancellationToken: cancellationToken);
+
+
+				//  /data/keys/
+				await container.ExecAsync(["ls /data/"], e =>
 				{
 					return false;
 				}, cancellationToken: cancellationToken);
 
-				await container.ExecAsync(["bash", "-c", $"echo 'disableTelemetry(); rs.initiate({{_id: \"rs0\", members: [{{ _id: 0, host: \"localhost:{MongoDbBuilder.MongoDbPort}\" }}]}});' | mongosh --keyFile repl-key -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD"], e =>
+				await container.ExecAsync(["chmod 400 /data/keys/repl.key"], e =>
+				{
+					return false;
+				}, cancellationToken: cancellationToken);
+
+				await container.ExecAsync(["bash", "-c", $"echo 'disableTelemetry(); rs.initiate({{_id: \"rs0\", members: [{{ _id: 0, host: \"localhost:{MongoDbBuilder.MongoDbPort}\" }}]}});' | mongosh --keyFile /data/keys/repl.key -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD"], e =>
 				{
 					return false;
 				}, cancellationToken: cancellationToken);
@@ -147,16 +163,14 @@ public static class ContainerHelper
 			try
 			{
 				var result = await container.ExecAsync(commands, cancellationToken);
-				var exitCode = result.ExitCode;
-
-				if (exitCode == 0)
+				if (result.ExitCode == 0)
 				{
 					return isSuccess is not null && !isSuccess(result)
 						? throw new Exception($"Command failed. Stdout: {result.Stdout}, Stderr: {result.Stderr}")
 						: true;
 				}
 
-				exitCode.Should().Be(0,
+				result.ExitCode.Should().Be(0,
 					because: $"MongoDB replica set initialization failed. Attempt {attemptCount + 1} of 10. Stdout: {result.Stdout}, Stderr: {result.Stderr}");
 			}
 			catch
