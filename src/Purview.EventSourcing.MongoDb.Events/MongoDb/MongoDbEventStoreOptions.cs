@@ -32,6 +32,8 @@ sealed public class MongoDBEventStoreOptions
 	// TODO: Regex
 	public string? SnapshotCollection { get; set; }
 
+	public string? ReplicaName { get; set; }
+
 	[Range(1, 120000)]
 	public int? TimeoutInSeconds { get; set; } = 60;
 

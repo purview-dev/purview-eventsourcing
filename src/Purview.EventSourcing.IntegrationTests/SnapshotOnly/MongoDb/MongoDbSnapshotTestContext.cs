@@ -67,7 +67,7 @@ sealed public class MongoDBSnapshotTestContext
 
 	TableEventStore<PersistenceAggregate> CreateTableEventStore(int correlationIdsToGenerate = 1)
 	{
-		var runIds = Enumerable.Range(1, correlationIdsToGenerate).Select(_ => $"{Guid.NewGuid()}".ToUpperInvariant()).ToArray();
+		var runIds = Enumerable.Range(1, correlationIdsToGenerate).Select(_ => $"{Guid.NewGuid():u}".ToUpperInvariant()).ToArray();
 
 		_eventNameMapper = new AggregateEventNameMapper();
 		_telemetry = Substitute.For<ITableEventStoreTelemetry>();

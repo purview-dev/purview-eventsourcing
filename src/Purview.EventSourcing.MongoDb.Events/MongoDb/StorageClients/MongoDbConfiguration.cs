@@ -9,4 +9,6 @@ sealed class MongoDBConfiguration
 	public string Database { get; set; } = default!;
 
 	public string Collection { get; set; } = default!;
+
+	public string? ReplicaName { get; set; }
 }

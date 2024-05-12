@@ -62,7 +62,8 @@ public sealed partial class MongoDBEventStore<T> : IMongoDBEventStore<T>
 			Collection = storageNameBuilder?.GetEventsCollectionName<T>()
 				?? mongoDbOptions.Value.EventCollection
 				?? $"es-{_aggregateTypeShortName}-events",
-			ConnectionString = mongoDbOptions.Value.ConnectionString
+			ConnectionString = mongoDbOptions.Value.ConnectionString,
+			ReplicaName = mongoDbOptions.Value.ReplicaName
 		});
 
 		_snapshotClient = new(new StorageClients.MongoDBConfiguration
@@ -72,7 +73,8 @@ public sealed partial class MongoDBEventStore<T> : IMongoDBEventStore<T>
 			Collection = storageNameBuilder?.GetSnapshotCollectionName<T>()
 				?? mongoDbOptions.Value.SnapshotCollection
 				?? $"es-{_aggregateTypeShortName}-snapshots",
-			ConnectionString = mongoDbOptions.Value.ConnectionString
+			ConnectionString = mongoDbOptions.Value.ConnectionString,
+			ReplicaName = mongoDbOptions.Value.ReplicaName
 		});
 	}
 

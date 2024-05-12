@@ -22,7 +22,10 @@ sealed partial class CosmosDbClient
 	static readonly ConcurrentDictionary<string, AsyncLazy<Database>> _createdDatabases = new();
 	static readonly ConcurrentDictionary<string, AsyncLazy<Container>> _createdContainers = new();
 
-	public CosmosDbClient([NotNull] CosmosDbEventStoreOptions cosmosDbOptions, string? partitionKeyOverride = null, string? containerNameOverride = null, CosmosClient? cosmosClient = null)
+	public CosmosDbClient([NotNull] CosmosDbEventStoreOptions cosmosDbOptions,
+		string? partitionKeyOverride = null,
+		string? containerNameOverride = null,
+		CosmosClient? cosmosClient = null)
 	{
 		_cosmosDbOptions = cosmosDbOptions;
 

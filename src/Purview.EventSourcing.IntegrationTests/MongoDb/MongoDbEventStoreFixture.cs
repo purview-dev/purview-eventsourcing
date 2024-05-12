@@ -4,12 +4,14 @@ using Purview.EventSourcing.Aggregates;
 using Purview.EventSourcing.ChangeFeed;
 using Purview.EventSourcing.MongoDB.StorageClients;
 using Purview.EventSourcing.Services;
+using Testcontainers.MongoDb;
 
 namespace Purview.EventSourcing.MongoDB;
 
 public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 {
 	readonly Testcontainers.MongoDb.MongoDbContainer _mongoDBContainer;
+	readonly DotNet.Testcontainers.Containers.IContainer _mongoDbReplicaContainer;
 
 	IAggregateEventNameMapper _eventNameMapper = default!;
 	IDisposable? _eventStoreAsDisposable;
@@ -17,6 +19,7 @@ public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 	public MongoDBEventStoreFixture()
 	{
 		_mongoDBContainer = ContainerHelper.CreateMongoDB();
+		_mongoDbReplicaContainer = ContainerHelper.CreateMongoDBWithReplicaSet();
 	}
 
 	public IDistributedCache Cache { get; private set; } = default!;
@@ -39,14 +42,13 @@ public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 			.Select(_ => $"{Guid.NewGuid()}".ToUpperInvariant())
 			.ToArray();
 
-
 		Cache = CreateDistributedCache();
 		Telemetry = Substitute.For<IMongoDBEventStoreTelemetry>();
 
 		_eventNameMapper = new AggregateEventNameMapper();
 
 		var connectionString = _mongoDBContainer.GetConnectionString();
-		connectionString = "mongodb://127.0.0.1:27017/";
+		connectionString = $"mongodb://{MongoDbBuilder.DefaultUsername}:{MongoDbBuilder.DefaultPassword}@localhost:{_mongoDbReplicaContainer.GetMappedPublicPort(MongoDbBuilder.MongoDbPort)}";
 
 		var aggregateRequirementsManager = Substitute.For<IAggregateRequirementsManager>();
 		MongoDBEventStoreOptions mongoDBOptions = new()
@@ -56,7 +58,8 @@ public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 			Database = $"TestDatabase_{runId}",
 			EventCollection = $"TestCollection_Events_{runId}",
 			SnapshotCollection = $"TestCollection_Snapshots_{runId}",
-			TimeoutInSeconds = 10,
+			ReplicaName = "rs0",
+			TimeoutInSeconds = 60,
 			RemoveDeletedFromCache = removeFromCacheOnDelete,
 			SnapshotInterval = snapshotRecalculationInterval
 		};
@@ -72,11 +75,13 @@ public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 
 		EventClient = new(new()
 		{
-			ConnectionString = mongoDBOptions.ConnectionString
+			ConnectionString = mongoDBOptions.ConnectionString,
+			ReplicaName = mongoDBOptions.ReplicaName
 		}, mongoDBOptions.Database, mongoDBOptions.EventCollection);
 		SnapshotClient = new(new()
 		{
-			ConnectionString = mongoDBOptions.ConnectionString
+			ConnectionString = mongoDBOptions.ConnectionString,
+			ReplicaName = mongoDBOptions.ReplicaName
 		}, mongoDBOptions.Database, mongoDBOptions.SnapshotCollection);
 
 		_eventStoreAsDisposable = eventStore as IDisposable;
@@ -97,12 +102,31 @@ public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 	public async Task InitializeAsync()
 	{
 		await _mongoDBContainer.StartAsync();
+		await _mongoDbReplicaContainer.StartAsync();
 	}
 
 	public async Task DisposeAsync()
 	{
 		_eventStoreAsDisposable?.Dispose();
 
+		var output = await _mongoDBContainer.GetLogsAsync();
+
+		Console.WriteLine("MongoDB Container Output:");
+		Console.WriteLine("stdout:");
+		Console.WriteLine(output.Stdout);
+		Console.WriteLine("stderr:");
+		Console.WriteLine(output.Stderr);
+
 		await _mongoDBContainer.DisposeAsync();
+
+		output = await _mongoDbReplicaContainer.GetLogsAsync();
+
+		Console.WriteLine("MongoDB Replica Container Output:");
+		Console.WriteLine("stdout:");
+		Console.WriteLine(output.Stdout);
+		Console.WriteLine("stderr:");
+		Console.WriteLine(output.Stderr);
+
+		await _mongoDbReplicaContainer.DisposeAsync();
 	}
 }
