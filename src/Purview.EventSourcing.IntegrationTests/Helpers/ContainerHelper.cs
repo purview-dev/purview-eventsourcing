@@ -61,14 +61,18 @@ public static class ContainerHelper
 		var mntPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Resources/mongodb/");
 
 		var builder = new ContainerBuilder()
-			.WithImage(MongoDbBuilder.MongoDbImage)
+			.WithImage("mongo:7.0")
+			.WithCommand("--replSet rs0 --bind_ip_all")
 			.WithPortBinding(MongoDbBuilder.MongoDbPort, true)
-			.WithBindMount(mntPath, "/data-keys/")
+			//.WithBindMount(mntPath, "/data-keys/")
 			.WithEnvironment("MONGO_INITDB_ROOT_USERNAME", MongoDbBuilder.DefaultUsername)
 			.WithEnvironment("MONGO_INITDB_ROOT_PASSWORD", MongoDbBuilder.DefaultPassword)
 			.WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(MongoDbBuilder.MongoDbPort))
 			.WithStartupCallback(async (container, cancellationToken) =>
 			{
+				// test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017'}]}) }" | mongosh --port 27017 --quiet
+
+
 				//await container.ExecAsync(["apt-get update -y", "apt-get upgrade -y", "apt-get install openssl -y"], e =>
 				//{
 				//	return false;
@@ -80,6 +84,14 @@ public static class ContainerHelper
 				//	return false;
 				//}, cancellationToken: cancellationToken);
 
+				await container.ExecAsync(["bash", "-c", $"echo 'disableTelemetry()' | mongosh -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD"], cancellationToken: cancellationToken);
+
+				await container.ExecAsync(["bash", "-c", $"echo 'try {{ rs.status() }} catch (err) {{ rs.initiate({{_id: \"rs0\", members: [{{ _id: 0, host: \"localhost:{MongoDbBuilder.MongoDbPort}\" }}]}}) }};' | mongosh -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD"], e =>
+				{
+					return false;
+				}, cancellationToken: cancellationToken);
+
+				return;
 
 				//  /data/keys/
 				await container.ExecAsync(["ls /data/"], e =>
