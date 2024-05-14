@@ -84,7 +84,18 @@ public static class ContainerHelper
 				//	return false;
 				//}, cancellationToken: cancellationToken);
 
-				await container.ExecAsync(["bash", "-c", $"echo 'disableTelemetry()' | mongosh -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD"], cancellationToken: cancellationToken);
+				await container.ExecAsync(["bash", "-c", $"echo 'disableTelemetry()' | mongosh -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD"], isSuccess: result =>
+				{
+					result.Stderr.Should().BeNullOrEmpty();
+
+					if (!string.IsNullOrEmpty(result.Stdout))
+					{
+						Console.WriteLine("stdout:" + result.Stdout);
+					}
+
+					return true;
+
+				}, cancellationToken: cancellationToken);
 
 				await container.ExecAsync(["bash", "-c", $"echo 'try {{ rs.status() }} catch (err) {{ rs.initiate({{_id: \"rs0\", members: [{{ _id: 0, host: \"localhost:{MongoDbBuilder.MongoDbPort}\" }}]}}) }};' | mongosh -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD"], e =>
 				{
@@ -192,9 +203,8 @@ public static class ContainerHelper
 			}
 		}
 
-		if (throwOnFailure)
-			throw new Exception("Failed to execute command.");
-
-		return false;
+		return throwOnFailure
+			? throw new Exception("Failed to execute command.")
+			: false;
 	}
 }

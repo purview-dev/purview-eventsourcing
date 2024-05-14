@@ -13,7 +13,7 @@ namespace Purview.EventSourcing;
 /// <para>Otherwise, false is returned.</para>
 /// </remarks>
 [System.Diagnostics.DebuggerStepThrough]
-readonly public record struct ExistsState(ExistsStatus Status, int? Version)
+public readonly record struct ExistsState(ExistsStatus Status, int? Version)
 {
 	/// <summary>
 	/// Converts this instance of a <see cref="ExistsState"/> to a <see cref="bool"/>.

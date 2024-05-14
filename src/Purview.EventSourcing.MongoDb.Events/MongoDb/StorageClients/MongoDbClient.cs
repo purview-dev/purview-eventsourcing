@@ -10,6 +10,8 @@ namespace Purview.EventSourcing.MongoDB.StorageClients;
 
 sealed partial class MongoDBClient
 {
+	readonly IMongoDBClientTelemetry _telemetry;
+
 	readonly MongoDBConfiguration _configuration;
 	readonly MongoClient _client;
 	readonly IMongoDatabase _database;
@@ -18,28 +20,20 @@ sealed partial class MongoDBClient
 
 	static MongoDBClient()
 	{
-		//BsonClassMap.RegisterClassMap<IEntity>(cm =>
-		//{
-		//	cm.AutoMap();
-		//	cm.IdMemberMap
-		//		.SetIdGenerator(StringObjectIdGenerator.Instance)
-		//		.SetSerializer(new StringSerializer(BsonType.ObjectId));
-		//});
+		try
+		{
+			BsonSerializer.RegisterSerializationProvider(new MongoDBAggregateSerializationProvider());
 
-		BsonSerializer.RegisterSerializationProvider(new MongoDBAggregateSerializationProvider());
+			var iEntityType = typeof(IEntity);
 
-		var iEntityType = typeof(IEntity);
-
-		BsonSerializer.RegisterSerializer(new ObjectSerializer(iEntityType.IsAssignableFrom));
-
-		//ConventionPack cp = [new StringObjectIdIdGeneratorConventionThatWorks()];
-
-		//ConventionRegistry.Register("TreatAllStringIdsProperly", cp, _ => true);
-
+			BsonSerializer.RegisterSerializer(new ObjectSerializer(iEntityType.IsAssignableFrom));
+		}
+		catch { }
 	}
 
-	public MongoDBClient(MongoDBConfiguration configuration, string? databaseOverride = null, string? collectionOverride = null)
+	public MongoDBClient(IMongoDBClientTelemetry telemetry, MongoDBConfiguration configuration, string? databaseOverride = null, string? collectionOverride = null)
 	{
+		_telemetry = telemetry;
 		_configuration = configuration;
 
 		var settings = MongoClientSettings.FromConnectionString(configuration.ConnectionString);

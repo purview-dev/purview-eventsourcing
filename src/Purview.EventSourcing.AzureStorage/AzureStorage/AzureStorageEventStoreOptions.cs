@@ -5,7 +5,7 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace Purview.EventSourcing.AzureStorage;
 
-sealed public class AzureStorageEventStoreOptions
+public sealed class AzureStorageEventStoreOptions
 {
 	public const string AzureStorageEventStore = "EventStore:AzureStorage";
 

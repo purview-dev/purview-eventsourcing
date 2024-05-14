@@ -32,6 +32,7 @@ public sealed partial class MongoDBEventStore<T> : IMongoDBEventStore<T>
 		[NotNull] IOptions<MongoDBEventStoreOptions> mongoDbOptions,
 		IDistributedCache distributedCache,
 		IMongoDBEventStoreTelemetry eventStoreTelemetry,
+		StorageClients.IMongoDBClientTelemetry mongoDBClientTelemetry,
 		ChangeFeed.IAggregateChangeFeedNotifier<T> aggregateChangeNotifier,
 		IAggregateRequirementsManager aggregateRequirementsManager,
 		IMongoDBEventStoreStorageNameBuilder? storageNameBuilder = null,
@@ -52,10 +53,9 @@ public sealed partial class MongoDBEventStore<T> : IMongoDBEventStore<T>
 
 		var aggregateName = _eventNameMapper.InitializeAggregate<T>();
 		if (!aggregateName.Contains('.', StringComparison.InvariantCulture))
-			// Could do with validating that this is a valid blob container name.
 			_aggregateTypeShortName = aggregateName;
 
-		_eventClient = new(new StorageClients.MongoDBConfiguration
+		_eventClient = new(mongoDBClientTelemetry, new StorageClients.MongoDBConfiguration
 		{
 			ApplicationName = mongoDbOptions.Value.ApplicationName,
 			Database = storageNameBuilder?.GetDatabaseName<T>() ?? mongoDbOptions.Value.Database,
@@ -66,7 +66,7 @@ public sealed partial class MongoDBEventStore<T> : IMongoDBEventStore<T>
 			ReplicaName = mongoDbOptions.Value.ReplicaName
 		});
 
-		_snapshotClient = new(new StorageClients.MongoDBConfiguration
+		_snapshotClient = new(mongoDBClientTelemetry, new StorageClients.MongoDBConfiguration
 		{
 			ApplicationName = mongoDbOptions.Value.ApplicationName,
 			Database = storageNameBuilder?.GetDatabaseName<T>() ?? mongoDbOptions.Value.Database,

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Purview.EventSourcing.Internal;
@@ -9,7 +10,7 @@ namespace Purview.EventSourcing;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class MongoDBEventStoreIServiceCollectionExtensions
 {
-	public static IServiceCollection AddMongoDBEventStore(this IServiceCollection services)
+	public static IServiceCollection AddMongoDBEventStore([NotNull] this IServiceCollection services)
 	{
 		services.AddEventSourcing();
 
@@ -18,6 +19,8 @@ public static class MongoDBEventStoreIServiceCollectionExtensions
 			.AddTransient(typeof(INonQueryableEventStore<>), typeof(MongoDBEventStore<>))
 			.AddTransient(typeof(IMongoDBEventStore<>), typeof(MongoDBEventStore<>))
 			.AddMongoDBEventStoreTelemetry();
+
+		services.AddMongoDBClientTelemetry();
 
 		services
 			.AddOptions<MongoDBEventStoreOptions>()

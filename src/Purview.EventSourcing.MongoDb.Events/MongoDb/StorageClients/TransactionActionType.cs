@@ -2,7 +2,7 @@
 
 enum TransactionActionType
 {
-	Add,
+	Insert,
 	Update,
 	Delete
 }

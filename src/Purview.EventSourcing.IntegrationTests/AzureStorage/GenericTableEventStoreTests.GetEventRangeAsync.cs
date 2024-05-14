@@ -41,7 +41,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 
 		var eventStore = fixture.CreateEventStore<TAggregate>();
 
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		for (var i = 0; i < eventsToCreate; i++)
 			aggregate.IncrementInt32Value();
 

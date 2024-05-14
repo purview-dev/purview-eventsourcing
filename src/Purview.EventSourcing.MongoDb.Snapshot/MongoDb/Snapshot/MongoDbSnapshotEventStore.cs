@@ -18,7 +18,8 @@ public partial class MongoDBSnapshotEventStore<T> : IMongoDBSnapshotEventStore<T
 	public MongoDBSnapshotEventStore(
 		Internal.INonQueryableEventStore<T> eventStore,
 		IOptions<MongoDBEventStoreOptions> mongoDbOptions,
-		IMongoDBSnapshotEventStoreTelemetry telemetry)
+		IMongoDBSnapshotEventStoreTelemetry telemetry,
+		IMongoDBClientTelemetry mongoDBClientTelemetry)
 	{
 		_eventStore = eventStore;
 		_mongoDbOptions = mongoDbOptions;
@@ -26,7 +27,7 @@ public partial class MongoDBSnapshotEventStore<T> : IMongoDBSnapshotEventStore<T
 
 		_aggregateName = TypeNameHelper.GetName(typeof(T), "Aggregate");
 		var collectionName = _mongoDbOptions.Value.Collection ?? $"snapshot-{_aggregateName}-store";
-		_mongoDbClient = new(new()
+		_mongoDbClient = new(mongoDBClientTelemetry, new()
 		{
 			ConnectionString = _mongoDbOptions.Value.ConnectionString,
 			Database = _mongoDbOptions.Value.Database,
@@ -35,7 +36,7 @@ public partial class MongoDBSnapshotEventStore<T> : IMongoDBSnapshotEventStore<T
 		});
 	}
 
-	async public Task SnapshotAsync(T aggregate, CancellationToken cancellationToken = default)
+	public async Task SnapshotAsync(T aggregate, CancellationToken cancellationToken = default)
 	{
 		ArgumentNullException.ThrowIfNull(aggregate, nameof(aggregate));
 

@@ -11,8 +11,8 @@ sealed class BatchOperation
 	public void Delete(IEntity document)
 		=> AddAction(TransactionActionType.Delete, document);
 
-	public void Add(IEntity document)
-		=> AddAction(TransactionActionType.Add, document);
+	public void Insert(IEntity document)
+		=> AddAction(TransactionActionType.Insert, document);
 
 	public void Update(IEntity document)
 		=> AddAction(TransactionActionType.Update, document);

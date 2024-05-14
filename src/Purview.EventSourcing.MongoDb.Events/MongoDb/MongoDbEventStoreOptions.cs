@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Purview.EventSourcing.MongoDB;
 
-sealed public class MongoDBEventStoreOptions
+public sealed class MongoDBEventStoreOptions
 {
 	public const string MongoDBEventStore = "EventStore:MongoDB";
 

@@ -44,7 +44,7 @@
     <PackageVersion Include="Verify.Xunit" Version="24.1.0" />
   </ItemGroup>
   <ItemGroup Label="Data">
-    <PackageVersion Include="Azure.Storage.Blobs" Version="12.19.1" />
+    <PackageVersion Include="Azure.Storage.Blobs" Version="12.20.0" />
     <PackageVersion Include="Azure.Data.Tables" Version="12.8.3" />
     <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.39.1" />
     <PackageVersion Include="MongoDB.Driver" Version="2.25.0" />

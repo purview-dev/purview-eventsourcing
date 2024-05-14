@@ -8,7 +8,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		for (var i = 0; i < previousEventsToCreate; i++)
 		{
 			aggregate.IncrementInt32Value();

@@ -15,7 +15,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		var beforeWasCalled = false;
 		var afterWasCalled = false;
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		for (var i = 0; i < eventsToCreate; i++)
 			aggregate.AppendString($"{i + 1} of {eventsToCreate}(s) to created.");
 
@@ -64,7 +64,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 
 		var eventStore = fixture.CreateEventStore(aggregateChangeNotifier: aggregateChangeNotifier);
 

@@ -13,7 +13,7 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 		for (var i = 0; i < aggregateCount; i++)
 		{
 			var aggregateId = $"{Guid.NewGuid()}";
-			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 			aggregate.IncrementInt32Value();
 
 			await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -41,7 +41,7 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 		for (var i = 0; i < nonDeletedAggregateIdCount; i++)
 		{
 			var aggregateId = $"{Guid.NewGuid()}";
-			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 			aggregate.IncrementInt32Value();
 
 			await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -52,7 +52,7 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 		for (var i = 0; i < deletedAggregateIdCount; i++)
 		{
 			var aggregateId = $"{Guid.NewGuid()}";
-			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 			aggregate.IncrementInt32Value();
 
 			await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -83,7 +83,7 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 		for (var i = 0; i < nonDeletedAggregateIdCount; i++)
 		{
 			var aggregateId = $"{Guid.NewGuid()}";
-			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 			aggregate.IncrementInt32Value();
 
 			await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
@@ -94,7 +94,7 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 		for (var i = 0; i < deletedAggregateIdCount; i++)
 		{
 			var aggregateId = $"{Guid.NewGuid()}";
-			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+			var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 			aggregate.IncrementInt32Value();
 
 			await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);

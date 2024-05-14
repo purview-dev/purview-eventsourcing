@@ -36,7 +36,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		var complexProperty = CreateComplexTestType();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 
 		aggregate.SetComplexProperty(complexProperty);
 
@@ -64,7 +64,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 
 		var eventStore = fixture.CreateEventStore<TAggregate>();
 
@@ -88,7 +88,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		aggregate.IncrementInt32Value();
 
 		var eventStore = fixture.CreateEventStore<TAggregate>();
@@ -144,7 +144,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		for (var i = 0; i < eventsToGenerate; i++)
 		{
 			aggregate.IncrementInt32Value();
@@ -211,7 +211,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 
 		var value = string.Empty;
 		var sizeIsLessThan32K = true;
@@ -267,7 +267,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 
 		var value = string.Empty;
 		var sizeIsLessThan32K = true;
@@ -335,7 +335,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		for (var i = 0; i < eventsToGenerate; i++)
 			aggregate.IncrementInt32Value();
 
@@ -401,7 +401,7 @@ partial class GenericTableEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		for (var i = 0; i < eventsToGenerate; i++)
 			aggregate.IncrementInt32Value();
 

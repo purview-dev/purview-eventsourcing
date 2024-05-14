@@ -13,7 +13,7 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		aggregate.IncrementInt32Value();
 
 		var eventStore = fixture.CreateEventStore<TAggregate>();
@@ -39,7 +39,7 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		for (var i = 0; i < eventsToCreate; i++)
 			aggregate.IncrementInt32Value();
 
@@ -111,7 +111,7 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 		var eventStore = fixture.CreateEventStore<TAggregate>(snapshotRecalculationInterval: snapshotInterval);
 
 		// Act
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		for (var i = 0; i < initialEventsToCreate; i++)
 			aggregate.IncrementInt32Value();
 
@@ -148,7 +148,7 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		// Register the event type here...!
 		aggregate.RegisterOldEventType();
 
@@ -218,7 +218,7 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 		using var tokenSource = TestHelpers.CancellationTokenSource();
 
 		var aggregateId = $"{Guid.NewGuid()}";
-		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId); ;
+		var aggregate = TestHelpers.Aggregate<TAggregate>(aggregateId: aggregateId);
 		// Register the event type here...!
 		aggregate.RegisterOldEventType();
 

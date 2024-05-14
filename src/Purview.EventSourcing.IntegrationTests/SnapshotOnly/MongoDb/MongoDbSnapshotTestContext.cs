@@ -11,7 +11,7 @@ using Purview.EventSourcing.Services;
 
 namespace Purview.EventSourcing.SnapshotOnly.MongoDB;
 
-sealed public class MongoDBSnapshotTestContext
+public sealed class MongoDBSnapshotTestContext
 {
 	readonly string _mongoDbConnectionString;
 	readonly string _azuriteConnectionString;
@@ -51,23 +51,26 @@ sealed public class MongoDBSnapshotTestContext
 		MongoDBSnapshots::Purview.EventSourcing.MongoDB.Snapshot.MongoDBSnapshotEventStore<PersistenceAggregate> eventStore = new(
 			tableEventStore,
 			Microsoft.Extensions.Options.Options.Create(config),
-			Substitute.For<MongoDBSnapshots::Purview.EventSourcing.MongoDB.Snapshot.IMongoDBSnapshotEventStoreTelemetry>()
+			Substitute.For<MongoDBSnapshots::Purview.EventSourcing.MongoDB.Snapshot.IMongoDBSnapshotEventStoreTelemetry>(),
+			Substitute.For<MongoDBSnapshots::Purview.EventSourcing.MongoDB.StorageClients.IMongoDBClientTelemetry>()
 		);
 
-		MongoDBClient = new(new()
-		{
-			ConnectionString = config.ConnectionString,
-			ApplicationName = "purview-integration-tests",
-			Database = config.Database,
-			Collection = config.Collection
-		});
+		MongoDBClient = new(
+			Substitute.For<IMongoDBClientTelemetry>(),
+			new()
+			{
+				ConnectionString = config.ConnectionString,
+				ApplicationName = "purview-integration-tests",
+				Database = config.Database,
+				Collection = config.Collection
+			});
 
 		return eventStore;
 	}
 
 	TableEventStore<PersistenceAggregate> CreateTableEventStore(int correlationIdsToGenerate = 1)
 	{
-		var runIds = Enumerable.Range(1, correlationIdsToGenerate).Select(_ => $"{Guid.NewGuid():u}".ToUpperInvariant()).ToArray();
+		var runIds = Enumerable.Range(1, correlationIdsToGenerate).Select(_ => $"{Guid.NewGuid()}".ToUpperInvariant()).ToArray();
 
 		_eventNameMapper = new AggregateEventNameMapper();
 		_telemetry = Substitute.For<ITableEventStoreTelemetry>();

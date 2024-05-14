@@ -2,7 +2,6 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
-using Purview.EventSourcing.MongoDB.Entities;
 
 namespace Purview.EventSourcing.MongoDB.StorageClients;
 
@@ -10,7 +9,7 @@ partial class MongoDBClient
 {
 	public async Task SubmitBatchAsync(BatchOperation operation, CancellationToken cancellationToken = default)
 	{
-		var collection = GetCollection<IEntity>().WithWriteConcern(WriteConcern.WMajority);
+		var collection = GetCollection<BsonDocument>().WithWriteConcern(WriteConcern.WMajority);
 		using var session = await _client.StartSessionAsync(cancellationToken: cancellationToken);
 
 		TransactionOptions transactionOptions = new(writeConcern: WriteConcern.WMajority);
@@ -22,14 +21,18 @@ partial class MongoDBClient
 				{
 					switch (op.ActionType)
 					{
-						case TransactionActionType.Add:
-							await collection.InsertOneAsync(session, op.Document, cancellationToken: cancellationToken);
+						case TransactionActionType.Insert:
+							await collection.InsertOneAsync(session, op.Document.ToBsonDocument(), cancellationToken: cancellationToken);
 							break;
 						case TransactionActionType.Update:
-							await collection.ReplaceOneAsync(session, BuildPredicate<IEntity>(op.Document.Id, op.Document.EntityType), op.Document, new ReplaceOptions() { IsUpsert = false }, cancellationToken: cancellationToken);
+							var d = op.Document.ToBsonDocument();
+							d.Remove("_id");
+
+							await collection.ReplaceOneAsync(session, m => m["_id"] == op.Document.Id, d, new ReplaceOptions { IsUpsert = false }, cancellationToken);
+
 							break;
 						case TransactionActionType.Delete:
-							await collection.DeleteOneAsync(session, BuildPredicate<IEntity>(op.Document.Id, op.Document.EntityType), cancellationToken: cancellationToken);
+							await collection.DeleteOneAsync(session, m => m["_id"] == op.Document.Id, cancellationToken: cancellationToken);
 							break;
 					}
 				}
@@ -41,10 +44,7 @@ partial class MongoDBClient
 			}
 
 			return true;
-		},
-		   transactionOptions,
-			cancellationToken
-		);
+		}, transactionOptions, cancellationToken);
 	}
 
 	public async Task SubmitDeleteBatchAsync(IEnumerable<string> entityIds, CancellationToken cancellationToken = default)
@@ -58,18 +58,25 @@ partial class MongoDBClient
 			try
 			{
 				foreach (var id in entityIds)
-					await collection.DeleteOneAsync(session, BuildPredicate<BsonDocument>(id, null), cancellationToken: cancellationToken);
+				{
+					var deleteResult = await collection.DeleteOneAsync(session, BuildPredicate<BsonDocument>(id, null), cancellationToken: cancellationToken);
+					if (deleteResult.IsAcknowledged)
+					{
+						if (deleteResult.DeletedCount != 0)
+							_telemetry.DeleteResultedInNoOp(id);
+					}
+				}
 			}
-			catch (MongoWriteException)
+			catch (MongoWriteException ex)
 			{
+				_telemetry.FailedToWriteBatch(ex);
 				// Do something in response to the exception
 				throw; // NOTE: You must rethrow the exception otherwise an infinite loop can occur.
 			}
 
 			return true;
 		},
-		   transactionOptions,
-			cancellationToken
+		   transactionOptions, cancellationToken
 		);
 	}
 
@@ -91,10 +98,14 @@ partial class MongoDBClient
 	{
 		var collection = GetCollection<T>();
 
-		return await collection.AsQueryable().Take(1).SingleOrDefaultAsync(predicate, cancellationToken);
+		var result = await collection.FindAsync<T>(predicate, options: new() { Limit = 1 }, cancellationToken: cancellationToken);
+		if (!await result.MoveNextAsync(cancellationToken))
+			return null;
+
+		return result.Current.FirstOrDefault();
 	}
 
-	async public Task<bool> UpsertAsync<T>(T document, Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+	public async Task<bool> UpsertAsync<T>(T document, Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
 		where T : class
 	{
 		var collection = GetCollection<T>();
@@ -103,7 +114,7 @@ partial class MongoDBClient
 		return result.IsAcknowledged;
 	}
 
-	async public Task<bool> UpsertAsync<T>(T document, FilterDefinition<T> predicate, CancellationToken cancellationToken = default)
+	public async Task<bool> UpsertAsync<T>(T document, FilterDefinition<T> predicate, CancellationToken cancellationToken = default)
 		where T : class
 	{
 		var collection = GetCollection<T>();
@@ -112,57 +123,53 @@ partial class MongoDBClient
 		return result.IsAcknowledged;
 	}
 
-	public Task InsertAsync<T>(T document, CancellationToken cancellationToken = default)
+	public async Task InsertAsync<T>(T document, CancellationToken cancellationToken = default)
 		where T : class
 	{
 		var collection = GetCollection<T>();
 
-		return collection.InsertOneAsync(document, null, cancellationToken);
+		await collection.InsertOneAsync(document, null, cancellationToken);
 	}
 
-	public Task InsertAsync<T>(T[] documents, CancellationToken cancellationToken = default)
+	public async Task InsertAsync<T>(T[] documents, CancellationToken cancellationToken = default)
 		where T : class
-	{
-		return InsertAsync(documents.AsEnumerable(), cancellationToken);
-	}
+		=> await InsertAsync(documents.AsEnumerable(), cancellationToken);
 
-	public Task InsertAsync<T>(IEnumerable<T> documents, CancellationToken cancellationToken = default)
-		where T : class
-	{
-		var collection = GetCollection<T>();
-
-		return collection.InsertManyAsync(documents, null, cancellationToken);
-	}
-
-	public Task DeleteAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+	public async Task InsertAsync<T>(IEnumerable<T> documents, CancellationToken cancellationToken = default)
 		where T : class
 	{
 		var collection = GetCollection<T>();
 
-		return collection.DeleteOneAsync(predicate, cancellationToken);
+		await collection.InsertManyAsync(documents, null, cancellationToken);
 	}
 
-	public Task DeleteAsync<T>(FilterDefinition<T> predicate, CancellationToken cancellationToken = default)
+	public async Task DeleteAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
 		where T : class
 	{
 		var collection = GetCollection<T>();
 
-		return collection.DeleteOneAsync(predicate, cancellationToken);
+		await collection.DeleteOneAsync(predicate, cancellationToken);
 	}
 
-	public Task DeleteManyAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+	public async Task DeleteAsync<T>(FilterDefinition<T> predicate, CancellationToken cancellationToken = default)
 		where T : class
 	{
 		var collection = GetCollection<T>();
 
-		return collection.DeleteManyAsync(predicate, cancellationToken);
+		await collection.DeleteOneAsync(predicate, cancellationToken);
 	}
 
-	public Task DeleteDatabaseAsync(CancellationToken cancellationToken = default)
-		=> _client.DropDatabaseAsync(_configuration.Database, cancellationToken);
+	public async Task DeleteManyAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default) where T : class
+	{
+		var collection = GetCollection<T>();
+		await collection.DeleteManyAsync(predicate, cancellationToken);
+	}
 
-	public Task DeleteCollectionAsync(CancellationToken cancellationToken = default)
-		=> _database.DropCollectionAsync(_collectionName, cancellationToken);
+	public async Task DeleteDatabaseAsync(CancellationToken cancellationToken = default)
+		=> await _client.DropDatabaseAsync(_configuration.Database, cancellationToken);
+
+	public async Task DeleteCollectionAsync(CancellationToken cancellationToken = default)
+		=> await _database.DropCollectionAsync(_collectionName, cancellationToken);
 
 	IMongoCollection<T> GetCollection<T>()
 		where T : class

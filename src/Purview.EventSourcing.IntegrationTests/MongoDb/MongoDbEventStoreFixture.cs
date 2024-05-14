@@ -10,6 +10,8 @@ namespace Purview.EventSourcing.MongoDB;
 
 public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 {
+	public const bool UseTestContainers = false;
+
 	readonly Testcontainers.MongoDb.MongoDbContainer _mongoDBContainer;
 	readonly DotNet.Testcontainers.Containers.IContainer _mongoDbReplicaContainer;
 
@@ -18,8 +20,8 @@ public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 
 	public MongoDBEventStoreFixture()
 	{
-		_mongoDBContainer = ContainerHelper.CreateMongoDB();
-		_mongoDbReplicaContainer = ContainerHelper.CreateMongoDBWithReplicaSet();
+		_mongoDBContainer = UseTestContainers ? ContainerHelper.CreateMongoDB() : default!;
+		_mongoDbReplicaContainer = UseTestContainers ? ContainerHelper.CreateMongoDBWithReplicaSet() : default!;
 	}
 
 	public IDistributedCache Cache { get; private set; } = default!;
@@ -47,8 +49,14 @@ public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 
 		_eventNameMapper = new AggregateEventNameMapper();
 
-		var connectionString = _mongoDBContainer.GetConnectionString();
-		connectionString = $"mongodb://{MongoDbBuilder.DefaultUsername}:{MongoDbBuilder.DefaultPassword}@localhost:{_mongoDbReplicaContainer.GetMappedPublicPort(MongoDbBuilder.MongoDbPort)}";
+		string connectionString;
+		if (UseTestContainers)
+		{
+			connectionString = _mongoDBContainer.GetConnectionString();
+			connectionString = $"mongodb://{MongoDbBuilder.DefaultUsername}:{MongoDbBuilder.DefaultPassword}@localhost:{_mongoDbReplicaContainer.GetMappedPublicPort(MongoDbBuilder.MongoDbPort)}";
+		}
+		else
+			connectionString = "mongodb://localhost:27017";
 
 		var aggregateRequirementsManager = Substitute.For<IAggregateRequirementsManager>();
 		MongoDBEventStoreOptions mongoDBOptions = new()
@@ -64,25 +72,33 @@ public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 			SnapshotInterval = snapshotRecalculationInterval
 		};
 
+		var mongoDBClientTelemetry = Substitute.For<IMongoDBClientTelemetry>();
 		MongoDBEventStore<TAggregate> eventStore = new(
 			eventNameMapper: _eventNameMapper,
 			mongoDbOptions: Microsoft.Extensions.Options.Options.Create(mongoDBOptions),
 			distributedCache: Cache,
 			aggregateChangeNotifier: aggregateChangeNotifier ?? Substitute.For<IAggregateChangeFeedNotifier<TAggregate>>(),
 			eventStoreTelemetry: Telemetry,
+			mongoDBClientTelemetry: mongoDBClientTelemetry,
 			aggregateRequirementsManager: aggregateRequirementsManager
 		);
 
-		EventClient = new(new()
-		{
-			ConnectionString = mongoDBOptions.ConnectionString,
-			ReplicaName = mongoDBOptions.ReplicaName
-		}, mongoDBOptions.Database, mongoDBOptions.EventCollection);
-		SnapshotClient = new(new()
-		{
-			ConnectionString = mongoDBOptions.ConnectionString,
-			ReplicaName = mongoDBOptions.ReplicaName
-		}, mongoDBOptions.Database, mongoDBOptions.SnapshotCollection);
+
+
+		EventClient = new(
+			mongoDBClientTelemetry,
+			new()
+			{
+				ConnectionString = mongoDBOptions.ConnectionString,
+				ReplicaName = mongoDBOptions.ReplicaName
+			}, mongoDBOptions.Database, mongoDBOptions.EventCollection);
+		SnapshotClient = new(
+			mongoDBClientTelemetry,
+			new()
+			{
+				ConnectionString = mongoDBOptions.ConnectionString,
+				ReplicaName = mongoDBOptions.ReplicaName
+			}, mongoDBOptions.Database, mongoDBOptions.SnapshotCollection);
 
 		_eventStoreAsDisposable = eventStore as IDisposable;
 
@@ -101,6 +117,9 @@ public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 
 	public async Task InitializeAsync()
 	{
+		if (!UseTestContainers)
+			return;
+
 		await _mongoDBContainer.StartAsync();
 		await _mongoDbReplicaContainer.StartAsync();
 	}
@@ -108,6 +127,9 @@ public sealed class MongoDBEventStoreFixture : IAsyncLifetime
 	public async Task DisposeAsync()
 	{
 		_eventStoreAsDisposable?.Dispose();
+
+		if (!UseTestContainers)
+			return;
 
 		var output = await _mongoDBContainer.GetLogsAsync();
 

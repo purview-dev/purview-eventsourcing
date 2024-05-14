@@ -89,7 +89,7 @@ partial class MongoDBEventStore<T>
 			BatchOperation batchOperation = new();
 			streamEntity = new()
 			{
-				Id = CreateStreamVersionId(aggregate.Id()),
+				Id = streamEntity?.Id ?? CreateStreamVersionId(aggregate.Id()),
 				AggregateId = aggregate.Id(),
 				IsDeleted = aggregate.Details.IsDeleted,
 				AggregateType = aggregate.AggregateType,
@@ -98,7 +98,7 @@ partial class MongoDBEventStore<T>
 			};
 
 			if (isNew || !hasStreamEntity)
-				batchOperation.Add(streamEntity);
+				batchOperation.Insert(streamEntity);
 			else
 				batchOperation.Update(streamEntity);
 
@@ -118,10 +118,10 @@ partial class MongoDBEventStore<T>
 				var serializedEvent = SerializeEvent(changeEvent);
 				var eventEntity = CreateSerializedEvent(aggregate.Id(), changeEvent, serializedEvent, idempotencyMarkerOperation.AggregateId);
 
-				batchOperation.Add(eventEntity);
+				batchOperation.Insert(eventEntity);
 			}
 
-			batchOperation.Add(idempotencyMarkerOperation);
+			batchOperation.Insert(idempotencyMarkerOperation);
 
 			await SubmitBatchOperationsAsync(aggregate, idempotencyId, batchOperation, cancellationToken);
 
