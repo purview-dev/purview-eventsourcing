@@ -42,6 +42,7 @@ partial class MongoDBEventStore<T>
 		var query = _eventClient.QueryEnumerableAsync<EventEntity>(m => m.AggregateId == aggregateId
 			&& m.EntityType == EntityTypes.EventType
 			&& m.Version >= versionFrom && m.Version <= versionTo,
+			orderByClause: m => m.OrderBy(e => e.Version),
 			cancellationToken: cancellationToken);
 
 		await foreach (var eventEntity in query)

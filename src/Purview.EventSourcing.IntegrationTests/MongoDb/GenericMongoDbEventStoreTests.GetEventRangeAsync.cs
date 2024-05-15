@@ -1,4 +1,5 @@
 ﻿using Purview.EventSourcing.Aggregates.Events;
+using Purview.EventSourcing.MongoDB.Entities;
 
 namespace Purview.EventSourcing.MongoDB;
 
@@ -48,11 +49,19 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 		await eventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
 
 		// Act
-		var results = eventStore.GetEventRangeAsync(aggregateId, startEvent, endEvent, cancellationToken: tokenSource.Token);
+		var results = eventStore.GetEventRangeAsync(aggregateId, startEvent, endEvent, cancellationToken: tokenSource.Token).ToBlockingEnumerable().ToArray();
+		var continuationResult = await fixture.EventClient.QueryAsync<EventEntity>(
+			m => m.AggregateId == aggregateId && m.EntityType == EntityTypes.EventType,
+			 e => e.OrderBy(m => m.Version),
+			 eventsToCreate,
+			 tokenSource.Token);
 
 		// Assert
+		results.Should().HaveCount(eventsToCreate);
+		continuationResult.ResultCount.Should().Be(eventsToCreate);
+
 		List<IEvent> eventList = [];
-		await foreach ((var @event, _) in results)
+		foreach ((var @event, _) in results)
 		{
 			@event
 				.Details

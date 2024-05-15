@@ -108,9 +108,14 @@ partial class MongoDBClient
 	public async Task<bool> UpsertAsync<T>(T document, Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
 		where T : class
 	{
-		var collection = GetCollection<T>();
+		//var collection = GetCollection<BsonDocument>();
+		//var d = document.ToBsonDocument();
+		//d.Remove("_id");
 
-		var result = await collection.ReplaceOneAsync(predicate, document, new ReplaceOptions { IsUpsert = true }, cancellationToken);
+		//var result = await collection.ReplaceOneAsync(m => m["_id"] == op.Document.Id, d, new ReplaceOptions { IsUpsert = false }, cancellationToken);
+
+		var collection = GetCollection<T>();
+		var result = await collection.ReplaceOneAsync(predicate, document, new ReplaceOptions { IsUpsert = true, BypassDocumentValidation = true }, cancellationToken);
 		return result.IsAcknowledged;
 	}
 

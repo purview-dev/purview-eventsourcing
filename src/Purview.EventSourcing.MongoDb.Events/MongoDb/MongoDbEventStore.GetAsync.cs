@@ -135,7 +135,7 @@ partial class MongoDBEventStore<T>
 	{
 		try
 		{
-			var snapshot = await _snapshotClient.GetAsync<SnapshotEntity>(aggregateId, cancellationToken);
+			var snapshot = await _snapshotClient.GetAsync<SnapshotEntity>(aggregateId, EntityTypes.SnapshotType, cancellationToken);
 			return snapshot == null
 				? null
 				: DeserializeSnapshot(snapshot.Payload);
