@@ -6,7 +6,7 @@ namespace Purview.EventSourcing.CosmosDb;
 
 partial class CosmosDbClient
 {
-	sealed class CosmosJsonNetSerializer : CosmosSerializer
+	sealed public class CosmosJsonNetSerializer : CosmosSerializer
 	{
 		static readonly Encoding DefaultEncoding = new UTF8Encoding(false, true);
 
@@ -27,9 +27,7 @@ partial class CosmosDbClient
 		public override T FromStream<T>(Stream stream)
 		{
 			if (typeof(Stream).IsAssignableFrom(typeof(T)))
-			{
 				return (T)(object)stream;
-			}
 
 			using (stream)
 			{

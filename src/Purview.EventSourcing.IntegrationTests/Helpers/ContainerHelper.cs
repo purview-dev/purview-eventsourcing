@@ -30,8 +30,8 @@ public static class ContainerHelper
 	public static CosmosDbContainer CreateCosmosDB(Action<CosmosDbBuilder>? config = null)
 	{
 		var builder = new CosmosDbBuilder()
-			.WithAutoRemove(true)
-			.WithCleanUp(true)
+			//.WithAutoRemove(true)
+			//.WithCleanUp(true)
 			//.WithEnvironment("AZURE_COSMOS_EMULATOR_PARTITION_COUNT", "5")
 			//.WithEnvironment("AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE", "127.0.0.1")
 			.WithEnvironment("AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE", "false")

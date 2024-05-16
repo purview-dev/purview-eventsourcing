@@ -3,7 +3,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Purview.EventSourcing.AzureStorage\Purview.EventSourcing.AzureStorage.csproj" />
 		<ProjectReference Include="..\Purview.EventSourcing.MongoDB.Events\Purview.EventSourcing.MongoDB.Events.csproj" />
-		<ProjectReference Include="..\Purview.EventSourcing.CosmosDb.Snapshot\Purview.EventSourcing.CosmosDb.Snapshot.csproj" />
+		<ProjectReference Include="..\Purview.EventSourcing.CosmosDb.Snapshot\Purview.EventSourcing.CosmosDb.Snapshot.csproj"/>
 		<ProjectReference Include="..\Purview.EventSourcing.MongoDB.Snapshot\Purview.EventSourcing.MongoDB.Snapshot.csproj">
 			<Aliases>MongoDBSnapshots</Aliases>
 		</ProjectReference>
@@ -11,6 +11,7 @@
 
 	<ItemGroup>
 		<Compile Include="..\.shared-testing-helpers\**\*" LinkBase="" />
+		<Compile Include="..\.shared-extensions\**\*" LinkBase="" />
 	</ItemGroup>
 
 	<ItemGroup>

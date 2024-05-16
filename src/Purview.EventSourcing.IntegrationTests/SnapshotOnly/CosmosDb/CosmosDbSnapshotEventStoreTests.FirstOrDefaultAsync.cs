@@ -26,7 +26,11 @@ partial class CosmosDbSnapshotEventStoreTests
 		}
 
 		// Act
-		var result = await context.EventStore.FirstOrDefaultAsync(m => m.IncrementInt32 == matchingIncrement, orderByClause: m => m.OrderByDescending(p => p.Int32Value), cancellationToken: tokenSource.Token);
+		var result = await context.EventStore.FirstOrDefaultAsync(
+			m => m.IncrementInt32 == matchingIncrement,
+			orderByClause: m => m.OrderByDescending(p => p.Int32Value),
+			cancellationToken: tokenSource.Token
+		);
 
 		// Assert
 		result.Should().NotBeNull();
@@ -57,7 +61,9 @@ partial class CosmosDbSnapshotEventStoreTests
 		}
 
 		// Act
-		var result = await context.EventStore.FirstOrDefaultAsync(m => m.IncrementInt32 == matchingIncrement, orderByClause: m => m.OrderBy(p => p.Int32Value), cancellationToken: tokenSource.Token);
+		var result = await context.EventStore.FirstOrDefaultAsync(m => m.IncrementInt32 == matchingIncrement,
+			   orderByClause: m => m.OrderBy(p => p.Int32Value),
+			   cancellationToken: tokenSource.Token);
 
 		// Assert
 		result.Should().NotBeNull();

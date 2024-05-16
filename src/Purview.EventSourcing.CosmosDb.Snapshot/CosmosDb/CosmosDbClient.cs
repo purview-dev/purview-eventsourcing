@@ -227,7 +227,7 @@ sealed partial class CosmosDbClient
 						ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 					};
 
-					return new HttpClient(httpMessageHandler);
+					return new(httpMessageHandler);
 				};
 			}
 
