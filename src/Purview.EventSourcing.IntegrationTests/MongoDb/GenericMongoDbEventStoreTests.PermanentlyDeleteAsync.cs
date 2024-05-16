@@ -28,21 +28,11 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 		}, cancellationToken: tokenSource.Token);
 
 		// Assert
-		result
-			.Should()
-			.BeTrue();
+		result.Should().BeTrue();
 
-		aggregate!
-			.Details
-			.IsDeleted
-			.Should()
-			.BeTrue();
+		aggregate!.Details.IsDeleted.Should().BeTrue();
 
-		aggregate
-			.Details
-			.Locked
-			.Should()
-			.BeTrue();
+		aggregate.Details.Locked.Should().BeTrue();
 
 		await ValidateEntitiesDeletedAsync(aggregate, tokenSource.Token);
 	}
@@ -94,12 +84,16 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 
 	async Task ValidateEntitiesDeletedAsync(TAggregate aggregate, CancellationToken cancellationToken)
 	{
-		var count = await fixture.EventClient.CountAsync<EventEntity>(m => m.AggregateId == aggregate.Id(), cancellationToken: cancellationToken);
+		var eventCount = await fixture.EventClient.CountAsync<EventEntity>(m => m.AggregateId == aggregate.Id() && m.EntityType == EntityTypes.EventType, cancellationToken: cancellationToken);
+		eventCount.Should().Be(0);
 
-		count.Should().Be(0);
+		var streamVersionCount = await fixture.EventClient.CountAsync<StreamVersionEntity>(m => m.AggregateId == aggregate.Id() && m.EntityType == EntityTypes.StreamVersionType, cancellationToken: cancellationToken);
+		streamVersionCount.Should().Be(0);
 
-		var snapshotEntity = await fixture.SnapshotClient.GetAsync<SnapshotEntity>(m => m.Id == aggregate.Id(), cancellationToken: cancellationToken);
+		var idempotencyMarkerCount = await fixture.EventClient.CountAsync<IdempotencyMarkerEntity>(m => m.AggregateId == aggregate.Id() && m.EntityType == EntityTypes.StreamVersionType, cancellationToken: cancellationToken);
+		idempotencyMarkerCount.Should().Be(0);
 
+		var snapshotEntity = await fixture.SnapshotClient.GetAsync<SnapshotEntity>(m => m.Id == aggregate.Id() && m.EntityType == EntityTypes.SnapshotType, cancellationToken: cancellationToken);
 		snapshotEntity.Should().BeNull();
 	}
 }

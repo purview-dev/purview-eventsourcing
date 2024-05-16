@@ -46,22 +46,22 @@ partial class MongoDBEventStore<T>
 			return false;
 
 		_eventStoreTelemetry.PermanentDeleteRequested(aggregateId);
-
 		try
 		{
-			var ids = Enumerable.Range(0, streamVersion.Version).Select(id => CreateEventId(aggregateId, id).ToString());
+			var ids = Enumerable.Range(1, streamVersion.Version).Select(id => CreateEventId(aggregateId, id).ToString());
 
 			List<string> entitiesToDelete = [.. ids];
-			entitiesToDelete.Add(streamVersion.AggregateId);
+			entitiesToDelete.Add(streamVersion.Id);
 
 			if (operationContext.UseIdempotencyMarker)
 			{
-				var results = _eventClient.QueryEnumerableAsync<IdempotencyMarkerEntity>(m => m.AggregateId == aggregateId, cancellationToken: cancellationToken);
+				var results = _eventClient.QueryEnumerableAsync<IdempotencyMarkerEntity>(m => m.AggregateId == aggregateId && m.EntityType == EntityTypes.IdempotencyMarkerType, cancellationToken: cancellationToken);
 				await foreach (var entity in results)
-					entitiesToDelete.Add(entity.AggregateId);
+					entitiesToDelete.Add(entity.Id);
 			}
 
 			await _eventClient.SubmitDeleteBatchAsync(entitiesToDelete, cancellationToken);
+			await _snapshotClient.DeleteAsync<SnapshotEntity>(m => m.Id == aggregateId, cancellationToken);
 
 			_eventStoreTelemetry.PermanentDeleteComplete(aggregateId);
 

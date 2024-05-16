@@ -1,8 +1,10 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
+﻿using System.Diagnostics;
+using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
 
 namespace Purview.EventSourcing.MongoDB.Entities;
 
+[DebuggerStepThrough]
 public sealed class SnapshotEntity : IEntity
 {
 	[BsonId]

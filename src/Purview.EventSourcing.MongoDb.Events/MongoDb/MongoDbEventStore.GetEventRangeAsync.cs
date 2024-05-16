@@ -49,6 +49,7 @@ partial class MongoDBEventStore<T>
 			yield return eventEntity!;
 	}
 
+	/// <param name="aggregateVersion">Only used when an unknown event is found.</param>
 	IEvent? DeserializeEvent(EventEntity eventEntity, int aggregateVersion)
 	{
 		static UnknownEvent ReturnUnknownEvent(EventEntity eventEntity, int aggregateVersion)

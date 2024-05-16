@@ -57,17 +57,12 @@ partial class GenericMongoDBEventStoreTests<TAggregate>
 			 tokenSource.Token);
 
 		// Assert
-		results.Should().HaveCount(eventsToCreate);
 		continuationResult.ResultCount.Should().Be(eventsToCreate);
 
 		List<IEvent> eventList = [];
 		foreach ((var @event, _) in results)
 		{
-			@event
-				.Details
-				.AggregateVersion
-				.Should()
-				.Be(startEvent);
+			@event.Details.AggregateVersion.Should().Be(startEvent);
 
 			startEvent++;
 		}

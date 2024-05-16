@@ -36,9 +36,14 @@ partial class MongoDBClient
 							break;
 					}
 				}
+
+				await s.CommitTransactionAsync(ct);
 			}
 			catch (MongoWriteException)
 			{
+				await s.AbortTransactionAsync(ct);
+
+
 				// Do something in response to the exception
 				throw; // NOTE: You must rethrow the exception otherwise an infinite loop can occur.
 			}
@@ -62,17 +67,21 @@ partial class MongoDBClient
 					var deleteResult = await collection.DeleteOneAsync(session, BuildPredicate<BsonDocument>(id, null), cancellationToken: cancellationToken);
 					if (deleteResult.IsAcknowledged)
 					{
-						if (deleteResult.DeletedCount != 0)
+						if (deleteResult.DeletedCount == 0)
 							_telemetry.DeleteResultedInNoOp(id);
 					}
 				}
 			}
 			catch (MongoWriteException ex)
 			{
+				await s.AbortTransactionAsync(ct);
+
 				_telemetry.FailedToWriteBatch(ex);
 				// Do something in response to the exception
 				throw; // NOTE: You must rethrow the exception otherwise an infinite loop can occur.
 			}
+
+			await s.CommitTransactionAsync(ct);
 
 			return true;
 		},
