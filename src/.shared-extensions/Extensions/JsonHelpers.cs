@@ -2,7 +2,7 @@
 
 static class JsonHelpers
 {
-	static public readonly Newtonsoft.Json.JsonSerializerSettings JsonSerializerSettings = new()
+	public static readonly Newtonsoft.Json.JsonSerializerSettings JsonSerializerSettings = new()
 	{
 		TypeNameHandling = Newtonsoft.Json.TypeNameHandling.None,
 		ContractResolver = new Newtonsoft.Json.Serialization.PrivateSetterContractResolver(),

@@ -1,11 +1,11 @@
 ﻿using Purview.EventSourcing.Aggregates.Persistence;
 
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+namespace Purview.EventSourcing.MongoDB.Snapshot;
 
-partial class MongoDbSnapshotEventStoreTests
+partial class MongoDBSnapshotEventStoreTests
 {
 	[Fact]
-	public async Task DeleteAsync_GivenExistingAggregateMarkedAsDeleted_DeletesFromMongoDb()
+	public async Task DeleteAsync_GivenExistingAggregateMarkedAsDeleted_DeletesFromMongoDB()
 	{
 		// Arrange
 		using var tokenSource = TestHelpers.CancellationTokenSource();
@@ -21,22 +21,22 @@ partial class MongoDbSnapshotEventStoreTests
 		saveResult.Should().BeTrue();
 
 		var predicate = PredicateId(aggregateId);
-		var aggregateFromMongoDb = await context.MongoDbClient.GetAsync(predicate, cancellationToken: tokenSource.Token);
-		aggregateFromMongoDb
+		var aggregateFromMongoDB = await context.MongoDBClient.GetAsync(predicate, cancellationToken: tokenSource.Token);
+		aggregateFromMongoDB
 			.Should()
 			.NotBeNull();
 
 		// Act
 		var deleteResult = await mongoDbEventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
 
-		aggregateFromMongoDb = await context.MongoDbClient.GetAsync<PersistenceAggregate>(a => a.Details.Id == aggregateId, cancellationToken: tokenSource.Token);
+		aggregateFromMongoDB = await context.MongoDBClient.GetAsync<PersistenceAggregate>(a => a.Details.Id == aggregateId, cancellationToken: tokenSource.Token);
 
 		// Assert
 		deleteResult
 			.Should()
 			.BeTrue();
 
-		aggregateFromMongoDb
+		aggregateFromMongoDB
 			.Should()
 			.BeNull();
 	}

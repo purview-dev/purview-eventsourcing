@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Caching.Distributed;
 using Purview.EventSourcing.Aggregates;
 using Purview.EventSourcing.Aggregates.Persistence;
-using Purview.EventSourcing.AzureStorage.Table;
-using Purview.EventSourcing.AzureStorage.Table.StorageClients.Blob;
-using Purview.EventSourcing.AzureStorage.Table.StorageClients.Table;
+using Purview.EventSourcing.AzureStorage;
+using Purview.EventSourcing.AzureStorage.StorageClients.Blob;
+using Purview.EventSourcing.AzureStorage.StorageClients.Table;
 using Purview.EventSourcing.ChangeFeed;
 using Purview.EventSourcing.CosmosDb;
 using Purview.EventSourcing.CosmosDb.Snapshot;
@@ -45,7 +45,8 @@ public sealed class CosmosDbSnapshotEventStoreContext(string cosmosDbConnectionS
 		{
 			HttpClientFactory = () => cosmosDbHttpClient,
 			ConnectionMode = config.ConnectionMode,
-			LimitToEndpoint = true
+			LimitToEndpoint = true,
+			Serializer = new CosmosDbClient.CosmosJsonNetSerializer(JsonHelpers.JsonSerializerSettings)
 		});
 
 		CosmosDbClient = new(
@@ -72,7 +73,7 @@ public sealed class CosmosDbSnapshotEventStoreContext(string cosmosDbConnectionS
 		_eventNameMapper = new AggregateEventNameMapper();
 		_telemetry = Substitute.For<ITableEventStoreTelemetry>();
 
-		AzureStorage.Table.Options.AzureStorageEventStoreOptions azureStorageOptions = new()
+		AzureStorageEventStoreOptions azureStorageOptions = new()
 		{
 			ConnectionString = azuriteConnectionString,
 			Table = TestHelpers.GenAzureTableName(RunId),

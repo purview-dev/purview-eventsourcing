@@ -1,5 +1,4 @@
 ﻿using Purview.EventSourcing.Aggregates.Persistence;
-using Purview.EventSourcing.SnapshotOnly.CosmosDb;
 
 namespace Purview.EventSourcing.CosmosDb.Snapshot;
 

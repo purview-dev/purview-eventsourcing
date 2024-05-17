@@ -103,40 +103,36 @@ static class CosmosDbClientExtensions
 
 	#region CRUD
 
-	public static Task<IEnumerable<ResponseMessage>> DeleteAsync<T>([NotNull] this CosmosDbClient cosmosDbClient, IEnumerable<T> documents, PartitionKey partitionKey, CancellationToken cancellationToken = default)
+	public static async Task<IEnumerable<ResponseMessage>> DeleteAsync<T>([NotNull] this CosmosDbClient cosmosDbClient, IEnumerable<T> documents, PartitionKey partitionKey, CancellationToken cancellationToken = default)
 		where T : class
 	{
-		if (documents == null)
-			throw new ArgumentNullException(nameof(documents));
+		ArgumentNullException.ThrowIfNull(documents, nameof(documents));
 
-		return cosmosDbClient.DeleteAsync(documents.ToArray(), partitionKey, cancellationToken);
+		return await cosmosDbClient.DeleteAsync(documents.ToArray(), partitionKey, cancellationToken);
 	}
 
-	public static Task<IEnumerable<ResponseMessage>> InsertAsync<T>([NotNull] this CosmosDbClient cosmosDbClient, IEnumerable<T> documents, PartitionKey partitionKey, CancellationToken cancellationToken = default)
+	public static async Task<IEnumerable<ResponseMessage>> InsertAsync<T>([NotNull] this CosmosDbClient cosmosDbClient, IEnumerable<T> documents, PartitionKey partitionKey, CancellationToken cancellationToken = default)
 		where T : class
 	{
-		if (documents == null)
-			throw new ArgumentNullException(nameof(documents));
+		ArgumentNullException.ThrowIfNull(documents, nameof(documents));
 
-		return cosmosDbClient.InsertAsync(documents.ToArray(), partitionKey, cancellationToken);
+		return await cosmosDbClient.InsertAsync(documents.ToArray(), partitionKey, cancellationToken);
 	}
 
-	public static Task<IEnumerable<ResponseMessage>> UpsertAsync<T>([NotNull] this CosmosDbClient cosmosDbClient, IEnumerable<T> documents, PartitionKey partitionKey, CancellationToken cancellationToken = default)
+	public static async Task<IEnumerable<ResponseMessage>> UpsertAsync<T>([NotNull] this CosmosDbClient cosmosDbClient, IEnumerable<T> documents, PartitionKey partitionKey, CancellationToken cancellationToken = default)
 		where T : class
 	{
-		if (documents == null)
-			throw new ArgumentNullException(nameof(documents));
+		ArgumentNullException.ThrowIfNull(documents, nameof(documents));
 
-		return cosmosDbClient.UpsertAsync(documents.ToArray(), partitionKey, cancellationToken);
+		return await cosmosDbClient.UpsertAsync(documents.ToArray(), partitionKey, cancellationToken);
 	}
 
-	public static Task<IEnumerable<ResponseMessage>> ReplaceAsync<T>([NotNull] this CosmosDbClient cosmosDbClient, IEnumerable<T> documents, PartitionKey partitionKey, CancellationToken cancellationToken = default)
+	public static async Task<IEnumerable<ResponseMessage>> ReplaceAsync<T>([NotNull] this CosmosDbClient cosmosDbClient, IEnumerable<T> documents, PartitionKey partitionKey, CancellationToken cancellationToken = default)
 		where T : class
 	{
-		if (documents == null)
-			throw new ArgumentNullException(nameof(documents));
+		ArgumentNullException.ThrowIfNull(documents, nameof(documents));
 
-		return cosmosDbClient.ReplaceAsync(documents.ToArray(), partitionKey, cancellationToken);
+		return await cosmosDbClient.ReplaceAsync(documents.ToArray(), partitionKey, cancellationToken);
 	}
 
 	#endregion CRUD

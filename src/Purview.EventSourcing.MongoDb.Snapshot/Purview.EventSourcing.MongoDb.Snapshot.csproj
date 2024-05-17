@@ -6,13 +6,14 @@
 
 	<PropertyGroup Label="NuGet Package Values">
 		<IsPackable>true</IsPackable>
-		<Title>Purview Event Store based on MongoDb</Title>
-		<Description>Queryable Event Store using MongoDb for queryable snapshots.</Description>
+		<Title>Purview Event Store based on MongoDB</Title>
+		<Description>Queryable Event Store using MongoDB for queryable snapshots.</Description>
 		<PackageTags>$(PackageTags);events;event-sourcing;event-store;mongodb;</PackageTags>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<Compile Include="..\.shared-extensions\**\*" LinkBase="" />
+		<Compile Include="..\Purview.EventSourcing.MongoDB.Events\MongoDB\StorageClients\**\*" LinkBase="MongoDB\StorageClients\" />
 	</ItemGroup>
 
 	<ItemGroup>

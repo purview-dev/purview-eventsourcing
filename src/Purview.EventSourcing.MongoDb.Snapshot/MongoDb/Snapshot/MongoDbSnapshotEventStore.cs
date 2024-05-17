@@ -1,29 +1,25 @@
 ﻿using Microsoft.Extensions.Options;
-using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using Purview.EventSourcing.Aggregates;
+using Purview.EventSourcing.MongoDB.StorageClients;
 
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+namespace Purview.EventSourcing.MongoDB.Snapshot;
 
-public partial class MongoDbSnapshotEventStore<T> : IMongoDbSnapshotEventStore<T>
+public partial class MongoDBSnapshotEventStore<T> : IMongoDBSnapshotEventStore<T>
 	where T : AggregateBase, new()
 {
 	readonly IEventStore<T> _eventStore;
-	readonly MongoDbClient _mongoDbClient;
-	readonly IOptions<MongoDbEventStoreOptions> _mongoDbOptions;
-	readonly IMongoDbSnapshotEventStoreTelemetry _telemetry;
+	readonly MongoDBClient _mongoDbClient;
+	readonly IOptions<MongoDBEventStoreOptions> _mongoDbOptions;
+	readonly IMongoDBSnapshotEventStoreTelemetry _telemetry;
 
 	readonly string _aggregateName;
 
-	static MongoDbSnapshotEventStore()
-	{
-		BsonSerializer.RegisterSerializationProvider(new MongoDbAggregateSerializationProvider());
-	}
-
-	public MongoDbSnapshotEventStore(
+	public MongoDBSnapshotEventStore(
 		Internal.INonQueryableEventStore<T> eventStore,
-		IOptions<MongoDbEventStoreOptions> mongoDbOptions,
-		IMongoDbSnapshotEventStoreTelemetry telemetry)
+		IOptions<MongoDBEventStoreOptions> mongoDbOptions,
+		IMongoDBSnapshotEventStoreTelemetry telemetry,
+		IMongoDBClientTelemetry mongoDBClientTelemetry)
 	{
 		_eventStore = eventStore;
 		_mongoDbOptions = mongoDbOptions;
@@ -31,7 +27,7 @@ public partial class MongoDbSnapshotEventStore<T> : IMongoDbSnapshotEventStore<T
 
 		_aggregateName = TypeNameHelper.GetName(typeof(T), "Aggregate");
 		var collectionName = _mongoDbOptions.Value.Collection ?? $"snapshot-{_aggregateName}-store";
-		_mongoDbClient = new(new()
+		_mongoDbClient = new(mongoDBClientTelemetry, new()
 		{
 			ConnectionString = _mongoDbOptions.Value.ConnectionString,
 			Database = _mongoDbOptions.Value.Database,
@@ -40,7 +36,7 @@ public partial class MongoDbSnapshotEventStore<T> : IMongoDbSnapshotEventStore<T
 		});
 	}
 
-	async public Task SnapshotAsync(T aggregate, CancellationToken cancellationToken = default)
+	public async Task SnapshotAsync(T aggregate, CancellationToken cancellationToken = default)
 	{
 		ArgumentNullException.ThrowIfNull(aggregate, nameof(aggregate));
 
@@ -51,7 +47,7 @@ public partial class MongoDbSnapshotEventStore<T> : IMongoDbSnapshotEventStore<T
 	static FilterDefinition<T> BuildPredicate(T aggregate)
 	{
 		var predicate = new FilterDefinitionBuilder<T>()
-			.Eq(MongoDbAggregateSerializer<T>.BsonDocuemntIdPropertyName, aggregate.Id());
+			.Eq(MongoDBAggregateSerializer<T>.BsonDocuemntIdPropertyName, aggregate.Id());
 
 		return predicate;
 	}

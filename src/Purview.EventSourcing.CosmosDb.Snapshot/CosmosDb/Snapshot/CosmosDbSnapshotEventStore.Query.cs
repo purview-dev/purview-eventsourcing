@@ -50,21 +50,13 @@ partial class CosmosDbSnapshotEventStore<T>
 	{
 		// Leave as 2 as it'll throw when expected.
 		var query = await GetSpecificNumberAsync(whereClause, null, 2, cancellationToken: cancellationToken);
-		var result = query.SingleOrDefault();
-		if (result != null)
-			FulfilRequirements(result);
-
-		return result;
+		return query.SingleOrDefault();
 	}
 
 	public async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> whereClause, Func<IQueryable<T>, IQueryable<T>>? orderByClause, CancellationToken cancellationToken = default)
 	{
 		var query = await GetSpecificNumberAsync(whereClause, orderByClause, 1, cancellationToken: cancellationToken);
-		var result = query.FirstOrDefault();
-		if (result != null)
-			FulfilRequirements(result);
-
-		return result;
+		return query.FirstOrDefault();
 	}
 
 	public Task<long> CountAsync(Expression<Func<T, bool>>? whereClause, CancellationToken cancellationToken = default)

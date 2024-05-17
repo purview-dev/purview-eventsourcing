@@ -1,11 +1,9 @@
-﻿using Purview.EventSourcing.Aggregates.Persistence;
+﻿namespace Purview.EventSourcing.MongoDB.Snapshot;
 
-namespace Purview.EventSourcing.MongoDb.Snapshot;
-
-partial class MongoDbSnapshotEventStoreTests
+partial class MongoDBSnapshotEventStoreTests
 {
 	[Fact]
-	public async Task RestoreAsync_GivenExistingAggregateMarkedAsDeletedAndDoesNotExistInMongoDbWhenRestore_SnapshotCreatedInMongoDb()
+	public async Task RestoreAsync_GivenExistingAggregateMarkedAsDeletedAndDoesNotExistInMongoDBWhenRestore_SnapshotCreatedInMongoDB()
 	{
 		// Arrange
 		using var tokenSource = TestHelpers.CancellationTokenSource();
@@ -18,39 +16,27 @@ partial class MongoDbSnapshotEventStoreTests
 		var mongoDbEventStore = context.EventStore;
 
 		bool saveResult = await mongoDbEventStore.SaveAsync(aggregate, cancellationToken: tokenSource.Token);
-		saveResult
-			.Should()
-			.BeTrue();
+		saveResult.Should().BeTrue();
 
 		var predicate = PredicateId(aggregateId);
 
-		var aggregateFromMongo = await context.MongoDbClient.GetAsync(predicate, cancellationToken: tokenSource.Token);
-		aggregateFromMongo
-			.Should()
-			.NotBeNull();
+		var aggregateFromMongo = await context.MongoDBClient.GetAsync(predicate, cancellationToken: tokenSource.Token);
+		aggregateFromMongo.Should().NotBeNull();
 
 		var deleteResult = await mongoDbEventStore.DeleteAsync(aggregate, cancellationToken: tokenSource.Token);
-		deleteResult
-			.Should()
-			.BeTrue();
+		deleteResult.Should().BeTrue();
 
-		aggregateFromMongo = await context.MongoDbClient.GetAsync<PersistenceAggregate>(aggregateId, cancellationToken: tokenSource.Token);
-		aggregateFromMongo
-			.Should()
-			.BeNull();
+		aggregateFromMongo = await context.MongoDBClient.GetAsync(predicate, cancellationToken: tokenSource.Token);
+		aggregateFromMongo.Should().BeNull();
 
 		// Act
 		var restoreResult = await mongoDbEventStore.RestoreAsync(aggregate, cancellationToken: tokenSource.Token);
 
-		aggregateFromMongo = await context.MongoDbClient.GetAsync<PersistenceAggregate>(aggregateId, cancellationToken: tokenSource.Token);
+		aggregateFromMongo = await context.MongoDBClient.GetAsync(predicate, cancellationToken: tokenSource.Token);
 
 		// Assert
-		restoreResult
-			.Should()
-			.BeTrue();
+		restoreResult.Should().BeTrue();
 
-		aggregateFromMongo
-			.Should()
-			.NotBeNull();
+		aggregateFromMongo.Should().NotBeNull();
 	}
 }

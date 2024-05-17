@@ -34,7 +34,7 @@ static class TestHelpers
 		return $"{prefix}{GenName(value)}";
 	}
 
-	public static string GenMongoDbCollectionName(Guid? value = null, string? prefix = null)
+	public static string GenMongoDBCollectionName(Guid? value = null, string? prefix = null)
 	{
 		prefix ??= "EnvTest_";
 

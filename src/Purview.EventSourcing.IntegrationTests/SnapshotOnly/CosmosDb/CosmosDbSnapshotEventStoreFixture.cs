@@ -8,7 +8,7 @@ public class CosmosDbSnapshotEventStoreFixture : IAsyncLifetime
 	public CosmosDbSnapshotEventStoreFixture()
 	{
 		_azuriteContainer = ContainerHelper.CreateAzurite();
-		_cosmosDbContainer = ContainerHelper.CreateCosmosDb();
+		_cosmosDbContainer = ContainerHelper.CreateCosmosDB();
 	}
 
 	public CosmosDbSnapshotEventStoreContext CreateContext(int correlationIdsToGenerate = 1)

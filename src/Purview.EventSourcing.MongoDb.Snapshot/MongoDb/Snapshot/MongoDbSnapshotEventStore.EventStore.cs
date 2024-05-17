@@ -1,8 +1,8 @@
 ﻿using Purview.EventSourcing.Aggregates;
 
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+namespace Purview.EventSourcing.MongoDB.Snapshot;
 
-partial class MongoDbSnapshotEventStore<T>
+partial class MongoDBSnapshotEventStore<T>
 {
 	public Task<T> CreateAsync(string? aggregateId = null, CancellationToken cancellationToken = default)
 		=> _eventStore.CreateAsync(aggregateId, cancellationToken);

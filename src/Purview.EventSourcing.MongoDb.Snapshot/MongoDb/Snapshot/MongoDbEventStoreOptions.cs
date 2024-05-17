@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Purview.EventSourcing.MongoDb.Snapshot;
+namespace Purview.EventSourcing.MongoDB.Snapshot;
 
-sealed public class MongoDbEventStoreOptions
+public sealed class MongoDBEventStoreOptions
 {
-	public const string MongoDbEventStore = "EventStore:MongoDb";
+	public const string MongoDBEventStore = "EventStore:MongoDBSnapshot";
 
 	[Required]
 	public string ConnectionString { get; set; } = default!;

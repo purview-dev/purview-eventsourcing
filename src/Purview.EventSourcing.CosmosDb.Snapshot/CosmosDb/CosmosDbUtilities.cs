@@ -111,9 +111,7 @@ static class CosmosDbUtilities
 
 		public string GetId(object document)
 		{
-#pragma warning disable IDE0007 // Use implicit type
 			object? currentItem = document;
-#pragma warning restore IDE0007 // Use implicit type
 			for (var i = 0; i < _idProperties.Length; i++)
 			{
 				var idProperty = _idProperties[i];

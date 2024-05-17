@@ -43,7 +43,7 @@ public sealed partial class CosmosDbSnapshotEventStore<T> : ICosmosDbSnapshotEve
 	/// </summary>
 	/// <param name="aggregate"></param>
 	/// <param name="cancellationToken"></param>
-	async public Task SnapshotAsync(T aggregate, CancellationToken cancellationToken = default)
+	public async Task SnapshotAsync(T aggregate, CancellationToken cancellationToken = default)
 	{
 		ArgumentNullException.ThrowIfNull(aggregate, nameof(aggregate));
 
