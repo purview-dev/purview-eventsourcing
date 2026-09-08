@@ -28,6 +28,18 @@ public sealed class EventEntity : ITableEntity
 	/// </summary>
 	public string IdempotencyId { get; set; } = default!;
 
+	/// <summary>Gets or sets the event contract schema version.</summary>
+	public int SchemaVersion { get; set; } = 1;
+
+	/// <summary>Gets or sets the correlation identifier.</summary>
+	public string? CorrelationId { get; set; }
+
+	/// <summary>Gets or sets the causation identifier.</summary>
+	public string? CausationId { get; set; }
+
+	/// <summary>Gets or sets the user identifier.</summary>
+	public string? UserId { get; set; }
+
 	/// <summary>
 	/// Gets or sets the partition key of the entity, which is the aggregate id.
 	/// </summary>

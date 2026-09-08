@@ -40,6 +40,7 @@ builder.Services
 | `SearchAggregates` | `AdminPortal.Aggregates.Search` | Searching for aggregates |
 | `ViewAggregate` | `AdminPortal.Aggregates.View` | Viewing a single aggregate |
 | `ViewEvents` | `AdminPortal.Events.View` | Viewing event history |
+| `ViewEventPayloads` | `AdminPortal.Events.Payload.View` | Viewing serialized event payloads |
 | `ProjectPointInTime` | `AdminPortal.Projections.Execute` | Point-in-time projection |
 | `ExportEvents` | `AdminPortal.Events.Export` | Exporting events |
 
@@ -48,6 +49,7 @@ builder.Services
 - **Deny by default** - the default `DenyAllPermissionProvider` grants nothing.
 - Permissions are resolved through `IAdminPermissionProvider` and represented as `AdminPermission` records (feature + optional aggregate-type scope + allow/deny).
 - `AdminFeatureAuthorizationHandler` enforces feature-level access; `AggregateTypeAccessHandler` additionally scopes access to the requested aggregate type when a permission is scoped.
+- `ViewEvents` grants access to event metadata. Payloads are returned as `null` unless `ViewEventPayloads` is also granted. Event export requires both `ExportEvents` and `ViewEventPayloads` so it cannot bypass payload authorization.
 
 ## Related packages
 

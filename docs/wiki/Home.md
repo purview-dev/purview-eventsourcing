@@ -5,11 +5,18 @@ This wiki is the project documentation hub for framework features, provider capa
 ## Start here
 
 - [Getting Started](Getting-Started.md)
+- [Guarantees and Limitations](Guarantees-and-Limitations.md)
 - [Solution Design Guide](Solution-Design-Guide.md)
 - [Solution Design Worksheet](Solution-Design-Worksheet.md)
 - [Provider Feature Matrix](Provider-Feature-Matrix.md)
+- [Provider Capabilities](Provider-Capabilities.md)
+- [Transactional Outbox](Transactional-Outbox.md)
+- [Transaction Guarantees](Transaction-Guarantees.md)
+- [Event Contract Manifest](Event-Contract-Manifest.md)
+- [Source Generator Performance](Source-Generator-Performance.md)
 - [Dependency Guardrails](Dependency-Guardrails.md)
 - [Source Generator Behaviors](Source-Generator-Behaviors.md)
+- [Source Generator Code Fixes](Code-Fixes.md)
 - [SQL Server Guide](SQL-Server-Guide.md)
 - [Shared Testing Framework](Shared-Testing-Framework.md)
 - [Release Flow](Release-Flow.md)
@@ -18,6 +25,8 @@ This wiki is the project documentation hub for framework features, provider capa
 
 - **Core framework (`Purview.EventSourcing`)**
   - `AggregateBase`, `IEventStore`, `IQueryableEventStore`, and `IEventStoreTransactionFactory`.
+  - [Transaction guarantees](Transaction-Guarantees.md): atomic requirements, best-effort fallback, and failure behavior.
+  - [Snapshot schema versioning](Snapshot-Schema-Versioning.md): compatibility detection and event-replay rebuilds.
   - Source-generated aggregate events/command wiring from partial methods.
   - Provider-agnostic aggregate load/save/query APIs.
 - **Solution design**
@@ -33,7 +42,7 @@ This wiki is the project documentation hub for framework features, provider capa
   - Validation adapters: FluentValidation and ZodSharp adapters for `IAggregateValidator<T>`.
   - SQL snapshot translation distinguishes between provider-converted scalar value objects and directly mapped complex snapshot graphs; see the provider matrix and SQL guide for details.
 - **Generator behavior**
-  - `[GenerateAggregate]` supports no base, direct `AggregateBase`, and transitive base-chain inheritance.
+  - `[Aggregate]` supports no base, direct `AggregateBase`, and transitive base-chain inheritance.
   - Property hooks are property-scoped across generated events that map that property.
   - `On<Property>Changed` runs in `Apply(...)` (including replay); `On<Property>Changing` runs on command/event-raise path only.
   - Event hooks (`OnRaising...`, `OnRaised...`, `OnApplied...`) are event-scoped.

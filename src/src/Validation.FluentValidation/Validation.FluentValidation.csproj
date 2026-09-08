@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup Label="NuGet Package Values">
+		<IsPackable>true</IsPackable>
+		<Title>Purview Event Sourcing FluentValidation Integration</Title>
+		<Description>FluentValidation adapter for Purview EventSourcing — bridges FluentValidation IValidator&lt;T&gt; with IAggregateValidator&lt;T&gt;.</Description>
+		<PackageTags>$(PackageTags);purview;dotnet;event-sourcing;validation;fluentvalidation;</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FluentValidation" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\EventSourcing\EventSourcing.csproj" />
+	</ItemGroup>
+</Project>

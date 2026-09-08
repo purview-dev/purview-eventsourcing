@@ -4,7 +4,7 @@ This page documents framework-level source-generator behavior (not storage-provi
 
 ## Aggregate eligibility and inheritance
 
-`[GenerateAggregate]` supports three inheritance paths:
+`[Aggregate]` supports three inheritance paths:
 
 1. No declared base class: generated partial type automatically inherits `AggregateBase`.
 2. Direct inheritance from `AggregateBase`.
@@ -20,18 +20,18 @@ Other eligibility rules:
 
 ```csharp
 // 1) No declared base class (generator adds AggregateBase on generated partial)
-[GenerateAggregate]
+[Aggregate]
 public partial class ProductAggregate
 {
-    [GenerateAggregateEvent]
+    [Event]
     public partial void Create(string name);
 }
 
 // 2) Direct inheritance
-[GenerateAggregate]
+[Aggregate]
 public partial class OrderAggregate : AggregateBase
 {
-    [GenerateAggregateEvent]
+    [Event]
     public partial void CreateOrder(string customerId);
 }
 
@@ -39,10 +39,10 @@ public partial class OrderAggregate : AggregateBase
 public abstract class DomainAggregateBase : AggregateBase { }
 public abstract class BillingAggregateBase : DomainAggregateBase { }
 
-[GenerateAggregate]
+[Aggregate]
 public partial class InvoiceAggregate : BillingAggregateBase
 {
-    [GenerateAggregateEvent]
+    [Event]
     public partial void CreateInvoice(string invoiceNumber);
 }
 ```
@@ -67,13 +67,13 @@ Namespace can be overridden per method (`EventNamespace`) or by aggregate defaul
 ```csharp
 namespace Testing;
 
-[GenerateAggregate]
+[Aggregate]
 public partial class OrderAggregate : AggregateBase
 {
-    [GenerateAggregateEvent]
+    [Event]
     public partial void CreateOrder(string customerId);
 
-    [GenerateAggregateEvent(EventName = "OrderRegistered", EventNamespace = "Testing.Custom.Events")]
+    [Event(EventName = "OrderRegistered", EventNamespace = "Testing.Custom.Events")]
     public partial void RegisterOrder(string customerId);
 }
 ```
@@ -112,15 +112,15 @@ Manual behavior:
 ### Property hook example
 
 ```csharp
-[GenerateAggregate]
+[Aggregate]
 public partial class CustomerAggregate : AggregateBase
 {
     public string Email { get; private set; } = string.Empty;
 
-    [GenerateAggregateEvent(EventName = "CustomerRegistered")]
+    [Event(EventName = "CustomerRegistered")]
     public partial void Register(string email);
 
-    [GenerateAggregateEvent(EventName = "CustomerEmailChanged")]
+    [Event(EventName = "CustomerEmailChanged")]
     public partial void ChangeEmail(string email);
 
     partial void OnEmailChanging(ref string email) => email = email.Trim().ToLowerInvariant();
@@ -132,20 +132,20 @@ public partial class CustomerAggregate : AggregateBase
 
 ## Event method mapping and validation
 
-- `[GenerateAggregateEvent]` methods must be `partial` declarations without bodies.
+- `[Event]` methods must be `partial` declarations without bodies.
 - Return types must be `void`, `bool`, or the containing aggregate type.
 - Parameters must map to writable aggregate properties unless explicitly handled as metadata/manual payload.
-- Collection event methods (`[GenerateAggregateCollectionEvent]`) require `EventStoreList<T>` / `EventStoreSet<T>` target properties.
+- Collection event methods (`[CollectionEvent]`) require `EventStoreList<T>` / `EventStoreSet<T>` target properties.
 
 ### Example
 
 ```csharp
-[GenerateAggregate]
+[Aggregate]
 public partial class ReportAggregate : AggregateBase
 {
     public EventStoreSet<string> Tags { get; private set; } = [];
 
-    [GenerateAggregateCollectionEvent(nameof(Tags))]
+    [CollectionEvent(nameof(Tags))]
     public partial void AddTag(string tag);
 }
 ```
@@ -160,12 +160,12 @@ The generator honors two standard attributes on event parameters to tighten comm
 Both attributes also cause the generator to use a local copy of the parameter value when calling `On...Changing` hooks and when creating the event. This keeps the original parameter unmodified so the compiler does not require it to be assigned after a `throw` path.
 
 ```csharp
-[GenerateAggregate]
+[Aggregate]
 public partial class ProfileAggregate : AggregateBase
 {
     public string? Bio { get; private set; }
 
-    [GenerateAggregateEvent]
+    [Event]
     public partial void UpdateBio([NotNull] string? bio);
 }
 ```

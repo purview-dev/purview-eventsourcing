@@ -71,6 +71,37 @@ public sealed class EventHistoryExtensionsTests
 	}
 
 	[Test]
+	public async Task GetEventHistoryAsync_ExposesCompletePersistedMetadata(CancellationToken cancellationToken)
+	{
+		var timestamp = DateTimeOffset.UtcNow;
+		var sourceEvent = new TestAuditEvent
+		{
+			Details = new EventDetails
+			{
+				AggregateVersion = 7,
+				SchemaVersion = 3,
+				When = timestamp,
+				IdempotencyId = "idempotency-7",
+				CorrelationId = "correlation-7",
+				CausationId = "causation-6",
+				UserId = "user-7",
+			},
+		};
+		var store = new HistoryEnabledStore([(sourceEvent, "Updated")]);
+
+		var response = await store.GetEventHistoryAsync("agg-1", cancellationToken: cancellationToken);
+
+		var item = response.Results.Single();
+		await Assert.That(item.SchemaVersion).IsEqualTo(3);
+		await Assert.That(item.AggregateVersion).IsEqualTo(7);
+		await Assert.That(item.When).IsEqualTo(timestamp);
+		await Assert.That(item.IdempotencyId).IsEqualTo("idempotency-7");
+		await Assert.That(item.CorrelationId).IsEqualTo("correlation-7");
+		await Assert.That(item.CausationId).IsEqualTo("causation-6");
+		await Assert.That(item.UserId).IsEqualTo("user-7");
+	}
+
+	[Test]
 	public async Task GetEventHistoryAsync_GivenLegacyOffsetToken_StillPaginates(CancellationToken cancellationToken)
 	{
 		// Arrange

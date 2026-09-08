@@ -11,4 +11,9 @@ public interface IEvent
 	/// information about the event on an <see cref="IAggregate"/>.
 	/// </summary>
 	EventDetails Details { get; }
+
+	/// <summary>
+	/// Gets the schema version of the persisted event contract.
+	/// </summary>
+	int SchemaVersion => 1;
 }

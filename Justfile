@@ -9,10 +9,9 @@ solution_file := root_folder + "/EventSourcing.slnx"
 sg_perf_tests := test_root + "/SourceGenerator.PerformanceTests/SourceGenerator.PerformanceTests.csproj"
 sql_perf_tests := test_root + "/SqlServer.PerformanceTests/SqlServer.PerformanceTests.csproj"
 
-build_configuration := "Release"
+build_configuration := "Debug"
 artifacts_folder := "./artifacts"
 
-pipeline_version := "0.2.1"
 pipeline_feed := "https://api.nuget.org/v3/index.json"
 pipeline_tool := ".tools/purview-build/purview-build"
 
@@ -26,7 +25,7 @@ default:
 [private]
 ensure-pipeline-tool:
     if [ ! -x "{{ pipeline_tool }}" ]; then \
-        dotnet tool install Purview.Build --tool-path .tools/purview-build --add-source "{{ pipeline_feed }}" --version "{{ pipeline_version }}"; \
+        dotnet tool install Purview.Build --tool-path .tools/purview-build --add-source "{{ pipeline_feed }}"; \
     fi
 
 # Run the PR pipeline (restore, build, lint, tests)

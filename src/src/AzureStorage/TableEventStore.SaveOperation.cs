@@ -320,6 +320,7 @@ sealed class TableSaveOperation<T>(
 		changeEvent.Details.IdempotencyId = idempotencyIdAsString;
 		changeEvent.Details.UserId = userId;
 		changeEvent.Details.CorrelationId ??= operationContext.CorrelationId;
+		changeEvent.Details.SchemaVersion = changeEvent.SchemaVersion;
 
 		var serializedEvent = TableEventStore<T>.SerializeEvent(changeEvent);
 		var eventEntity = CreateSerializedEvent(
@@ -469,6 +470,10 @@ sealed class TableSaveOperation<T>(
 			Payload = serializedEvent,
 			EventType = eventNameMapper.GetName<T>(@event),
 			IdempotencyId = compoundIdempotencyId,
+			SchemaVersion = @event.SchemaVersion,
+			CorrelationId = @event.Details.CorrelationId,
+			CausationId = @event.Details.CausationId,
+			UserId = @event.Details.UserId,
 		};
 
 	async Task WriteLargeEventEntitiesAsync(

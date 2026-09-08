@@ -62,7 +62,7 @@ Checks:
 - Metadata is marked with `[Metadata]` when it should not map to aggregate state.
 - Parameter aliases use `[AggregateProperty(nameof(Property))]`.
 - Deterministic generated values use `[Computed]`.
-- Collection changes use `[GenerateAggregateCollectionEvent]` with `EventStoreList<T>` or `EventStoreSet<T>`.
+- Collection changes use `[CollectionEvent]` with `EventStoreList<T>` or `EventStoreSet<T>`.
 - Manual events identify who owns the `Apply(...)` method.
 
 ## Event Stream Example

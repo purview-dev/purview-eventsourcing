@@ -33,6 +33,14 @@ public sealed class SqlServerEventStoreTransactionFactory(IEventStoreCorrelation
 	public IEventStoreTransaction Create(string? correlationId = null) => CreateSqlServerTransaction(correlationId);
 
 	///<inheritdoc/>
+	public IEventStoreTransaction Create(EventStoreTransactionOptions options)
+	{
+		ArgumentNullException.ThrowIfNull(options);
+
+		return CreateSqlServerTransaction(options.CorrelationId);
+	}
+
+	///<inheritdoc/>
 	public ISqlServerEventStoreTransaction CreateSqlServerTransaction(string? correlationId = null) =>
 		new SqlServerEventStoreTransaction(correlationId ?? correlationIdProvider.GetCorrelationId());
 }

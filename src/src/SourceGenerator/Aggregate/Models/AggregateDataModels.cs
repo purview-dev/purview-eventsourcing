@@ -1,12 +1,12 @@
 namespace Purview.EventSourcing.SourceGenerator.Aggregate.Models;
 
-[Generate(TypeLibrary.AggregateNamespace + "." + nameof(TypeLibrary.Attributes.AggregateAttribute))]
+[Generate(TypeLibrary.AggregateAttributeFullTypeName)]
 readonly partial record struct AggregateAttributeData(string? EventNamespace, string? EventSuffix);
 
-[Generate(TypeLibrary.AggregateNamespace + "." + nameof(TypeLibrary.Attributes.AggregateDefaultsAttribute))]
+[Generate(TypeLibrary.AggregateDefaultsAttributeFullTypeName)]
 readonly partial record struct AggregateDefaultsAttributeData(string? EventSuffix, TypeIdentity EventType);
 
-[Generate(TypeLibrary.AggregateNamespace + "." + nameof(TypeLibrary.Attributes.CollectionEventAttribute))]
+[Generate(TypeLibrary.CollectionEventAttributeFullTypeName)]
 readonly partial record struct CollectionEventAttributeData(
 	[Argument("propertyName", defaultValue: "")] string PropertyName,
 	[Property(1)] int Version,
@@ -16,7 +16,7 @@ readonly partial record struct CollectionEventAttributeData(
 	bool Manual
 );
 
-[Generate(TypeLibrary.AggregateNamespace + "." + nameof(TypeLibrary.Attributes.EventAttribute))]
+[Generate(TypeLibrary.EventAttributeFullTypeName)]
 readonly partial record struct EventAttributeData(
 	[Property(1)] int Version,
 	string? EventName,
@@ -24,8 +24,8 @@ readonly partial record struct EventAttributeData(
 	bool Manual
 );
 
-[Generate(TypeLibrary.AggregateNamespace + "." + nameof(TypeLibrary.Attributes.MetadataAttribute))]
+[Generate(TypeLibrary.MetadataAttributeFullTypeName)]
 readonly partial record struct MetadataAttributeData([Argument("store", true)] bool Store);
 
-[Generate(TypeLibrary.AggregateNamespace + "." + nameof(TypeLibrary.Attributes.PropertyAttribute))]
+[Generate(TypeLibrary.PropertyAttributeFullTypeName)]
 readonly partial record struct PropertyAttributeData([Argument("propertyName", defaultValue: "")] string PropertyName);

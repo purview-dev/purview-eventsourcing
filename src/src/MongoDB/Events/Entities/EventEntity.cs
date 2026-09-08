@@ -52,6 +52,18 @@ public sealed class EventEntity : IEntity
 	/// </summary>
 	public string IdempotencyId { get; set; } = default!;
 
+	/// <summary>The event contract schema version.</summary>
+	public int SchemaVersion { get; set; } = 1;
+
+	/// <summary>The correlation identifier recorded with the event.</summary>
+	public string? CorrelationId { get; set; }
+
+	/// <summary>The causation identifier recorded with the event.</summary>
+	public string? CausationId { get; set; }
+
+	/// <summary>The user identifier recorded with the event.</summary>
+	public string? UserId { get; set; }
+
 	/// <summary>
 	/// The time the event was persisted.
 	/// </summary>

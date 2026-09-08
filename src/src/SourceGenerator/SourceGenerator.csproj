@@ -16,8 +16,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- The code-fix assembly shares the diagnostic descriptors and type library without
+		     acquiring any Workspaces dependency in this assembly. -->
+		<InternalsVisibleTo Include="Purview.EventSourcing.SourceGenerator.CodeFixes" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Using Include="Purview.EventSourcing.SourceGenerator.Common" />
-		<Using Include="Purview.EventSourcing.SourceGenerator.Common.TypeLibrary" Alias="TypeLibrary" />
 		<Using Include="Purview.EventSourcing.SourceGenerator.Aggregate" />
 		<Using Include="Purview.EventSourcing.SourceGenerator.Aggregate.Models" />
 		<Using Include="Purview.EventSourcing.SourceGenerator.ValueObject" />

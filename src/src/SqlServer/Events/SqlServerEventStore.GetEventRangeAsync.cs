@@ -64,8 +64,12 @@ partial class SqlServerEventStore<T>
 				Details =
 				{
 					When = eventRow.Timestamp,
+					SchemaVersion = eventRow.SchemaVersion,
 					AggregateVersion = aggregateVersion,
 					IdempotencyId = eventRow.IdempotencyId,
+					CorrelationId = eventRow.CorrelationId,
+					CausationId = eventRow.CausationId,
+					UserId = eventRow.UserId,
 				},
 				Payload = eventRow.Payload,
 			};

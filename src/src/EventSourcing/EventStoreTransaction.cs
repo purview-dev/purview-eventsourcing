@@ -40,11 +40,30 @@ public sealed class EventStoreTransaction : IEventStoreTransaction
 	/// <see cref="Activity"/> ID is used when available, otherwise a new <see cref="Guid"/> is generated.
 	/// </param>
 	public EventStoreTransaction(string? correlationId = null)
+		: this(new EventStoreTransactionOptions { CorrelationId = correlationId }) { }
+
+	/// <summary>
+	/// Creates a transaction with explicit persistence requirements.
+	/// </summary>
+	/// <param name="options">Transaction correlation and guarantee options.</param>
+	public EventStoreTransaction(EventStoreTransactionOptions options)
 	{
-		var resolvedCorrelationId = correlationId ?? Activity.Current?.Id;
+		ArgumentNullException.ThrowIfNull(options);
+
+		var resolvedCorrelationId = options.CorrelationId ?? Activity.Current?.Id;
 		CorrelationId = resolvedCorrelationId ?? Guid.NewGuid().ToString();
 		_useIdempotencyMarker = !string.IsNullOrWhiteSpace(resolvedCorrelationId);
+		RequiredGuarantee = options.RequiredGuarantee;
 	}
+
+	/// <inheritdoc/>
+	public EventStoreTransactionGuarantee RequiredGuarantee { get; }
+
+	/// <inheritdoc/>
+	public EventStoreTransactionGuarantee AvailableGuarantee =>
+		CanUseNativeTransactionCoordinator()
+			? EventStoreTransactionGuarantee.Atomic
+			: EventStoreTransactionGuarantee.BestEffort;
 
 	/// <inheritdoc/>
 	public string CorrelationId { get; }
@@ -92,14 +111,22 @@ public sealed class EventStoreTransaction : IEventStoreTransaction
 			throw new InvalidOperationException("This transaction has already been committed.");
 
 		_committed = true;
+		var availableGuarantee = AvailableGuarantee;
+		if (availableGuarantee < RequiredGuarantee)
+			throw new EventStoreTransactionGuaranteeException(RequiredGuarantee, availableGuarantee);
 
+		// If no aggregates were enlisted, return an empty result.
 		return _enlisted.Count == 0 ? new([])
-			: CanUseNativeTransactionCoordinator() ? await CommitWithNativeTransactionAsync(cancellationToken)
+			: availableGuarantee == EventStoreTransactionGuarantee.Atomic
+				? await CommitWithNativeTransactionAsync(cancellationToken)
 			: await CommitSequentiallyAsync(cancellationToken);
 	}
 
 	bool CanUseNativeTransactionCoordinator()
 	{
+		if (_enlisted.Count == 0)
+			return false;
+
 		string? boundaryKey = null;
 
 		foreach (var enlisted in _enlisted)

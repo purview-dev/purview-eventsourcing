@@ -21,7 +21,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Samples.Shared\Samples.Shared.csproj" IsAspireProjectResource="false" />
-		<ProjectReference Include="..\ZodSharpImpl\ZodSharpImpl.csproj" IsAspireProjectResource="false" />
+		<ProjectReference Include="..\Validation.ZodSharp\Validation.ZodSharp.csproj" IsAspireProjectResource="false" />
 		<ProjectReference Include="..\Samples.Web\Samples.Web.csproj" />
 	</ItemGroup>
 </Project>

@@ -81,8 +81,12 @@ partial class MongoDBEventStore<T>
 				Details =
 				{
 					When = eventEntity.Timestamp!.Value,
+					SchemaVersion = eventEntity.SchemaVersion,
 					AggregateVersion = aggregateVersion,
 					IdempotencyId = eventEntity.IdempotencyId,
+					CorrelationId = eventEntity.CorrelationId,
+					CausationId = eventEntity.CausationId,
+					UserId = eventEntity.UserId,
 				},
 				Payload = eventEntity.Payload,
 			};

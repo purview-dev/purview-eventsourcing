@@ -205,7 +205,7 @@ static partial class ScalarValueObjectEmitter
 			{
 				IsPartial = false,
 				IsSealed = true,
-				BaseType = TypeLibrary.System.TextJson.JsonConverter.MakeGeneric(valueObjectType),
+				BaseType = TypeLibrary.System.Text.Json.Serialization.JsonConverter.MakeGeneric(valueObjectType),
 			},
 			body =>
 			{
@@ -215,9 +215,9 @@ static partial class ScalarValueObjectEmitter
 						IsOverride = true,
 						Parameters =
 						[
-							new("reader", TypeLibrary.System.TextJson.Utf8JsonReader, ParameterModifier.Ref),
+							new("reader", TypeLibrary.System.Text.Json.Utf8JsonReader, ParameterModifier.Ref),
 							new("typeToConvert", PurviewTypeLibrary.System.Type),
-							new("options", TypeLibrary.System.TextJson.JsonSerializerOptions),
+							new("options", TypeLibrary.System.Text.Json.JsonSerializerOptions),
 						],
 					},
 					methodBody =>
@@ -229,7 +229,7 @@ static partial class ScalarValueObjectEmitter
 								writeValue.MethodCall(
 									"Deserialize",
 									[new MethodCallArgumentOptions("reader", ParameterModifier.Ref), "options"],
-									receiver: $"{TypeLibrary.System.TextJson.JsonSerializer}",
+									receiver: $"{TypeLibrary.System.Text.Json.JsonSerializer}",
 									genericArguments: [model.ScalarTypeReference]
 								)
 						);
@@ -240,7 +240,7 @@ static partial class ScalarValueObjectEmitter
 								"value is null",
 								ifBody =>
 									ifBody.Throw(
-										TypeLibrary.System.TextJson.JsonException,
+										TypeLibrary.System.Text.Json.JsonException,
 										$"{model.TypeModel.Name} cannot be null."
 									)
 							);
@@ -256,14 +256,14 @@ static partial class ScalarValueObjectEmitter
 						IsOverride = true,
 						Parameters =
 						[
-							new("writer", TypeLibrary.System.TextJson.Utf8JsonWriter),
+							new("writer", TypeLibrary.System.Text.Json.Utf8JsonWriter),
 							new("value", valueObjectType),
-							new("options", TypeLibrary.System.TextJson.JsonSerializerOptions),
+							new("options", TypeLibrary.System.Text.Json.JsonSerializerOptions),
 						],
 					},
 					methodBody =>
 						methodBody.MethodCallOn(
-							$"{TypeLibrary.System.TextJson.JsonSerializer}",
+							$"{TypeLibrary.System.Text.Json.JsonSerializer}",
 							"Serialize",
 							"writer",
 							$"value.{model.ScalarPropertyName}",

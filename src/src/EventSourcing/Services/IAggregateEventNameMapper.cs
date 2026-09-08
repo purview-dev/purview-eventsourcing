@@ -45,6 +45,18 @@ public interface IAggregateEventNameMapper
 		where T : IAggregate;
 
 	/// <summary>
+	/// Resolves a persisted event name back to the assembly-qualified name of the event type,
+	/// regardless of the aggregate. Returns null when the name is not registered.
+	/// </summary>
+	/// <param name="eventTypeName">The persisted event name to resolve.</param>
+	/// <returns>The assembly-qualified type name, or null when the name is not registered.</returns>
+	string? GetTypeName(string eventTypeName)
+	{
+		ArgumentNullException.ThrowIfNull(eventTypeName);
+		return null;
+	}
+
+	/// <summary>
 	/// Registers the aggregate's event types and returns its aggregate type name.
 	/// </summary>
 	/// <typeparam name="T">The aggregate type to initialize.</typeparam>

@@ -11,6 +11,7 @@ sealed class SampleAdminPermissionProvider : IAdminPermissionProvider
 		new(AdminFeature.SearchAggregates, AggregateType: null, Allowed: true),
 		new(AdminFeature.ViewAggregate, AggregateType: null, Allowed: true),
 		new(AdminFeature.ViewEvents, AggregateType: null, Allowed: true),
+		new(AdminFeature.ViewEventPayloads, AggregateType: null, Allowed: true),
 		new(AdminFeature.ProjectPointInTime, AggregateType: null, Allowed: true),
 		new(AdminFeature.ExportEvents, AggregateType: null, Allowed: true),
 	];

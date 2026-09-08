@@ -17,20 +17,20 @@ static class ValueObjectsAttributeEmitter
 		writer
 			.XmlSummary(
 				"Specifies assembly-level defaults for value object code generation.",
-				$"These defaults can be overridden on individual {XmlSee(TypeLibrary.Attributes.ValueObjectAttributeFullTypeName)} attributes."
+				$"These defaults can be overridden on individual {XmlSee(TypeLibrary.ValueObjectAttributeFullTypeName)} attributes."
 			)
 			.AttributeClass(
-				new(TypeLibrary.Attributes.ValueObjectDefaultsAttribute),
+				new(TypeLibrary.Purview.EventSourcing.Serialization.ValueObjectDefaultsAttribute),
 				AttributeTargets.Assembly,
 				bodyWriter =>
 				{
 					bodyWriter
 						.XmlSummary(
-							$"Constructs a new instance of the {XmlSee(TypeLibrary.Attributes.ValueObjectDefaultsAttribute)} class."
+							$"Constructs a new instance of the {XmlSee(TypeLibrary.Purview.EventSourcing.Serialization.ValueObjectDefaultsAttribute)} class."
 						)
 						.Constructor(
 							new(
-								TypeLibrary.Attributes.ValueObjectDefaultsAttribute,
+								TypeLibrary.Purview.EventSourcing.Serialization.ValueObjectDefaultsAttribute,
 								TypeDeclarationAccessibility.Public
 							)
 							{
@@ -43,7 +43,7 @@ static class ValueObjectsAttributeEmitter
 						.XmlSummary(
 							"Gets or sets whether parameterless constructors should be generated for value objects.",
 							"When true, generates a private parameterless constructor for EF Core compatibility.",
-							$"Individual {XmlSee(TypeLibrary.Attributes.ValueObjectAttributeFullTypeName)} attributes can override this setting.",
+							$"Individual {XmlSee(TypeLibrary.ValueObjectAttributeFullTypeName)} attributes can override this setting.",
 							"Default: true"
 						)
 						.Property(

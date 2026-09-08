@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.1",
   "info": {
-    "title": "AdminApi.OpenApi | admin",
+    "title": "Purview.EventSourcing.AdminAPI.OpenAPI | admin",
     "version": "1.0.0"
   },
   "paths": {
@@ -525,10 +525,293 @@
           }
         }
       }
+    },
+    "/admin/api/capabilities": {
+      "get": {
+        "tags": [
+          "AdminPortal"
+        ],
+        "summary": "Get event store capabilities",
+        "description": "Returns the merged event-store capability contract for the registered providers.",
+        "operationId": "GetCapabilities",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventStoreCapabilities"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/health": {
+      "get": {
+        "tags": [
+          "AdminPortal"
+        ],
+        "summary": "Get Admin portal health",
+        "description": "Reports whether the Admin portal can resolve the event-store capability contract.",
+        "operationId": "GetAdminHealth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminHealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/outbox/poisoned": {
+      "get": {
+        "tags": [
+          "AdminPortal"
+        ],
+        "summary": "Get poisoned outbox messages",
+        "description": "Returns poisoned (dead-letter) transactional outbox messages.",
+        "operationId": "GetPoisonedOutbox",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoisonedOutboxResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/admin/api/manifest": {
+      "get": {
+        "tags": [
+          "AdminPortal"
+        ],
+        "summary": "Get event contract manifest",
+        "description": "Returns the runtime event-contract manifest and its compatibility status.",
+        "operationId": "GetEventContractManifest",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventContractManifestInfo"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/admin/api/aggregates/{aggregateType}/{aggregateId}/events/unknown": {
+      "get": {
+        "tags": [
+          "AdminPortal"
+        ],
+        "summary": "Get unknown events in an aggregate stream",
+        "description": "Reports stored event type names the runtime cannot resolve to a registered event type — events that would be skipped during replay.",
+        "operationId": "GetUnknownEvents",
+        "parameters": [
+          {
+            "name": "aggregateType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "aggregateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnknownEventsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/aggregates/{aggregateType}/{aggregateId}/snapshot": {
+      "get": {
+        "tags": [
+          "AdminPortal"
+        ],
+        "summary": "Get aggregate snapshot status",
+        "description": "Reports whether a snapshot is materialized for the aggregate and its stored and declared schema versions.",
+        "operationId": "GetSnapshotStatus",
+        "parameters": [
+          {
+            "name": "aggregateType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "aggregateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnapshotStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/aggregates/{aggregateType}/{aggregateId}/snapshot/rebuild": {
+      "post": {
+        "tags": [
+          "AdminPortal"
+        ],
+        "summary": "Rebuild an aggregate snapshot",
+        "description": "Reconstructs the aggregate from its canonical event stream and persists a fresh snapshot. The operation is idempotent.",
+        "operationId": "RebuildSnapshot",
+        "parameters": [
+          {
+            "name": "aggregateType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "aggregateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnapshotRebuildResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AdminHealthResponse": {
+        "required": [
+          "status",
+          "timestampUtc",
+          "transactionGuarantee",
+          "supportsEventStreams",
+          "supportsQueries",
+          "supportsTransactionalOutbox",
+          "operationalLimitations"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "timestampUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "transactionGuarantee": {
+            "$ref": "#/components/schemas/EventStoreTransactionGuarantee"
+          },
+          "supportsEventStreams": {
+            "type": "boolean"
+          },
+          "supportsQueries": {
+            "type": "boolean"
+          },
+          "supportsTransactionalOutbox": {
+            "type": "boolean"
+          },
+          "operationalLimitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "AggregateSearchRequest": {
         "required": [
           "aggregateType",
@@ -635,6 +918,39 @@
           }
         }
       },
+      "ConcurrencyGuarantee": {
+        "type": "integer"
+      },
+      "EventContractCompatibilityStatus": {
+        "type": "integer"
+      },
+      "EventContractManifestInfo": {
+        "required": [
+          "formatVersion",
+          "json",
+          "baselineJson",
+          "compatibilityStatus"
+        ],
+        "type": "object",
+        "properties": {
+          "formatVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "json": {
+            "type": "string"
+          },
+          "baselineJson": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "compatibilityStatus": {
+            "$ref": "#/components/schemas/EventContractCompatibilityStatus"
+          }
+        }
+      },
       "EventEnvelopeResponse": {
         "required": [
           "aggregateType",
@@ -654,7 +970,14 @@
             "$ref": "#/components/schemas/EventMetadataResponse"
           },
           "payload": {
-            "$ref": "#/components/schemas/JsonElement"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonElement"
+              }
+            ]
           }
         }
       },
@@ -712,6 +1035,58 @@
           }
         }
       },
+      "EventStoreCapabilities": {
+        "required": [
+          "transactionGuarantee",
+          "supportsEventStreams",
+          "supportsSnapshots",
+          "snapshotSchemaVersioning",
+          "preservedMetadata",
+          "supportsQueries",
+          "supportsIdempotencyMarkers",
+          "concurrency",
+          "operationalLimitations"
+        ],
+        "type": "object",
+        "properties": {
+          "transactionGuarantee": {
+            "$ref": "#/components/schemas/EventStoreTransactionGuarantee"
+          },
+          "supportsEventStreams": {
+            "type": "boolean"
+          },
+          "supportsSnapshots": {
+            "type": "boolean"
+          },
+          "snapshotSchemaVersioning": {
+            "$ref": "#/components/schemas/SnapshotSchemaSupport"
+          },
+          "preservedMetadata": {
+            "$ref": "#/components/schemas/PreservedEventMetadata"
+          },
+          "supportsQueries": {
+            "type": "boolean"
+          },
+          "supportsIdempotencyMarkers": {
+            "type": "boolean"
+          },
+          "concurrency": {
+            "$ref": "#/components/schemas/ConcurrencyGuarantee"
+          },
+          "operationalLimitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "supportsTransactionalOutbox": {
+            "type": "boolean"
+          }
+        }
+      },
+      "EventStoreTransactionGuarantee": {
+        "type": "integer"
+      },
       "HttpValidationProblemDetails": {
         "type": "object",
         "properties": {
@@ -755,6 +1130,89 @@
         }
       },
       "JsonElement": { },
+      "OutboxEnvelope": {
+        "required": [
+          "id",
+          "aggregateType",
+          "aggregateId",
+          "eventType",
+          "payloadJson",
+          "idempotencyKey",
+          "correlationId",
+          "createdUtc"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "aggregateType": {
+            "type": "string"
+          },
+          "aggregateId": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "payloadJson": {
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "correlationId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "state": {
+            "$ref": "#/components/schemas/OutboxState"
+          },
+          "attemptCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nextAttemptUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "dispatchedUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "leaseExpiresUtc": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "lastError": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "OutboxState": {
+        "type": "integer"
+      },
       "PagedResultOfAggregateSummaryResponse": {
         "required": [
           "items",
@@ -832,6 +1290,28 @@
             "type": "boolean"
           }
         }
+      },
+      "PoisonedOutboxResponse": {
+        "required": [
+          "items",
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OutboxEnvelope"
+            }
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PreservedEventMetadata": {
+        "type": "integer"
       },
       "ProblemDetails": {
         "type": "object",
@@ -936,6 +1416,89 @@
           },
           "provenance": {
             "$ref": "#/components/schemas/ProjectionProvenance"
+          }
+        }
+      },
+      "SnapshotRebuildResponse": {
+        "required": [
+          "aggregateType",
+          "aggregateId",
+          "rebuilt",
+          "currentVersion"
+        ],
+        "type": "object",
+        "properties": {
+          "aggregateType": {
+            "type": "string"
+          },
+          "aggregateId": {
+            "type": "string"
+          },
+          "rebuilt": {
+            "type": "boolean"
+          },
+          "currentVersion": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SnapshotSchemaSupport": {
+        "type": "integer"
+      },
+      "SnapshotStatusResponse": {
+        "required": [
+          "aggregateType",
+          "aggregateId",
+          "exists",
+          "currentVersion",
+          "schemaVersion"
+        ],
+        "type": "object",
+        "properties": {
+          "aggregateType": {
+            "type": "string"
+          },
+          "aggregateId": {
+            "type": "string"
+          },
+          "exists": {
+            "type": "boolean"
+          },
+          "currentVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "schemaVersion": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "UnknownEventsResponse": {
+        "required": [
+          "aggregateType",
+          "aggregateId",
+          "unknownEventNames",
+          "totalEvents"
+        ],
+        "type": "object",
+        "properties": {
+          "aggregateType": {
+            "type": "string"
+          },
+          "aggregateId": {
+            "type": "string"
+          },
+          "unknownEventNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "totalEvents": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       }

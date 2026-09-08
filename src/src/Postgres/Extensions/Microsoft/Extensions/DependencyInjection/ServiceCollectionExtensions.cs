@@ -3,7 +3,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Purview.EventSourcing.Internal;
+using Purview.EventSourcing.Outbox;
 using Purview.EventSourcing.Postgres.Events;
+using Purview.EventSourcing.Postgres.Outbox;
 using Purview.EventSourcing.Postgres.Snapshot;
 using Purview.EventSourcing.Postgres.Snapshots;
 
@@ -75,6 +77,23 @@ public static class ServiceCollectionExtensions
 
 			services.AddPostgresEventStoreTelemetry();
 
+			services.AddEventStoreCapabilities(
+				new EventStoreCapabilities(
+					EventStoreTransactionGuarantee.Atomic,
+					SupportsEventStreams: true,
+					SupportsSnapshots: true,
+					SnapshotSchemaVersioning: SnapshotSchemaSupport.Versioned,
+					PreservedMetadata: PreservedEventMetadata.All,
+					SupportsQueries: false,
+					SupportsIdempotencyMarkers: true,
+					Concurrency: ConcurrencyGuarantee.Optimistic,
+					OperationalLimitations: []
+				)
+				{
+					SupportsTransactionalOutbox = true,
+				}
+			);
+
 			services
 				.AddOptions<PostgresEventStoreOptions>()
 				.Configure<IConfiguration>(
@@ -135,6 +154,20 @@ public static class ServiceCollectionExtensions
 				services.TryAddTransient<IEventStore, EventStoreFacade>();
 			}
 
+			services.AddEventStoreCapabilities(
+				new EventStoreCapabilities(
+					EventStoreTransactionGuarantee.Atomic,
+					SupportsEventStreams: false,
+					SupportsSnapshots: true,
+					SnapshotSchemaVersioning: SnapshotSchemaSupport.SingleVersion,
+					PreservedMetadata: PreservedEventMetadata.None,
+					SupportsQueries: true,
+					SupportsIdempotencyMarkers: false,
+					Concurrency: ConcurrencyGuarantee.Optimistic,
+					OperationalLimitations: []
+				)
+			);
+
 			services
 				.AddOptions<PostgresSnapshotEventStoreOptions>()
 				.Configure<IConfiguration>(
@@ -152,6 +185,42 @@ public static class ServiceCollectionExtensions
 					}
 				)
 				.ValidateOnStart();
+
+			return services;
+		}
+
+		/// <summary>
+		/// Registers the PostgreSQL transactional outbox: an outbox store that persists messages
+		/// atomically with event saves, a lease-protected dispatcher, and a hosted dispatch loop.
+		/// </summary>
+		/// <typeparam name="TOutboxHandler">The <see cref="IOutboxHandler"/> implementation.</typeparam>
+		/// <param name="configure">Optional outbox dispatch configuration.</param>
+		/// <returns>The <paramref name="services"/> for chaining.</returns>
+		/// <remarks>
+		/// An outbox guarantees atomic persistence plus at-least-once delivery; the handler must be
+		/// idempotent. Enqueue messages inside the event transaction with
+		/// <c>PostgresOutboxStore.EnqueueInTransactionAsync</c> (typically via
+		/// <see cref="IPostgresEventStoreTransaction.Enlist(Func{Npgsql.NpgsqlConnection, Npgsql.NpgsqlTransaction, CancellationToken, Task})"/>).
+		/// </remarks>
+		public IServiceCollection AddPostgresOutbox<TOutboxHandler>(Action<OutboxDispatchOptions>? configure = null)
+			where TOutboxHandler : class, IOutboxHandler
+		{
+			services.AddEventSourcing();
+			services.AddOutbox<PostgresOutboxStore, TOutboxHandler>(configure);
+
+			services
+				.AddOptions<PostgresOutboxStoreOptions>()
+				.Configure<IConfiguration>(
+					(options, configuration) =>
+						configuration.GetSection(PostgresOutboxStoreOptions.PostgresOutbox).Bind(options)
+				);
+
+			services.TryAddEnumerable(
+				ServiceDescriptor.Singleton<
+					IValidateOptions<PostgresOutboxStoreOptions>,
+					PostgresOutboxStoreOptionsValidator
+				>()
+			);
 
 			return services;
 		}

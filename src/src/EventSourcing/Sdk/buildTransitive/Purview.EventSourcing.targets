@@ -3,5 +3,107 @@
 		<CompilerVisibleProperty Include="DisableEventSourcingSourceGenerator">
 			<Description>Specifies whether to disable the Purview EventSourcing source generators.</Description>
 		</CompilerVisibleProperty>
+		<CompilerVisibleProperty Include="PurviewEventContractManifestEnabled">
+			<Description>When true, the Purview EventSourcing generator emits the deterministic event-contract manifest as generated source and materializes it to EventContractManifest.json after build.</Description>
+		</CompilerVisibleProperty>
+		<CompilerVisibleProperty Include="PurviewEventContractBaselineFileName">
+			<Description>Overrides the AdditionalFiles name (default EventContractManifest.json) used as the approved event-contract baseline.</Description>
+		</CompilerVisibleProperty>
 	</ItemGroup>
+
+	<UsingTask
+		TaskName="ExtractEventContractManifest"
+		TaskFactory="RoslynCodeTaskFactory"
+		AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll"
+	>
+		<ParameterGroup>
+			<GeneratedFile ParameterType="System.String" Required="true" />
+			<OutputPath ParameterType="System.String" Required="true" />
+		</ParameterGroup>
+		<Task>
+			<Using Namespace="System" />
+			<Using Namespace="System.IO" />
+			<Using Namespace="System.Text" />
+			<Code Type="Fragment" Language="cs">
+				<![CDATA[
+var text = File.ReadAllText(GeneratedFile);
+const string marker = "public const string Json =";
+var markerIndex = text.IndexOf(marker, StringComparison.Ordinal);
+if (markerIndex < 0)
+{
+	Log.LogError("The generated EventContractManifest.g.cs does not contain a JSON constant.");
+	return false;
+}
+
+var valueStart = text.IndexOf('"', markerIndex);
+if (valueStart < 0)
+{
+	Log.LogError("The generated EventContractManifest.g.cs JSON constant is malformed.");
+	return false;
+}
+
+valueStart++;
+var valueEnd = -1;
+for (var i = valueStart; i < text.Length; i++)
+{
+	if (text[i] == '\\')
+	{
+		i++;
+		continue;
+	}
+
+	if (text[i] == '"')
+	{
+		valueEnd = i;
+		break;
+	}
+}
+
+if (valueEnd < 0)
+{
+	Log.LogError("The generated EventContractManifest.g.cs JSON constant is unterminated.");
+	return false;
+}
+
+var literal = text.Substring(valueStart, valueEnd - valueStart);
+var json = literal.Replace("\\\"", "\"").Replace("\\\\", "\\");
+
+var directory = Path.GetDirectoryName(OutputPath);
+if (!string.IsNullOrEmpty(directory))
+	Directory.CreateDirectory(directory);
+
+File.WriteAllText(OutputPath, json, new UTF8Encoding(false));
+Log.LogMessage(MessageImportance.High, "Event contract manifest written to {0}.", OutputPath);
+return true;
+				]]>
+			</Code>
+		</Task>
+	</UsingTask>
+
+	<Target
+		Name="PurviewEventContractManifestEnableEmittedFiles"
+		BeforeTargets="CoreCompile"
+		Condition="'$(PurviewEventContractManifestEnabled)' == 'true'"
+	>
+		<PropertyGroup>
+			<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+			<CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
+		</PropertyGroup>
+		<MakeDir Directories="$(CompilerGeneratedFilesOutputPath)" />
+	</Target>
+
+	<Target
+		Name="PurviewEventContractManifestWrite"
+		AfterTargets="CoreCompile"
+		Condition="'$(PurviewEventContractManifestEnabled)' == 'true'"
+	>
+		<ItemGroup>
+			<_PurviewEventContractManifestGenerated Include="$(IntermediateOutputPath)generated/**/EventContractManifest.g.cs" />
+		</ItemGroup>
+		<ExtractEventContractManifest
+			GeneratedFile="@(_PurviewEventContractManifestGenerated)"
+			OutputPath="$(MSBuildProjectDirectory)\EventContractManifest.json"
+			Condition="'@(_PurviewEventContractManifestGenerated)' != ''"
+		/>
+	</Target>
 </Project>

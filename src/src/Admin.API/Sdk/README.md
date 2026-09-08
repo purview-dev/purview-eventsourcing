@@ -55,6 +55,22 @@ app.MapPurviewEventSourcingAdminAPI();
 
 ## Endpoints
 
+### Host authorization and endpoint conventions
+
+The built-in policies remain the defaults, but a host can require its own policy for any feature and apply standard endpoint conventions such as rate limiting, CORS, tags, or additional metadata:
+
+```csharp
+app.MapPurviewEventSourcingAdminAPI(configureEndpoints: endpoints =>
+{
+    endpoints.RequirePolicy(AdminFeature.ViewEvents, "OperationsEventReader");
+    endpoints.GroupConvention = group => group.RequireRateLimiting("admin");
+    endpoints.EndpointConvention = (feature, endpoint) =>
+        endpoint.WithMetadata(new AdminAuditMetadata(feature));
+});
+```
+
+The named policies must be registered by the host through ASP.NET Core authorization. The framework's default feature policies continue to use `IAdminPermissionProvider` and deny access unless permissions are explicitly granted.
+
 All endpoints are grouped under `RoutePrefix` and require authorization:
 
 - Search aggregates: `POST /aggregates/search`

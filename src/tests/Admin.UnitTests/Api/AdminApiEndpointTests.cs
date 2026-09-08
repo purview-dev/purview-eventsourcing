@@ -4,10 +4,12 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -20,6 +22,78 @@ namespace Purview.EventSourcing.Admin.API;
 
 public sealed class AdminApiEndpointTests
 {
+	[Test]
+	public async Task HostPolicyOverride_IsEnforced(CancellationToken cancellationToken)
+	{
+		const string hostPolicy = "HostAdminPolicy";
+		await using var host = await AdminTestHost.CreateAsync(
+			endpoints => endpoints.RequirePolicy(AdminFeature.SearchAggregates, hostPolicy),
+			authorization => authorization.AddPolicy(hostPolicy, policy => policy.RequireAssertion(_ => false))
+		);
+
+		var response = await host.Client.PostAsJsonAsync(
+			"/admin/api/aggregates/search",
+			new { page = 1, pageSize = 25 },
+			cancellationToken
+		);
+
+		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
+	}
+
+	[Test]
+	public async Task HostEndpointConvention_ReceivesFeatureAndChangesMetadata()
+	{
+		await using var host = await AdminTestHost.CreateAsync(endpoints =>
+			endpoints.EndpointConvention = (feature, endpoint) =>
+				endpoint.WithMetadata(new HostConventionMetadata(feature))
+		);
+
+		var dataSources = ((IEndpointRouteBuilder)host.App).DataSources;
+		var endpoint = dataSources
+			.SelectMany(source => source.Endpoints)
+			.Single(candidate => candidate.DisplayName?.Contains("SearchAggregates", StringComparison.Ordinal) == true);
+
+		await Assert
+			.That(endpoint.Metadata.GetMetadata<HostConventionMetadata>()?.Feature)
+			.IsEqualTo(AdminFeature.SearchAggregates);
+	}
+
+	[Test]
+	public async Task EventRange_WithoutPayloadPermission_ReturnsMetadataWithRedactedPayload(
+		CancellationToken cancellationToken
+	)
+	{
+		await using var host = await AdminTestHost.CreateAsync(
+			permissionProvider: new MetadataOnlyPermissionProvider()
+		);
+
+		var response = await host.Client.GetAsync(
+			"/admin/api/aggregates/Order/order-1/events?page=1&pageSize=25",
+			cancellationToken
+		);
+		var json = await response.Content.ReadFromJsonAsync<JsonDocument>(cancellationToken: cancellationToken);
+
+		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+		var envelope = json!.RootElement.GetProperty("items")[0];
+		await Assert.That(envelope.GetProperty("metadata").GetProperty("eventType").GetString()).IsNotEmpty();
+		await Assert.That(envelope.GetProperty("payload").ValueKind).IsEqualTo(JsonValueKind.Null);
+	}
+
+	[Test]
+	public async Task Export_WithoutPayloadPermission_IsForbidden(CancellationToken cancellationToken)
+	{
+		await using var host = await AdminTestHost.CreateAsync(
+			permissionProvider: new MetadataOnlyPermissionProvider(includeExport: true)
+		);
+
+		var response = await host.Client.GetAsync(
+			"/admin/api/aggregates/Order/order-1/events/export?page=1&pageSize=25",
+			cancellationToken
+		);
+
+		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
+	}
+
 	[Test]
 	public async Task OpenApiDocument_ContainsOnlyAdminPathsAndBearerSecurity(CancellationToken cancellationToken)
 	{
@@ -305,26 +379,39 @@ sealed class AdminTestHost : IAsyncDisposable
 		"CA1506:Avoid excessive class coupling",
 		Justification = "Test host builder that wires the Admin API endpoints and their service dependencies."
 	)]
-	public static async Task<AdminTestHost> CreateAsync()
+	public static async Task<AdminTestHost> CreateAsync(
+		Action<AdminEndpointOptions>? configureEndpoints = null,
+		Action<AuthorizationBuilder>? configureAuthorization = null,
+		IAdminPermissionProvider? permissionProvider = null,
+		Action<AdminPortalOptions>? configureAdmin = null,
+		Action<IServiceCollection>? configureServices = null
+	)
 	{
 		var builder = WebApplication.CreateBuilder();
 		builder.Logging.ClearProviders();
 
-		builder.Services.AddPurviewEventSourcingAdminApi(options => options.Features.ExportEvents = true);
+		builder.Services.AddPurviewEventSourcingAdminApi(options =>
+		{
+			options.Features.ExportEvents = true;
+			configureAdmin?.Invoke(options);
+		});
 		builder.Services.AddPurviewEventSourcingAdminOpenApi();
 		builder
 			.Services.AddAuthentication(TestAuthHandler.SchemeName)
 			.AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, null);
-		builder.Services.AddAuthorizationBuilder().AddPurviewEventSourcingAdminPolicies();
-		builder.Services.AddPurviewEventSourcingAdminSecurity(new AllowAllPermissionProvider());
+		var authorization = builder.Services.AddAuthorizationBuilder().AddPurviewEventSourcingAdminPolicies();
+		configureAuthorization?.Invoke(authorization);
+		builder.Services.AddPurviewEventSourcingAdminSecurity(permissionProvider ?? new AllowAllPermissionProvider());
 
 		var aggregateQueryService = new RecordingAggregateQueryService();
 		builder.Services.AddSingleton<IAdminAggregateQueryService>(aggregateQueryService);
 		builder.Services.AddSingleton<IAdminEventQueryService, RecordingEventQueryService>();
 		builder.Services.AddSingleton<IAdminProjectionService, RecordingProjectionService>();
+		builder.Services.AddSingleton<IEventStoreCapabilitiesProvider>(new TestCapabilitiesProvider());
+		configureServices?.Invoke(builder.Services);
 
 		var app = builder.Build();
-		app.MapPurviewEventSourcingAdminAPI();
+		app.MapPurviewEventSourcingAdminAPI(configureEndpoints: configureEndpoints);
 		app.MapOpenApi();
 
 		app.Urls.Clear();
@@ -345,6 +432,8 @@ sealed class AdminTestHost : IAsyncDisposable
 	}
 }
 
+sealed record HostConventionMetadata(AdminFeature Feature);
+
 sealed class TestAuthHandler(
 	IOptionsMonitor<AuthenticationSchemeOptions> options,
 	ILoggerFactory logger,
@@ -360,6 +449,23 @@ sealed class TestAuthHandler(
 	}
 }
 
+sealed class TestCapabilitiesProvider : IEventStoreCapabilitiesProvider
+{
+	static readonly EventStoreCapabilities Capabilities = new(
+		EventStoreTransactionGuarantee.Atomic,
+		SupportsEventStreams: true,
+		SupportsSnapshots: true,
+		SnapshotSchemaVersioning: SnapshotSchemaSupport.Versioned,
+		PreservedMetadata: PreservedEventMetadata.All,
+		SupportsQueries: true,
+		SupportsIdempotencyMarkers: true,
+		Concurrency: ConcurrencyGuarantee.Optimistic,
+		[]
+	);
+
+	public EventStoreCapabilities GetCapabilities() => Capabilities;
+}
+
 sealed class AllowAllPermissionProvider : IAdminPermissionProvider
 {
 	static readonly IReadOnlyList<AdminPermission> Permissions =
@@ -367,14 +473,38 @@ sealed class AllowAllPermissionProvider : IAdminPermissionProvider
 		new(AdminFeature.SearchAggregates, null, Allowed: true),
 		new(AdminFeature.ViewAggregate, null, Allowed: true),
 		new(AdminFeature.ViewEvents, null, Allowed: true),
+		new(AdminFeature.ViewEventPayloads, null, Allowed: true),
 		new(AdminFeature.ProjectPointInTime, null, Allowed: true),
 		new(AdminFeature.ExportEvents, null, Allowed: true),
+		new(AdminFeature.ViewCapabilities, null, Allowed: true),
+		new(AdminFeature.ViewPoisonedOutbox, null, Allowed: true),
+		new(AdminFeature.ViewManifest, null, Allowed: true),
+		new(AdminFeature.ViewUnknownEvents, null, Allowed: true),
+		new(AdminFeature.ViewSnapshot, null, Allowed: true),
+		new(AdminFeature.RebuildSnapshot, null, Allowed: true),
 	];
 
 	public Task<IReadOnlyList<AdminPermission>> GetPermissionsAsync(
 		ClaimsPrincipal user,
 		CancellationToken cancellationToken
 	) => Task.FromResult(Permissions);
+}
+
+sealed class MetadataOnlyPermissionProvider(bool includeExport = false) : IAdminPermissionProvider
+{
+	public Task<IReadOnlyList<AdminPermission>> GetPermissionsAsync(
+		ClaimsPrincipal user,
+		CancellationToken cancellationToken
+	) =>
+		Task.FromResult<IReadOnlyList<AdminPermission>>(
+			includeExport
+				?
+				[
+					new(AdminFeature.ViewEvents, null, Allowed: true),
+					new(AdminFeature.ExportEvents, null, Allowed: true),
+				]
+				: [new(AdminFeature.ViewEvents, null, Allowed: true)]
+		);
 }
 
 sealed class RecordingAggregateQueryService : IAdminAggregateQueryService

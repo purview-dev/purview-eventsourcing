@@ -309,21 +309,21 @@ Event classes can declare a **schema version** to track breaking changes to thei
 
 ### With the source generator
 
-Set `Version` on `[GenerateAggregateEvent]`:
+Set `Version` on `[Event]`:
 
 ```csharp
-[GenerateAggregate]
+[Aggregate]
 public partial class OrderAggregate : AggregateBase
 {
     public string CustomerId { get; private set; } = default!;
     public string Currency   { get; private set; } = default!;
 
     // Version 1: original event (no currency)
-    // [GenerateAggregateEvent]            ← implicitly Version = 1
+    // [Event]            ← implicitly Version = 1
     // public partial void CreateOrder(string customerId);
 
     // Version 2: added Currency field
-    [GenerateAggregateEvent(Version = 2)]
+    [Event(Version = 2)]
     public partial void CreateOrder(string customerId, string currency);
 }
 ```

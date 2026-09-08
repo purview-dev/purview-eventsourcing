@@ -48,6 +48,10 @@ public class EventStoreDbContext(DbContextOptions<EventStoreDbContext> options, 
 			entity.Property(e => e.Payload).HasColumnType("json");
 			entity.Property(e => e.EventType).HasMaxLength(450);
 			entity.Property(e => e.IdempotencyId).HasMaxLength(450);
+			entity.Property(e => e.SchemaVersion).HasDefaultValue(1).IsRequired();
+			entity.Property(e => e.CorrelationId).HasMaxLength(450);
+			entity.Property(e => e.CausationId).HasMaxLength(450);
+			entity.Property(e => e.UserId).HasMaxLength(450);
 			entity.Property(e => e.Timestamp).HasDefaultValueSql("SYSUTCDATETIME()").IsRequired();
 
 			// Covers: GetByAggregateIdAndEntityType, GetIdempotencyMarkers, DeleteByAggregateId
@@ -76,6 +80,10 @@ public class EventStoreDbContext(DbContextOptions<EventStoreDbContext> options, 
 					e.Payload,
 					e.EventType,
 					e.IdempotencyId,
+					e.SchemaVersion,
+					e.CorrelationId,
+					e.CausationId,
+					e.UserId,
 					e.Timestamp,
 				});
 

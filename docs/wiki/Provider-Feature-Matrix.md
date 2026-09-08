@@ -1,6 +1,10 @@
 # Provider Feature Matrix
 
 This page summarizes feature availability by package so provider selection is explicit and accurate.
+The capability values below are backed by executable capability definitions registered by each
+provider and asserted by the `Capabilities.UnitTests` contract suite — see
+[Provider Capabilities](Provider-Capabilities.md) for the runtime-queryable contract and the exact
+per-registration values.
 
 | Capability | `Purview.EventSourcing` (core) | `Purview.EventSourcing.SqlServer` | `Purview.EventSourcing.Postgres` | `Purview.EventSourcing.AzureStorage` | `Purview.EventSourcing.MongoDB` | `Purview.EventSourcing.CosmosDb` |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -10,7 +14,9 @@ This page summarizes feature availability by package so provider selection is ex
 | Event-stream persistence | Not persistent by itself | Yes | Yes | Yes | Yes | No |
 | Snapshot-backed query/list/count | Null provider only | Optional | Optional | No | Optional | Optional |
 | Blob-backed snapshots / large payloads | No | No | No | Yes | No | No |
-| SQL-specific transaction factory (`ISqlServerEventStoreTransactionFactory`) | No | Yes | Yes | No | No | No |
+| Provider-neutral transaction guarantee | Explicit `BestEffort` or required `Atomic` | Atomic within one database boundary | Atomic within one database boundary | Best effort | Best effort | Best effort |
+| Transactional outbox (atomic with events) | No | Yes (`AddSqlServerOutbox<THandler>`) | Yes (`AddPostgresOutbox<THandler>`) | No | No | No |
+| Provider-specific native transaction factory | No | `ISqlServerEventStoreTransactionFactory` | `IPostgresEventStoreTransactionFactory` | No | No | No |
 | Runtime-configured JSON payload indexes | No | Yes (event + snapshot stores, auto-create path) | Yes (GIN + expression indexes for snapshots) | No | No | No |
 | DI registration helpers | `AddNullQueryableEventStore()` | `AddSqlServerEventStore()`, `AddSqlServerSnapshotQueryableEventStore()` | `AddPostgresEventStore()`, `AddPostgresSnapshotQueryableEventStore()` | `AddAzureStorageEventStore()` | `AddMongoDBEventStore()`, `AddMongoDBSnapshotQueryableEventStore()` | `AddCosmosDbSnapshotQueryableEventStore()` |
 
@@ -63,11 +69,13 @@ See the provider guides for provider-specific scaling configuration (for example
 ## Related docs
 
 - [Getting Started](Getting-Started.md)
+- [Guarantees and Limitations](Guarantees-and-Limitations.md)
+- [Provider Capabilities](Provider-Capabilities.md)
 - [Dependency Guardrails](Dependency-Guardrails.md)
 - [SQL Server Guide](SQL-Server-Guide.md)
-- Postgres package README: `src/src/Postgres/README.md`
-- Core package README: `src/src/EventSourcing/README.md`
-- SQL Server package README: `src/src/SqlServer/README.md`
-- Azure Storage package README: `src/src/AzureStorage/README.md`
-- MongoDB package README: `src/src/MongoDB/README.md`
-- Cosmos DB package README: `src/src/CosmosDb/README.md`
+- Postgres package README: `src/src/Postgres/Sdk/README.md`
+- Core package README: `src/src/EventSourcing/Sdk/README.md`
+- SQL Server package README: `src/src/SqlServer/Sdk/README.md`
+- Azure Storage package README: `src/src/AzureStorage/Sdk/README.md`
+- MongoDB package README: `src/src/MongoDB/Sdk/README.md`
+- Cosmos DB package README: `src/src/CosmosDb/Sdk/README.md`

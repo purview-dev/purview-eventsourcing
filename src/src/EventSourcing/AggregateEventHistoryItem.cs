@@ -26,6 +26,11 @@ public sealed class AggregateEventHistoryItem
 	public string EventClrType { get; set; } = default!;
 
 	/// <summary>
+	/// Gets or sets the persisted schema version of the event contract.
+	/// </summary>
+	public int SchemaVersion { get; set; } = 1;
+
+	/// <summary>
 	/// Gets or sets the aggregate version the event was recorded at.
 	/// </summary>
 	public int AggregateVersion { get; set; }

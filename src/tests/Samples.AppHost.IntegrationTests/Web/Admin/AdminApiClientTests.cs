@@ -87,7 +87,9 @@ public sealed class AdminApiClientTests(AppHostFixture fixture)
 				.IsGreaterThanOrEqualTo(DateTimeOffset.UtcNow.AddMinutes(-5));
 		}
 
-		var createdPayload = JsonSerializer.Serialize(events[0].Payload.AdditionalProperties);
+		var payload = events[0].Payload;
+		await Assert.That(payload).IsNotNull();
+		var createdPayload = JsonSerializer.Serialize(payload!.AdditionalProperties);
 		await Assert.That(createdPayload).Contains(customerId);
 	}
 

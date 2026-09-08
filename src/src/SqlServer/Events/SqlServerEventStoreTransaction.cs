@@ -40,6 +40,10 @@ sealed class SqlServerEventStoreTransaction(string? correlationId = null) : ISql
 
 	public string CorrelationId { get; } = correlationId ?? Activity.Current?.Id ?? Guid.NewGuid().ToString();
 
+	public EventStoreTransactionGuarantee RequiredGuarantee => EventStoreTransactionGuarantee.Atomic;
+
+	public EventStoreTransactionGuarantee AvailableGuarantee => EventStoreTransactionGuarantee.Atomic;
+
 	public void Enlist<T>(T aggregate, IEventStore eventStore, EventStoreOperationContext? operationContext = null)
 		where T : class, IAggregate, new()
 	{

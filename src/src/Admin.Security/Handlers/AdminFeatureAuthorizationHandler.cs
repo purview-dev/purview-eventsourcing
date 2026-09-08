@@ -19,11 +19,27 @@ public sealed class AdminFeatureAuthorizationHandler(IAdminPermissionProvider pe
 		AdminFeatureRequirement requirement
 	)
 	{
+		ArgumentNullException.ThrowIfNull(requirement);
 		var permissions = await permissionProvider.GetPermissionsAsync(context.User, CancellationToken.None);
 
-		var hasPermission =
-			permissions.FirstOrDefault(p => p.Feature == requirement.Feature && p.Allowed && (p.AggregateType == null))
-			is not null;
+		var aggregateType = context.Resource as string;
+		var hasPermission = false;
+		foreach (var permission in permissions)
+		{
+			if (
+				permission.Feature != requirement.Feature
+				|| (permission.AggregateType is not null && permission.AggregateType != aggregateType)
+			)
+				continue;
+
+			if (!permission.Allowed)
+			{
+				hasPermission = false;
+				break;
+			}
+
+			hasPermission = true;
+		}
 
 		if (hasPermission)
 			context.Succeed(requirement);

@@ -77,11 +77,11 @@ public sealed class SqlServerAdminEventQueryService(IOptions<SqlServerEventStore
 					row.Version,
 					row.Timestamp,
 					row.EventType ?? string.Empty,
-					SchemaVersion: 1,
-					CorrelationId: null,
-					CausationId: null,
+					row.SchemaVersion,
+					row.CorrelationId,
+					row.CausationId,
 					row.IdempotencyId,
-					UserId: null
+					row.UserId
 				),
 				ParsePayload(row.Payload)
 			))

@@ -20,7 +20,7 @@ static partial class ComplexValueObjectEmitter
 			{
 				IsPartial = false,
 				IsSealed = true,
-				BaseType = TypeLibrary.System.TextJson.JsonConverter.MakeGeneric(valueObjectType),
+				BaseType = TypeLibrary.System.Text.Json.Serialization.JsonConverter.MakeGeneric(valueObjectType),
 			},
 			body =>
 			{
@@ -30,9 +30,9 @@ static partial class ComplexValueObjectEmitter
 						IsOverride = true,
 						Parameters =
 						[
-							new("reader", TypeLibrary.System.TextJson.Utf8JsonReader, ParameterModifier.Ref),
+							new("reader", TypeLibrary.System.Text.Json.Utf8JsonReader, ParameterModifier.Ref),
 							new("typeToConvert", PurviewTypeLibrary.System.Type),
-							new("options", TypeLibrary.System.TextJson.JsonSerializerOptions),
+							new("options", TypeLibrary.System.Text.Json.JsonSerializerOptions),
 						],
 					},
 					methodBody =>
@@ -46,7 +46,7 @@ static partial class ComplexValueObjectEmitter
 							"model is null",
 							ifBody =>
 								ifBody.Throw(
-									TypeLibrary.System.TextJson.JsonException,
+									TypeLibrary.System.Text.Json.JsonException,
 									$"Unable to deserialize {model.TypeModel.Name}."
 								)
 						);
@@ -60,9 +60,9 @@ static partial class ComplexValueObjectEmitter
 						IsOverride = true,
 						Parameters =
 						[
-							new("writer", TypeLibrary.System.TextJson.Utf8JsonWriter),
+							new("writer", TypeLibrary.System.Text.Json.Utf8JsonWriter),
 							new("value", valueObjectType),
-							new("options", TypeLibrary.System.TextJson.JsonSerializerOptions),
+							new("options", TypeLibrary.System.Text.Json.JsonSerializerOptions),
 						],
 					},
 					methodBody =>
@@ -83,7 +83,7 @@ static partial class ComplexValueObjectEmitter
 							}
 						);
 						methodBody.MethodCallOn(
-							$"{TypeLibrary.System.TextJson.JsonSerializer}",
+							$"{TypeLibrary.System.Text.Json.JsonSerializer}",
 							"Serialize",
 							"writer",
 							"model",

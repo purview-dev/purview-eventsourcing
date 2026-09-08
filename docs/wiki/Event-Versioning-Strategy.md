@@ -1,5 +1,14 @@
 # Event Versioning Strategy
 
+Each persisted event row/document records `SchemaVersion`, `CorrelationId`, `CausationId`, and `UserId` separately
+from its payload. `IdempotencyId`, aggregate version, timestamp, event name, and aggregate identity are likewise
+first-class metadata. This allows Admin and history consumers to inspect an event envelope without deserializing
+sensitive or obsolete payload JSON.
+
+Legacy SQL rows are assigned schema version 1 by the metadata migration. Document and table providers also treat a
+missing schema-version field as version 1. Correlation, causation, and user identifiers remain null when they were not
+recorded by the original write; they are never inferred during a migration.
+
 This document codifies the product-wide approach to event versioning and schema evolution across all Purview EventSourcing providers.
 
 ## Core Principles
@@ -22,7 +31,7 @@ This document codifies the product-wide approach to event versioning and schema 
 - Property is **required** and has no safe default (e.g., changes meaning or becomes non-nullable).
 - Property is **removed or renamed** without a clear mapping.
 - **Example:** `OrderCreated` v1 has optional `Currency`; v2 makes it required. Or `Price` → `UnitPrice` with different semantics.
-- **Action:** Use `[GenerateAggregateEvent(Version = 2)]` or manually override `SchemaVersion => 2`. Implement an upcaster.
+- **Action:** Use `[Event(Version = 2)]` or manually override `SchemaVersion => 2`. Implement an upcaster.
 
 ### Create a new event type (semantic change)
 - The event's **meaning fundamentally changes** (e.g., `UserRegistered` → `UserRegisteredWithEmailVerification`).
@@ -45,7 +54,7 @@ This document codifies the product-wide approach to event versioning and schema 
 
 **Via the source generator:**
 ```csharp
-[GenerateAggregate]
+[Aggregate]
 public partial class OrderAggregate : AggregateBase
 {
     public string OrderId { get; private set; } = default!;
@@ -55,7 +64,7 @@ public partial class OrderAggregate : AggregateBase
     // public partial void Create(string orderId);
 
     // Version 2: Currency is now part of the event
-    [GenerateAggregateEvent(Version = 2)]
+    [Event(Version = 2)]
     public partial void Create(string orderId, string currency);
 }
 ```

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using Purview.EventSourcing.InMemory.Events;
 using Purview.EventSourcing.InMemory.Snapshots;
 using Purview.EventSourcing.Internal;
@@ -37,6 +37,20 @@ public static class ServiceCollectionExtensions
 				.AddTransient(typeof(IInMemoryEventStore<>), typeof(InMemoryEventStore<>))
 				.AddTransient<IEventStore, EventStoreFacade>();
 
+			services.AddEventStoreCapabilities(
+				new EventStoreCapabilities(
+					EventStoreTransactionGuarantee.BestEffort,
+					SupportsEventStreams: true,
+					SupportsSnapshots: false,
+					SnapshotSchemaVersioning: SnapshotSchemaSupport.None,
+					PreservedMetadata: PreservedEventMetadata.All,
+					SupportsQueries: false,
+					SupportsIdempotencyMarkers: true,
+					Concurrency: ConcurrencyGuarantee.Optimistic,
+					OperationalLimitations: [EventStoreOperationalLimitation.NonPersistent]
+				)
+			);
+
 			return services;
 		}
 
@@ -68,6 +82,20 @@ public static class ServiceCollectionExtensions
 			services
 				.AddTransient<IQueryableEventStore, QueryableEventStoreFacade>()
 				.AddTransient<IEventStore, EventStoreFacade>();
+
+			services.AddEventStoreCapabilities(
+				new EventStoreCapabilities(
+					EventStoreTransactionGuarantee.BestEffort,
+					SupportsEventStreams: true,
+					SupportsSnapshots: true,
+					SnapshotSchemaVersioning: SnapshotSchemaSupport.SingleVersion,
+					PreservedMetadata: PreservedEventMetadata.All,
+					SupportsQueries: true,
+					SupportsIdempotencyMarkers: true,
+					Concurrency: ConcurrencyGuarantee.Optimistic,
+					OperationalLimitations: [EventStoreOperationalLimitation.NonPersistent]
+				)
+			);
 
 			return services;
 		}

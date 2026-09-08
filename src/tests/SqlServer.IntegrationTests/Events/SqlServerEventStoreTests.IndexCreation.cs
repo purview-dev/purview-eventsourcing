@@ -51,7 +51,7 @@ public sealed class SqlServerEventStoreIndexCreationTests(SqlServerEventStoreFix
 		await Assert.That(string.Join(',', eventRangeKeyColumns)).IsEqualTo("AggregateId,AggregateType,Version");
 		await Assert
 			.That(string.Join(',', eventRangeIncludeColumns))
-			.IsEqualTo("Payload,EventType,IdempotencyId,Timestamp");
+			.IsEqualTo("Payload,EventType,IdempotencyId,SchemaVersion,CorrelationId,CausationId,UserId,Timestamp");
 	}
 
 	[Test]

@@ -42,6 +42,13 @@ sealed partial class AggregateEventNameMapper(IEnumerable<IEventUpcasterDescript
 		return _eventNamesByDefinedTypeName.TryGetValue(eventTypeName, out var eventName) ? eventName : null;
 	}
 
+	public string? GetTypeName(string eventTypeName)
+	{
+		ArgumentNullException.ThrowIfNull(eventTypeName);
+
+		return _eventNamesByDefinedTypeName.TryGetValue(eventTypeName, out var eventName) ? eventName : null;
+	}
+
 	public string InitializeAggregate<T>()
 		where T : class, IAggregate, new()
 	{

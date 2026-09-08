@@ -356,6 +356,58 @@ public sealed class EventStoreTransactionTests
 	}
 
 	[Test]
+	public async Task CommitAsync_WhenAtomicGuaranteeIsRequiredAndStoresDiffer_FailsBeforeWriting(
+		CancellationToken cancellationToken
+	)
+	{
+		var aggregate1 = TestHelpers.Aggregate<TestAggregate>(clearEvents: false);
+		aggregate1.Increment();
+		var aggregate2 = TestHelpers.Aggregate<TestAggregate>(clearEvents: false);
+		aggregate2.RecordEvent();
+		var store1 = new FakeTransactionalEventStore("sqlserver:primary");
+		var store2 = new FakeTransactionalEventStore("sqlserver:secondary");
+
+		await using var transaction = new EventStoreTransaction(
+			new EventStoreTransactionOptions
+			{
+				CorrelationId = "atomic-required",
+				RequiredGuarantee = EventStoreTransactionGuarantee.Atomic,
+			}
+		);
+		transaction.Enlist(aggregate1, (IEventStore)store1);
+		transaction.Enlist(aggregate2, (IEventStore)store2);
+
+		var exception = await Assert
+			.That(async () => await transaction.CommitAsync(cancellationToken))
+			.Throws<EventStoreTransactionGuaranteeException>();
+
+		await Assert.That(exception!.RequiredGuarantee).IsEqualTo(EventStoreTransactionGuarantee.Atomic);
+		await Assert.That(exception.AvailableGuarantee).IsEqualTo(EventStoreTransactionGuarantee.BestEffort);
+		await Assert.That(store1.SaveAsyncCalls).IsEqualTo(0);
+		await Assert.That(store2.SaveAsyncCalls).IsEqualTo(0);
+		await Assert.That(store1.SaveInTransactionCalls).IsEqualTo(0);
+		await Assert.That(store2.SaveInTransactionCalls).IsEqualTo(0);
+	}
+
+	[Test]
+	public async Task AvailableGuarantee_ReflectsCurrentlyEnlistedStoreBoundaries()
+	{
+		var aggregate1 = TestHelpers.Aggregate<TestAggregate>(clearEvents: false);
+		var aggregate2 = TestHelpers.Aggregate<TestAggregate>(clearEvents: false);
+		var store1 = new FakeTransactionalEventStore("sqlserver:primary");
+		var store2 = new FakeTransactionalEventStore("sqlserver:secondary");
+
+		await using var transaction = new EventStoreTransaction();
+		await Assert.That(transaction.AvailableGuarantee).IsEqualTo(EventStoreTransactionGuarantee.BestEffort);
+
+		transaction.Enlist(aggregate1, (IEventStore)store1);
+		await Assert.That(transaction.AvailableGuarantee).IsEqualTo(EventStoreTransactionGuarantee.Atomic);
+
+		transaction.Enlist(aggregate2, (IEventStore)store2);
+		await Assert.That(transaction.AvailableGuarantee).IsEqualTo(EventStoreTransactionGuarantee.BestEffort);
+	}
+
+	[Test]
 	public async Task CommitAsync_WhenNativeTransactionFails_RollsBackProcessedAggregates(
 		CancellationToken cancellationToken
 	)

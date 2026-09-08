@@ -48,16 +48,36 @@ sealed class PerformanceScenarioRun
 
 	public double GeneratorAverageMilliseconds { get; set; }
 
+	public double WarmRerunAverageMilliseconds { get; set; }
+
+	public double SingleAggregateEditAverageMilliseconds { get; set; }
+
 	public double GeneratorOverheadMilliseconds => GeneratorAverageMilliseconds - BaselineAverageMilliseconds;
 
 	public double GeneratorOverheadPercent =>
 		BaselineAverageMilliseconds <= 0 ? 0 : GeneratorOverheadMilliseconds / BaselineAverageMilliseconds * 100;
 
-	public string FormatCurrent() =>
-		$"{Name} [{GeneratorName}] baseline={BaselineAverageMilliseconds:F2}ms generator={GeneratorAverageMilliseconds:F2}ms overhead={GeneratorOverheadMilliseconds:F2}ms ({GeneratorOverheadPercent:F1}%)";
+	public double WarmRerunRatio =>
+		GeneratorAverageMilliseconds <= 0 ? 0 : WarmRerunAverageMilliseconds / GeneratorAverageMilliseconds;
+
+	public double SingleAggregateEditRatio =>
+		GeneratorAverageMilliseconds <= 0 ? 0 : SingleAggregateEditAverageMilliseconds / GeneratorAverageMilliseconds;
+
+	public string FormatCurrent()
+	{
+		var warm =
+			WarmRerunAverageMilliseconds > 0
+				? $" warm-rerun={WarmRerunAverageMilliseconds:F2}ms ({WarmRerunRatio:P0} of cold)"
+				: string.Empty;
+		var edit =
+			SingleAggregateEditAverageMilliseconds > 0
+				? $" single-edit={SingleAggregateEditAverageMilliseconds:F2}ms ({SingleAggregateEditRatio:P0} of cold)"
+				: string.Empty;
+		return $"{Name} [{GeneratorName}] baseline={BaselineAverageMilliseconds:F2}ms generator={GeneratorAverageMilliseconds:F2}ms overhead={GeneratorOverheadMilliseconds:F2}ms ({GeneratorOverheadPercent:F1}%){warm}{edit}";
+	}
 
 	public string FormatComparison(PerformanceScenarioRun previous) =>
-		$"  vs previous: generator={FormatDelta(GeneratorAverageMilliseconds - previous.GeneratorAverageMilliseconds, previous.GeneratorAverageMilliseconds)} baseline={FormatDelta(BaselineAverageMilliseconds - previous.BaselineAverageMilliseconds, previous.BaselineAverageMilliseconds)}";
+		$"  vs previous: generator={FormatDelta(GeneratorAverageMilliseconds - previous.GeneratorAverageMilliseconds, previous.GeneratorAverageMilliseconds)} baseline={FormatDelta(BaselineAverageMilliseconds - previous.BaselineAverageMilliseconds, previous.BaselineAverageMilliseconds)} warm-rerun={FormatDelta(WarmRerunAverageMilliseconds - previous.WarmRerunAverageMilliseconds, previous.WarmRerunAverageMilliseconds)}";
 
 	static string FormatDelta(double delta, double previous)
 	{

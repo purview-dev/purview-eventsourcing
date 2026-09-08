@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Purview.EventSourcing.Admin.Abstractions.Models;
 using Purview.EventSourcing.Admin.Abstractions.Services;
 using Purview.EventSourcing.Admin.Security.Handlers;
@@ -33,6 +34,9 @@ public static class AdminSecurityServiceCollectionExtensions
 		// Register authorization handlers
 		services.AddScoped<IAuthorizationHandler, AdminFeatureAuthorizationHandler>();
 		services.AddScoped<IAuthorizationHandler, AggregateTypeAccessHandler>();
+
+		// Default in-memory audit logger; applications may replace it with a durable implementation.
+		services.TryAddSingleton<IAdminAuditLogger, InMemoryAdminAuditLogger>();
 
 		return services;
 	}
@@ -68,6 +72,11 @@ public static class AdminSecurityServiceCollectionExtensions
 		);
 
 		builder.AddPolicy(
+			AdminPortalPolicies.ViewEventPayloads,
+			policy => policy.AddRequirements(new AdminFeatureRequirement(AdminFeature.ViewEventPayloads))
+		);
+
+		builder.AddPolicy(
 			AdminPortalPolicies.ProjectPointInTime,
 			policy =>
 				policy.AddRequirements(
@@ -81,6 +90,49 @@ public static class AdminSecurityServiceCollectionExtensions
 			policy =>
 				policy.AddRequirements(
 					new AdminFeatureRequirement(AdminFeature.ExportEvents),
+					new AdminFeatureRequirement(AdminFeature.ViewEventPayloads),
+					new AggregateTypeAccessRequirement()
+				)
+		);
+
+		builder.AddPolicy(
+			AdminPortalPolicies.ViewCapabilities,
+			policy => policy.AddRequirements(new AdminFeatureRequirement(AdminFeature.ViewCapabilities))
+		);
+
+		builder.AddPolicy(
+			AdminPortalPolicies.ViewPoisonedOutbox,
+			policy => policy.AddRequirements(new AdminFeatureRequirement(AdminFeature.ViewPoisonedOutbox))
+		);
+
+		builder.AddPolicy(
+			AdminPortalPolicies.ViewManifest,
+			policy => policy.AddRequirements(new AdminFeatureRequirement(AdminFeature.ViewManifest))
+		);
+
+		builder.AddPolicy(
+			AdminPortalPolicies.ViewUnknownEvents,
+			policy =>
+				policy.AddRequirements(
+					new AdminFeatureRequirement(AdminFeature.ViewUnknownEvents),
+					new AggregateTypeAccessRequirement()
+				)
+		);
+
+		builder.AddPolicy(
+			AdminPortalPolicies.ViewSnapshot,
+			policy =>
+				policy.AddRequirements(
+					new AdminFeatureRequirement(AdminFeature.ViewSnapshot),
+					new AggregateTypeAccessRequirement()
+				)
+		);
+
+		builder.AddPolicy(
+			AdminPortalPolicies.RebuildSnapshot,
+			policy =>
+				policy.AddRequirements(
+					new AdminFeatureRequirement(AdminFeature.RebuildSnapshot),
 					new AggregateTypeAccessRequirement()
 				)
 		);

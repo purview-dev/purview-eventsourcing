@@ -14,10 +14,10 @@ public sealed partial class AggregateSourceGenerator : IIncrementalGenerator
 			});
 
 		var generationContext = SourceGenLibrary.GetGenerationContext(context);
-		var aggregateInfo = SourceGenLibrary.GetAggregateTargets(context);
+		var aggregateTargets = SourceGenLibrary.GetAggregateTargets(context);
 
 		context.RegisterSourceOutput(
-			aggregateInfo.Combine(generationContext),
+			aggregateTargets.Combine(generationContext),
 			static (spc, tuple) =>
 			{
 				var (aggregateResult, context) = tuple;
@@ -27,13 +27,50 @@ public sealed partial class AggregateSourceGenerator : IIncrementalGenerator
 				if (!aggregateResult.ShouldProcess || !aggregateResult.HasValue)
 					return;
 
-				var info = aggregateResult.Value;
+				var info = aggregateResult.Value.Info;
 				var writer = context.CreateCodeWriter();
 
 				AggregateEmitContext outputContext = new(context, info);
 				AggregateSourceEmitter.GenerateAggregateSource(outputContext, writer);
 
 				spc.AddSource(info.HintName, writer);
+			}
+		);
+
+		var manifest = SourceGenLibrary.GetEventContractManifest(aggregateTargets);
+		var locations = SourceGenLibrary.GetEventContractLocations(aggregateTargets);
+		var baseline = SourceGenLibrary.GetEventContractBaseline(context);
+		var manifestEnabled = SourceGenLibrary.IsEventContractManifestEnabled(context);
+		var comparison = SourceGenLibrary.GetEventContractComparison(manifest, baseline);
+
+		context.RegisterSourceOutput(
+			comparison.Combine(locations).Combine(generationContext),
+			static (spc, tuple) =>
+			{
+				var ((comparison, locations), generationContext) = tuple;
+				if (generationContext.Settings.IsSourceGeneratorDisabled)
+					return;
+
+				foreach (var issue in comparison.Issues)
+					spc.ReportDiagnostic(EventContractDiagnostics.CreateDiagnostic(issue, locations));
+			}
+		);
+
+		context.RegisterSourceOutput(
+			manifest.Combine(manifestEnabled).Combine(generationContext),
+			static (spc, tuple) =>
+			{
+				var ((manifest, enabled), generationContext) = tuple;
+				if (generationContext.Settings.IsSourceGeneratorDisabled)
+					return;
+
+				if (!enabled)
+					return;
+
+				spc.AddSource(
+					EventContractManifestLibrary.GeneratedHintName,
+					EventContractManifestLibrary.EmitSource(manifest)
+				);
 			}
 		);
 	}

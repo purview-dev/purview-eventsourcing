@@ -509,34 +509,22 @@ namespace Testing
 		var aggregate = query.GetClass("ReportUploadAggregate", "Testing");
 		var statusType = TypeRefs.Named("ReportProcessingStatus", "Testing");
 
-		var computingSingle = aggregate.GetMethod(query, "OnComputingCompletedEvent", statusType);
-		await Assert.That(computingSingle.Modifiers.ToString()).Contains("partial");
+		var computingSingle = aggregate.GetMethod("OnComputingCompletedEvent", statusType);
+		await Assert.That(computingSingle.Node.Modifiers.ToString()).Contains("partial");
 
 		var computingAll = aggregate.GetMethod(
-			query,
 			"OnComputingCompletedEvent",
 			TypeRefs.String,
 			TypeRefs.Object,
 			statusType
 		);
-		await Assert.That(computingAll.Modifiers.ToString()).Contains("partial");
+		await Assert.That(computingAll.Node.Modifiers.ToString()).Contains("partial");
 
-		var raisingNonComputed = aggregate.GetMethod(
-			query,
-			"OnRaisingCompletedEvent",
-			TypeRefs.String,
-			TypeRefs.Object
-		);
-		await Assert.That(raisingNonComputed.Modifiers.ToString()).Contains("partial");
+		var raisingNonComputed = aggregate.GetMethod("OnRaisingCompletedEvent", TypeRefs.String, TypeRefs.Object);
+		await Assert.That(raisingNonComputed.Node.Modifiers.ToString()).Contains("partial");
 
-		var raisingAll = aggregate.GetMethod(
-			query,
-			"OnRaisingCompletedEvent",
-			TypeRefs.String,
-			TypeRefs.Object,
-			statusType
-		);
-		await Assert.That(raisingAll.Modifiers.ToString()).Contains("partial");
+		var raisingAll = aggregate.GetMethod("OnRaisingCompletedEvent", TypeRefs.String, TypeRefs.Object, statusType);
+		await Assert.That(raisingAll.Node.Modifiers.ToString()).Contains("partial");
 	}
 
 	[Test]
@@ -619,31 +607,15 @@ namespace Testing
 		var query = result.Generated();
 		var aggregate = query.GetClass("ReportUploadAggregate", "Testing");
 		var statusType = TypeRefs.Named("ReportProcessingStatus", "Testing");
-		await Assert.That(aggregate.HasMethod(query, "OnComputingMarkAsCompletedEvent", statusType)).IsTrue();
+		await Assert.That(aggregate.HasMethod("OnComputingMarkAsCompletedEvent", statusType)).IsTrue();
 		await Assert
-			.That(
-				aggregate.HasMethod(
-					query,
-					"OnRaisingMarkAsCompletedEvent",
-					TypeRefs.String,
-					TypeRefs.Object,
-					statusType
-				)
-			)
+			.That(aggregate.HasMethod("OnRaisingMarkAsCompletedEvent", TypeRefs.String, TypeRefs.Object, statusType))
 			.IsTrue();
 		await Assert
-			.That(aggregate.HasMethod(query, "OnRaisingMarkAsCompletedEvent", TypeRefs.String, TypeRefs.Object))
+			.That(aggregate.HasMethod("OnRaisingMarkAsCompletedEvent", TypeRefs.String, TypeRefs.Object))
 			.IsTrue();
 		await Assert
-			.That(
-				aggregate.HasMethod(
-					query,
-					"OnComputingMarkAsCompletedEvent",
-					TypeRefs.String,
-					TypeRefs.Object,
-					statusType
-				)
-			)
+			.That(aggregate.HasMethod("OnComputingMarkAsCompletedEvent", TypeRefs.String, TypeRefs.Object, statusType))
 			.IsTrue();
 	}
 
@@ -711,7 +683,7 @@ namespace Testing
 		// Assert that event class uses the default namespace pattern and inherits EventBase
 		await Assert.That(result.Generated().HasNamespace("Testing.OrderEvents")).IsTrue();
 		var orderCreated = result.Generated().GetClass("OrderCreatedEvent", "Testing.OrderEvents");
-		await Assert.That(orderCreated.BaseList?.ToString()).Contains("EventBase");
+		await Assert.That(orderCreated.Node.BaseList?.ToString()).Contains("EventBase");
 	}
 
 	[Test]
@@ -741,13 +713,13 @@ namespace Testing
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("OrderAggregate", "Testing");
-		var createFromJsonModel = aggregate.GetMethod(query, "CreateFromJsonModel");
-		await Assert.That(createFromJsonModel.Modifiers.ToString()).Contains("static");
-		await Assert.That(createFromJsonModel.ParameterList.Parameters.Count).IsEqualTo(1);
+		var createFromJsonModel = aggregate.GetMethod("CreateFromJsonModel");
+		await Assert.That(createFromJsonModel.Node.Modifiers.ToString()).Contains("static");
+		await Assert.That(createFromJsonModel.Node.ParameterList.Parameters.Count).IsEqualTo(1);
 		await Assert
-			.That(createFromJsonModel.ParameterList.Parameters[0].Type?.ToString())
+			.That(createFromJsonModel.Node.ParameterList.Parameters[0].Type?.ToString())
 			.Contains("OrderAggregateJsonModel");
-		await Assert.That(aggregate.AttributeLists.ToString()).Contains("JsonConverter");
+		await Assert.That(aggregate.Node.AttributeLists.ToString()).Contains("JsonConverter");
 	}
 
 	[Test]
@@ -777,8 +749,8 @@ namespace Testing
 
 		var query = result.Generated();
 		var orderCreated = query.GetClass("OrderCreatedEvent", "Testing.OrderEvents");
-		await Assert.That(orderCreated.HasProperty(query, "CustomerId", TypeRefs.String)).IsTrue();
-		await Assert.That(orderCreated.HasProperty(query, "Total", TypeRefs.Decimal)).IsTrue();
+		await Assert.That(orderCreated.HasProperty("CustomerId", TypeRefs.String)).IsTrue();
+		await Assert.That(orderCreated.HasProperty("Total", TypeRefs.Decimal)).IsTrue();
 	}
 
 	[Test]
@@ -808,11 +780,11 @@ namespace Testing
 
 		var query = result.Generated();
 		var orderSet = query.GetClass("OrderSetEvent", "Testing.OrderEvents");
-		var buildEventHash = orderSet.GetMethod(query, "BuildEventHash", TypeRefs.HashCode);
-		await Assert.That(buildEventHash.Modifiers.ToString()).Contains("override");
+		var buildEventHash = orderSet.GetMethod("BuildEventHash", TypeRefs.HashCode);
+		await Assert.That(buildEventHash.Node.Modifiers.ToString()).Contains("override");
 
 		// BuildEventHash adds each stored event property
-		var hashBody = buildEventHash.Body?.ToString() ?? string.Empty;
+		var hashBody = buildEventHash.Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(hashBody).Contains("hash.Add(Name);");
 		await Assert.That(hashBody).Contains("hash.Add(Count);");
 	}
@@ -846,12 +818,12 @@ namespace Testing
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("OrderAggregate", "Testing");
-		var registerEvents = aggregate.GetMethod(query, "RegisterEvents");
-		var modifiers = registerEvents.Modifiers.ToString();
+		var registerEvents = aggregate.GetMethod("RegisterEvents");
+		var modifiers = registerEvents.Node.Modifiers.ToString();
 		await Assert.That(modifiers).Contains("override");
 		await Assert.That(modifiers).Contains("protected");
 
-		var registerBody = registerEvents.Body?.ToString() ?? string.Empty;
+		var registerBody = registerEvents.Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(registerBody).Contains("Register<global::Testing.OrderEvents.OrderCreatedEvent>(Apply);");
 		await Assert.That(registerBody).Contains("Register<global::Testing.OrderEvents.OrderUpdatedEvent>(Apply);");
 	}
@@ -883,11 +855,11 @@ namespace Testing
 		var query = result.Generated();
 		var aggregate = query.GetClass("OrderAggregate", "Testing");
 		await Assert
-			.That(aggregate.HasMethod(query, "Apply", TypeRefs.Event("OrderCreatedEvent", "Testing.OrderEvents")))
+			.That(aggregate.HasMethod("Apply", TypeRefs.Event("OrderCreatedEvent", "Testing.OrderEvents")))
 			.IsTrue();
 
-		var apply = aggregate.GetMethod(query, "Apply", TypeRefs.Event("OrderCreatedEvent", "Testing.OrderEvents"));
-		await Assert.That(apply.Body?.ToString()).Contains("CustomerId = @event.CustomerId;");
+		var apply = aggregate.GetMethod("Apply", TypeRefs.Event("OrderCreatedEvent", "Testing.OrderEvents"));
+		await Assert.That(apply.Node.Body?.ToString()).Contains("CustomerId = @event.CustomerId;");
 	}
 
 	[Test]
@@ -917,12 +889,12 @@ namespace Testing
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("OrderAggregate", "Testing");
-		var createOrder = aggregate.GetMethod(query, "CreateOrder", TypeRefs.String, TypeRefs.Decimal);
-		var modifiers = createOrder.Modifiers.ToString();
+		var createOrder = aggregate.GetMethod("CreateOrder", TypeRefs.String, TypeRefs.Decimal);
+		var modifiers = createOrder.Node.Modifiers.ToString();
 		await Assert.That(modifiers).Contains("partial");
 		await Assert.That(modifiers).Contains("public");
 
-		var body = createOrder.Body?.ToString() ?? string.Empty;
+		var body = createOrder.Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(body).Contains("var @event = new global::Testing.OrderEvents.OrderCreatedEvent");
 		await Assert.That(body).Contains("RecordAndApply(@event);");
 		await Assert.That(body).Contains("CustomerId = customerId,");
@@ -953,10 +925,10 @@ namespace Testing
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("ProfileAggregate", "Testing");
-		var rename = aggregate.GetMethod(query, "Rename", TypeRefs.String);
-		await Assert.That(rename.Modifiers.ToString()).Contains("partial");
+		var rename = aggregate.GetMethod("Rename", TypeRefs.String);
+		await Assert.That(rename.Node.Modifiers.ToString()).Contains("partial");
 		await Assert
-			.That(rename.Body?.ToString())
+			.That(rename.Node.Body?.ToString())
 			.Contains("if (global::System.String.Equals(Name, name, global::System.StringComparison.Ordinal))");
 	}
 
@@ -985,8 +957,8 @@ namespace Testing
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("ProductAggregate", "Testing");
-		var update = aggregate.GetMethod(query, "Update", TypeRefs.String, TypeRefs.Int);
-		var body = update.Body?.ToString() ?? string.Empty;
+		var update = aggregate.GetMethod("Update", TypeRefs.String, TypeRefs.Int);
+		var body = update.Node.Body?.ToString() ?? string.Empty;
 		await Assert
 			.That(body)
 			.Contains(
@@ -1019,16 +991,16 @@ namespace Testing
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("ProfileAggregate", "Testing");
-		var rename = aggregate.GetMethod(query, "Rename", TypeRefs.String);
-		var modifiers = rename.Modifiers.ToString();
+		var rename = aggregate.GetMethod("Rename", TypeRefs.String);
+		var modifiers = rename.Node.Modifiers.ToString();
 		await Assert.That(modifiers).Contains("partial");
 		await Assert.That(modifiers).Contains("public");
-		var returnType = rename.ReturnType.ToString();
+		var returnType = rename.Node.ReturnType.ToString();
 		await Assert.That(returnType).Contains("ProfileAggregate");
 		await Assert
-			.That(rename.Body?.ToString())
+			.That(rename.Node.Body?.ToString())
 			.Contains("if (global::System.String.Equals(Name, name, global::System.StringComparison.Ordinal))");
-		await Assert.That(rename.Body?.ToString()).Contains("return this;");
+		await Assert.That(rename.Node.Body?.ToString()).Contains("return this;");
 	}
 
 	[Test]
@@ -1055,16 +1027,16 @@ namespace Testing
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("ProfileAggregate", "Testing");
-		var rename = aggregate.GetMethod(query, "Rename", TypeRefs.String);
-		var modifiers = rename.Modifiers.ToString();
+		var rename = aggregate.GetMethod("Rename", TypeRefs.String);
+		var modifiers = rename.Node.Modifiers.ToString();
 		await Assert.That(modifiers).Contains("partial");
 		await Assert.That(modifiers).Contains("public");
-		await Assert.That(rename.ReturnType.ToString()).Contains("bool");
+		await Assert.That(rename.Node.ReturnType.ToString()).Contains("bool");
 		await Assert
-			.That(rename.Body?.ToString())
+			.That(rename.Node.Body?.ToString())
 			.Contains("if (global::System.String.Equals(Name, name, global::System.StringComparison.Ordinal))");
-		await Assert.That(rename.Body?.ToString()).Contains("return false;");
-		await Assert.That(rename.Body?.ToString()).Contains("return true;");
+		await Assert.That(rename.Node.Body?.ToString()).Contains("return false;");
+		await Assert.That(rename.Node.Body?.ToString()).Contains("return true;");
 	}
 
 	[Test]
@@ -1097,19 +1069,19 @@ namespace Testing
 			.ToArray();
 
 		var aggregate = query.GetClass("CounterAggregate", "Testing");
-		var increment = aggregate.GetMethod(query, "Increment");
-		await Assert.That(increment.Modifiers.ToString()).Contains("partial");
+		var increment = aggregate.GetMethod("Increment");
+		await Assert.That(increment.Node.Modifiers.ToString()).Contains("partial");
 		await Assert
-			.That(aggregate.HasMethod(query, "Apply", TypeRefs.Event("IncrementedEvent", "Testing.CounterEvents")))
+			.That(aggregate.HasMethod("Apply", TypeRefs.Event("IncrementedEvent", "Testing.CounterEvents")))
 			.IsTrue();
 
 		var incrementedEvent = query.GetClass("IncrementedEvent", "Testing.CounterEvents");
-		var buildEventHash = incrementedEvent.GetMethod(query, "BuildEventHash", TypeRefs.HashCode);
-		var modifiers = buildEventHash.Modifiers.ToString();
+		var buildEventHash = incrementedEvent.GetMethod("BuildEventHash", TypeRefs.HashCode);
+		var modifiers = buildEventHash.Node.Modifiers.ToString();
 		await Assert.That(modifiers).Contains("override");
 		await Assert.That(modifiers).Contains("protected");
 
-		var body = increment.Body?.ToString() ?? string.Empty;
+		var body = increment.Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(body).Contains("var @event = new global::Testing.CounterEvents.IncrementedEvent");
 		await Assert.That(body).Contains("RecordAndApply(@event);");
 		await Assert.That(errors).IsEmpty();
@@ -1148,9 +1120,9 @@ namespace Testing
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("CustomerAggregate", "Testing");
-		var changeName = aggregate.GetMethod(query, "ChangeName", TypeRefs.String);
+		var changeName = aggregate.GetMethod("ChangeName", TypeRefs.String);
 		await Assert
-			.That(changeName.Body?.ToString())
+			.That(changeName.Node.Body?.ToString())
 			.Contains(
 				"global::System.Collections.Generic.EqualityComparer<global::Testing.Name>.Default.Equals(Name, __nameValue)"
 			);
@@ -1180,8 +1152,8 @@ namespace Testing
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("ToggleAggregate", "Testing");
-		var changeIsActive = aggregate.GetMethod(query, "ChangeIsActive", TypeRefs.Bool);
-		var modifiers = changeIsActive.Modifiers.ToString();
+		var changeIsActive = aggregate.GetMethod("ChangeIsActive", TypeRefs.Bool);
+		var modifiers = changeIsActive.Node.Modifiers.ToString();
 		await Assert.That(modifiers).Contains("partial");
 		await Assert.That(modifiers).Contains("private");
 		await Assert.That(result.Generated().HasClass("IsActiveChangedEvent", "Testing.ToggleEvents")).IsTrue();
@@ -1209,8 +1181,8 @@ namespace Testing
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("EmptyAggregate", "Testing");
-		var registerEvents = aggregate.GetMethod(query, "RegisterEvents");
-		var modifiers = registerEvents.Modifiers.ToString();
+		var registerEvents = aggregate.GetMethod("RegisterEvents");
+		var modifiers = registerEvents.Node.Modifiers.ToString();
 		await Assert.That(modifiers).Contains("override");
 		await Assert.That(modifiers).Contains("protected");
 		await Assert.That(query.HasNamespace("Testing.EmptyEvents")).IsFalse();
@@ -1273,8 +1245,8 @@ public partial class NotAnAggregate
 		await Assert.That(result.DriverResult.GeneratedTrees).Count().IsEqualTo(ExpectedFileCountPlusGen);
 
 		var notAnAggregate = result.Generated().GetClass("NotAnAggregate", "Testing");
-		await Assert.That(notAnAggregate.Modifiers.ToString()).Contains("partial");
-		await Assert.That(notAnAggregate.BaseList?.ToString()).Contains("AggregateBase");
+		await Assert.That(notAnAggregate.Node.Modifiers.ToString()).Contains("partial");
+		await Assert.That(notAnAggregate.Node.BaseList?.ToString()).Contains("AggregateBase");
 		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.AggregateMustInheritAggregateBase);
 	}
 
@@ -1338,7 +1310,7 @@ namespace Testing
 		var result = await GenerateAsync(source, cancellationToken);
 
 		var interfaceOnlyAggregate = result.Generated().GetClass("InterfaceOnlyAggregate", "Testing");
-		await Assert.That(interfaceOnlyAggregate.BaseList?.ToString()).Contains("AggregateBase");
+		await Assert.That(interfaceOnlyAggregate.Node.BaseList?.ToString()).Contains("AggregateBase");
 		await Assert.That(result).DoesNotHaveDiagnostic("EVENTSTORE002");
 
 		var errors = result
@@ -1374,8 +1346,8 @@ namespace Testing
 
 		// Assert that the generated partial class uses 'internal' access modifier
 		var internalAggregate = result.Generated().GetClass("InternalAggregate", "Testing");
-		await Assert.That(internalAggregate.Modifiers.ToString()).Contains("internal");
-		await Assert.That(internalAggregate.Modifiers.ToString()).Contains("partial");
+		await Assert.That(internalAggregate.Node.Modifiers.ToString()).Contains("internal");
+		await Assert.That(internalAggregate.Node.Modifiers.ToString()).Contains("partial");
 	}
 
 	[Test]
@@ -1501,9 +1473,9 @@ namespace Testing
 		var query = result.Generated();
 		var schemaVersion = query
 			.GetClass("OrderCreatedEvent", "Testing.OrderEvents")
-			.GetProperty(query, "SchemaVersion", TypeRefs.Int);
-		await Assert.That(schemaVersion.Modifiers.ToString()).Contains("override");
-		await Assert.That(schemaVersion.ExpressionBody?.ToString()).Contains("1");
+			.GetProperty("SchemaVersion", TypeRefs.Int);
+		await Assert.That(schemaVersion.Node.Modifiers.ToString()).Contains("override");
+		await Assert.That(schemaVersion.Node.ExpressionBody?.ToString()).Contains("1");
 	}
 
 	[Test]
@@ -1534,8 +1506,8 @@ namespace Testing
 		var query = result.Generated();
 		var schemaVersion = query
 			.GetClass("OrderCreatedEvent", "Testing.OrderEvents")
-			.GetProperty(query, "SchemaVersion", TypeRefs.Int);
-		await Assert.That(schemaVersion.ExpressionBody?.ToString()).Contains("3");
+			.GetProperty("SchemaVersion", TypeRefs.Int);
+		await Assert.That(schemaVersion.Node.ExpressionBody?.ToString()).Contains("3");
 	}
 
 	[Test]
@@ -1569,15 +1541,17 @@ namespace Testing
 		var query = result.Generated();
 		var orderCreatedSchemaVersion = query
 			.GetClass("OrderCreatedEvent", "Testing.OrderEvents")
-			.GetProperty(query, "SchemaVersion", TypeRefs.Int);
+			.GetProperty("SchemaVersion", TypeRefs.Int);
 		var totalUpdatedSchemaVersion = query
 			.GetClass("TotalUpdatedEvent", "Testing.OrderEvents")
-			.GetProperty(query, "SchemaVersion", TypeRefs.Int);
+			.GetProperty("SchemaVersion", TypeRefs.Int);
 
-		await Assert.That(orderCreatedSchemaVersion.ExpressionBody?.ToString()).Contains("1");
-		await Assert.That(totalUpdatedSchemaVersion.ExpressionBody?.ToString()).Contains("2");
+		await Assert.That(orderCreatedSchemaVersion.Node.ExpressionBody?.ToString()).Contains("1");
+		await Assert.That(totalUpdatedSchemaVersion.Node.ExpressionBody?.ToString()).Contains("2");
 		// They should appear in event-declaration order (OrderCreated before TotalUpdated)
-		await Assert.That(orderCreatedSchemaVersion.SpanStart).IsLessThan(totalUpdatedSchemaVersion.SpanStart);
+		await Assert
+			.That(orderCreatedSchemaVersion.Node.SpanStart)
+			.IsLessThan(totalUpdatedSchemaVersion.Node.SpanStart);
 	}
 
 	[Test]
@@ -1656,12 +1630,12 @@ namespace Testing
 		var aggregateAttribute = query.GetClass("AggregateAttribute", aggregateNamespace);
 		var aggregateDefaultsAttribute = query.GetClass("AggregateDefaultsAttribute", aggregateNamespace);
 
-		await Assert.That(eventAttribute.HasProperty(query, "Version", TypeRefs.Int)).IsTrue();
-		await Assert.That(eventAttribute.HasProperty(query, "EventName", TypeRefs.String)).IsTrue();
-		await Assert.That(eventAttribute.HasProperty(query, "EventNamespace", TypeRefs.String)).IsTrue();
-		await Assert.That(aggregateAttribute.HasProperty(query, "EventNamespace", TypeRefs.String)).IsTrue();
-		await Assert.That(aggregateAttribute.HasProperty(query, "EventSuffix", TypeRefs.String)).IsTrue();
-		await Assert.That(aggregateDefaultsAttribute.HasProperty(query, "EventSuffix", TypeRefs.String)).IsTrue();
+		await Assert.That(eventAttribute.HasProperty("Version", TypeRefs.Int)).IsTrue();
+		await Assert.That(eventAttribute.HasProperty("EventName", TypeRefs.String)).IsTrue();
+		await Assert.That(eventAttribute.HasProperty("EventNamespace", TypeRefs.String)).IsTrue();
+		await Assert.That(aggregateAttribute.HasProperty("EventNamespace", TypeRefs.String)).IsTrue();
+		await Assert.That(aggregateAttribute.HasProperty("EventSuffix", TypeRefs.String)).IsTrue();
+		await Assert.That(aggregateDefaultsAttribute.HasProperty("EventSuffix", TypeRefs.String)).IsTrue();
 	}
 
 	[Test]
@@ -1688,10 +1662,10 @@ namespace Testing
 		await Assert.That(query.HasClass("OrderCreatedEvent", "Testing.OrderEvents")).IsTrue();
 
 		var aggregate = query.GetClass("OrderAggregate", "Testing");
-		var registerBody = aggregate.GetMethod(query, "RegisterEvents").Body?.ToString() ?? string.Empty;
+		var registerBody = aggregate.GetMethod("RegisterEvents").Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(registerBody).Contains("Register<global::Testing.OrderEvents.OrderCreatedEvent>(Apply);");
 		await Assert
-			.That(aggregate.HasMethod(query, "Apply", TypeRefs.Event("OrderCreatedEvent", "Testing.OrderEvents")))
+			.That(aggregate.HasMethod("Apply", TypeRefs.Event("OrderCreatedEvent", "Testing.OrderEvents")))
 			.IsTrue();
 	}
 
@@ -1722,12 +1696,12 @@ namespace Testing
 		await Assert.That(query.HasClass("OrderCreatedDomainEvent", "Testing.OrderEvents")).IsTrue();
 
 		var aggregate = query.GetClass("OrderAggregate", "Testing");
-		var registerBody = aggregate.GetMethod(query, "RegisterEvents").Body?.ToString() ?? string.Empty;
+		var registerBody = aggregate.GetMethod("RegisterEvents").Node.Body?.ToString() ?? string.Empty;
 		await Assert
 			.That(registerBody)
 			.Contains("Register<global::Testing.OrderEvents.OrderCreatedDomainEvent>(Apply);");
 		await Assert
-			.That(aggregate.HasMethod(query, "Apply", TypeRefs.Event("OrderCreatedDomainEvent", "Testing.OrderEvents")))
+			.That(aggregate.HasMethod("Apply", TypeRefs.Event("OrderCreatedDomainEvent", "Testing.OrderEvents")))
 			.IsTrue();
 	}
 
@@ -1758,12 +1732,12 @@ namespace Testing
 		await Assert.That(query.HasClass("OrderCreatedCustomEvent", "Testing.OrderEvents")).IsTrue();
 
 		var aggregate = query.GetClass("OrderAggregate", "Testing");
-		var registerBody = aggregate.GetMethod(query, "RegisterEvents").Body?.ToString() ?? string.Empty;
+		var registerBody = aggregate.GetMethod("RegisterEvents").Node.Body?.ToString() ?? string.Empty;
 		await Assert
 			.That(registerBody)
 			.Contains("Register<global::Testing.OrderEvents.OrderCreatedCustomEvent>(Apply);");
 		await Assert
-			.That(aggregate.HasMethod(query, "Apply", TypeRefs.Event("OrderCreatedCustomEvent", "Testing.OrderEvents")))
+			.That(aggregate.HasMethod("Apply", TypeRefs.Event("OrderCreatedCustomEvent", "Testing.OrderEvents")))
 			.IsTrue();
 	}
 
@@ -1793,10 +1767,10 @@ namespace Testing
 		await Assert.That(query.HasNamespace("Testing.Custom.Events")).IsTrue();
 
 		var aggregate = query.GetClass("OrderAggregate", "Testing");
-		var registerBody = aggregate.GetMethod(query, "RegisterEvents").Body?.ToString() ?? string.Empty;
+		var registerBody = aggregate.GetMethod("RegisterEvents").Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(registerBody).Contains("Register<global::Testing.Custom.Events.OrderCreatedEvent>(Apply);");
 		await Assert
-			.That(aggregate.HasMethod(query, "Apply", TypeRefs.Event("OrderCreatedEvent", "Testing.Custom.Events")))
+			.That(aggregate.HasMethod("Apply", TypeRefs.Event("OrderCreatedEvent", "Testing.Custom.Events")))
 			.IsTrue();
 	}
 
@@ -1827,10 +1801,10 @@ namespace Testing
 		await Assert.That(query.HasClass("OrderCreated", "Testing.Domain.Ordering")).IsTrue();
 
 		var aggregate = query.GetClass("OrderAggregate", "Testing");
-		var registerBody = aggregate.GetMethod(query, "RegisterEvents").Body?.ToString() ?? string.Empty;
+		var registerBody = aggregate.GetMethod("RegisterEvents").Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(registerBody).Contains("Register<global::Testing.Domain.Ordering.OrderCreated>(Apply);");
 		await Assert
-			.That(aggregate.HasMethod(query, "Apply", TypeRefs.Event("OrderCreated", "Testing.Domain.Ordering")))
+			.That(aggregate.HasMethod("Apply", TypeRefs.Event("OrderCreated", "Testing.Domain.Ordering")))
 			.IsTrue();
 	}
 
@@ -2094,13 +2068,13 @@ namespace Testing
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("MappingAggregate", "Testing");
-		var rename = aggregate.GetMethod(query, "Rename", TypeRefs.String);
-		await Assert.That(rename.Modifiers.ToString()).Contains("partial");
+		var rename = aggregate.GetMethod("Rename", TypeRefs.String);
+		await Assert.That(rename.Node.Modifiers.ToString()).Contains("partial");
 
 		var renamedEvent = query.GetClass("RenamedEvent", "Testing.MappingEvents");
-		await Assert.That(renamedEvent.HasProperty(query, "InitialPropertyToTest", TypeRefs.String)).IsTrue();
+		await Assert.That(renamedEvent.HasProperty("InitialPropertyToTest", TypeRefs.String)).IsTrue();
 
-		var body = rename.Body?.ToString() ?? string.Empty;
+		var body = rename.Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(body).Contains("OnRaisingRenamedEvent(ref initialPropertyToTest);");
 		await Assert.That(body).Contains("InitialPropertyToTest = initialPropertyToTest,");
 		await Assert.That(body).Contains("OnRaisedRenamedEvent(@event);");
@@ -2136,25 +2110,19 @@ public partial class MappingAggregate
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("MappingAggregate", "Testing");
-		var rename = aggregate.GetMethod(query, "Rename", TypeRefs.String, TypeRefs.String, TypeRefs.String);
-		await Assert.That(rename.Modifiers.ToString()).Contains("partial");
+		var rename = aggregate.GetMethod("Rename", TypeRefs.String, TypeRefs.String, TypeRefs.String);
+		await Assert.That(rename.Node.Modifiers.ToString()).Contains("partial");
 
-		var onRaising = aggregate.GetMethod(
-			query,
-			"OnRaisingRenamedEvent",
-			TypeRefs.String,
-			TypeRefs.String,
-			TypeRefs.String
-		);
-		await Assert.That(onRaising.Modifiers.ToString()).Contains("partial");
+		var onRaising = aggregate.GetMethod("OnRaisingRenamedEvent", TypeRefs.String, TypeRefs.String, TypeRefs.String);
+		await Assert.That(onRaising.Node.Modifiers.ToString()).Contains("partial");
 
 		var renamedEvent = query.GetClass("RenamedEvent", "Testing.MappingEvents");
-		await Assert.That(renamedEvent.HasProperty(query, "CorrelationId")).IsFalse();
-		await Assert.That(renamedEvent.HasProperty(query, "CorrelationToStoreImplicitId", TypeRefs.String)).IsTrue();
-		await Assert.That(renamedEvent.HasProperty(query, "CorrelationToStoreExplicitId", TypeRefs.String)).IsTrue();
+		await Assert.That(renamedEvent.HasProperty("CorrelationId")).IsFalse();
+		await Assert.That(renamedEvent.HasProperty("CorrelationToStoreImplicitId", TypeRefs.String)).IsTrue();
+		await Assert.That(renamedEvent.HasProperty("CorrelationToStoreExplicitId", TypeRefs.String)).IsTrue();
 
 		await Assert
-			.That(rename.Body?.ToString())
+			.That(rename.Node.Body?.ToString())
 			.Contains("var @event = new global::Testing.MappingEvents.RenamedEvent");
 		await Assert.That(result).DoesNotHaveDiagnostic("CS8795");
 	}
@@ -2183,14 +2151,16 @@ namespace Testing
 
 		var query = result.Generated();
 		var stockReceived = query.GetClass("StockReceivedEvent", "Testing.MappingEvents");
-		await Assert.That(stockReceived.HasProperty(query, "InitialQuantity", TypeRefs.Int)).IsTrue();
+		await Assert.That(stockReceived.HasProperty("InitialQuantity", TypeRefs.Int)).IsTrue();
 
 		var aggregate = query.GetClass("MappingAggregate", "Testing");
-		var apply = aggregate.GetMethod(query, "Apply", TypeRefs.Event("StockReceivedEvent", "Testing.MappingEvents"));
-		await Assert.That(apply.Body?.ToString()).Contains("QuantityOnHand = @event.InitialQuantity;");
+		var apply = aggregate.GetMethod("Apply", TypeRefs.Event("StockReceivedEvent", "Testing.MappingEvents"));
+		await Assert.That(apply.Node.Body?.ToString()).Contains("QuantityOnHand = @event.InitialQuantity;");
 
-		var receiveStock = aggregate.GetMethod(query, "ReceiveStock", TypeRefs.Int);
-		await Assert.That(receiveStock.Body?.ToString()).Contains("OnRaisingStockReceivedEvent(ref initialQuantity);");
+		var receiveStock = aggregate.GetMethod("ReceiveStock", TypeRefs.Int);
+		await Assert
+			.That(receiveStock.Node.Body?.ToString())
+			.Contains("OnRaisingStockReceivedEvent(ref initialQuantity);");
 
 		await Assert
 			.That(
@@ -2345,7 +2315,7 @@ namespace Testing
 
 		// Assert that all 5 Register calls
 		var registerBody =
-			query.GetClass("OrderAggregate", "Testing").GetMethod(query, "RegisterEvents").Body?.ToString()
+			query.GetClass("OrderAggregate", "Testing").GetMethod("RegisterEvents").Node.Body?.ToString()
 			?? string.Empty;
 		await Assert.That(registerBody).Contains("Register<global::Testing.OrderEvents.OrderCreatedEvent>(Apply);");
 		await Assert.That(registerBody).Contains("Register<global::Testing.OrderEvents.TotalUpdatedEvent>(Apply);");
@@ -2385,21 +2355,21 @@ namespace Testing
 
 		var query = result.Generated();
 		var productUpdated = query.GetClass("ProductUpdatedEvent", "Testing.ProductEvents");
-		await Assert.That(productUpdated.HasProperty(query, "Name", TypeRefs.String)).IsTrue();
-		await Assert.That(productUpdated.HasProperty(query, "Price", TypeRefs.Decimal)).IsTrue();
-		await Assert.That(productUpdated.HasProperty(query, "Quantity", TypeRefs.Int)).IsTrue();
-		await Assert.That(productUpdated.HasProperty(query, "IsAvailable", TypeRefs.Bool)).IsTrue();
+		await Assert.That(productUpdated.HasProperty("Name", TypeRefs.String)).IsTrue();
+		await Assert.That(productUpdated.HasProperty("Price", TypeRefs.Decimal)).IsTrue();
+		await Assert.That(productUpdated.HasProperty("Quantity", TypeRefs.Int)).IsTrue();
+		await Assert.That(productUpdated.HasProperty("IsAvailable", TypeRefs.Bool)).IsTrue();
 
 		var aggregate = query.GetClass("ProductAggregate", "Testing");
-		var apply = aggregate.GetMethod(query, "Apply", TypeRefs.Event("ProductUpdatedEvent", "Testing.ProductEvents"));
-		var applyBody = apply.Body?.ToString() ?? string.Empty;
+		var apply = aggregate.GetMethod("Apply", TypeRefs.Event("ProductUpdatedEvent", "Testing.ProductEvents"));
+		var applyBody = apply.Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(applyBody).Contains("Name = @event.Name;");
 		await Assert.That(applyBody).Contains("Price = @event.Price;");
 		await Assert.That(applyBody).Contains("Quantity = @event.Quantity;");
 		await Assert.That(applyBody).Contains("IsAvailable = @event.IsAvailable;");
 
 		var hashBody =
-			productUpdated.GetMethod(query, "BuildEventHash", TypeRefs.HashCode).Body?.ToString() ?? string.Empty;
+			productUpdated.GetMethod("BuildEventHash", TypeRefs.HashCode).Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(hashBody).Contains("hash.Add(Name);");
 		await Assert.That(hashBody).Contains("hash.Add(Price);");
 		await Assert.That(hashBody).Contains("hash.Add(Quantity);");
@@ -2440,7 +2410,7 @@ namespace Testing
 		var query = result.Generated();
 		await Assert.That(query.HasClass("AccountCreatedEvent", "Testing.AccountEvents")).IsTrue();
 		var registerBody =
-			query.GetClass("AccountAggregate", "Testing").GetMethod(query, "RegisterEvents").Body?.ToString()
+			query.GetClass("AccountAggregate", "Testing").GetMethod("RegisterEvents").Node.Body?.ToString()
 			?? string.Empty;
 		await Assert.That(registerBody).Contains("Register<global::Testing.AccountEvents.AccountCreatedEvent>(Apply);");
 	}
@@ -2480,7 +2450,7 @@ namespace Testing
 		var query = result.Generated();
 		await Assert.That(query.HasClass("InvoiceCreatedEvent", "Testing.InvoiceEvents")).IsTrue();
 		var registerBody =
-			query.GetClass("InvoiceAggregate", "Testing").GetMethod(query, "RegisterEvents").Body?.ToString()
+			query.GetClass("InvoiceAggregate", "Testing").GetMethod("RegisterEvents").Node.Body?.ToString()
 			?? string.Empty;
 		await Assert.That(registerBody).Contains("Register<global::Testing.InvoiceEvents.InvoiceCreatedEvent>(Apply);");
 		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.AggregateMustInheritAggregateBase);
@@ -2513,10 +2483,7 @@ namespace Company.Domain.Orders
 		await Assert.That(query.HasNamespace("Company.Domain.Orders.OrderEvents")).IsTrue();
 		await Assert.That(query.HasNamespace("Company.Domain.Orders")).IsTrue();
 		var registerBody =
-			query
-				.GetClass("OrderAggregate", "Company.Domain.Orders")
-				.GetMethod(query, "RegisterEvents")
-				.Body?.ToString()
+			query.GetClass("OrderAggregate", "Company.Domain.Orders").GetMethod("RegisterEvents").Node.Body?.ToString()
 			?? string.Empty;
 		await Assert
 			.That(registerBody)
@@ -2565,23 +2532,23 @@ namespace Testing
 		var aggregate = query.GetClass("CounterAggregate", "Testing");
 
 		// Assert that parameterless use () constructor, parameterized use { } initializer
-		var incrementBody = aggregate.GetMethod(query, "Increment").Body?.ToString() ?? string.Empty;
+		var incrementBody = aggregate.GetMethod("Increment").Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(incrementBody).Contains("var @event = new global::Testing.CounterEvents.IncrementedEvent");
 		await Assert.That(incrementBody).Contains("RecordAndApply(@event);");
 
-		var decrementBody = aggregate.GetMethod(query, "Decrement").Body?.ToString() ?? string.Empty;
+		var decrementBody = aggregate.GetMethod("Decrement").Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(decrementBody).Contains("var @event = new global::Testing.CounterEvents.DecrementedEvent");
 		await Assert.That(decrementBody).Contains("RecordAndApply(@event);");
 
-		var resetBody = aggregate.GetMethod(query, "Reset").Body?.ToString() ?? string.Empty;
+		var resetBody = aggregate.GetMethod("Reset").Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(resetBody).Contains("var @event = new global::Testing.CounterEvents.ResetEvent");
 		await Assert.That(resetBody).Contains("RecordAndApply(@event);");
 
-		var setLabelBody = aggregate.GetMethod(query, "SetLabel", TypeRefs.String).Body?.ToString() ?? string.Empty;
+		var setLabelBody = aggregate.GetMethod("SetLabel", TypeRefs.String).Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(setLabelBody).Contains("Label = label,");
 
 		// Assert that all 4 Register calls
-		var registerBody = aggregate.GetMethod(query, "RegisterEvents").Body?.ToString() ?? string.Empty;
+		var registerBody = aggregate.GetMethod("RegisterEvents").Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(registerBody).Contains("Register<global::Testing.CounterEvents.IncrementedEvent>(Apply);");
 		await Assert.That(registerBody).Contains("Register<global::Testing.CounterEvents.DecrementedEvent>(Apply);");
 		await Assert.That(registerBody).Contains("Register<global::Testing.CounterEvents.LabelSetEvent>(Apply);");
@@ -2612,14 +2579,14 @@ namespace Testing
 
 		var query = result.Generated();
 		var bioUpdated = query.GetClass("BioUpdatedEvent", "Testing.ProfileEvents");
-		await Assert.That(bioUpdated.HasProperty(query, "Bio", TypeRefs.String)).IsTrue();
+		await Assert.That(bioUpdated.HasProperty("Bio", TypeRefs.String)).IsTrue();
 
 		var aggregate = query.GetClass("ProfileAggregate", "Testing");
-		var apply = aggregate.GetMethod(query, "Apply", TypeRefs.Event("BioUpdatedEvent", "Testing.ProfileEvents"));
-		await Assert.That(apply.Body?.ToString()).Contains("Bio = @event.Bio;");
+		var apply = aggregate.GetMethod("Apply", TypeRefs.Event("BioUpdatedEvent", "Testing.ProfileEvents"));
+		await Assert.That(apply.Node.Body?.ToString()).Contains("Bio = @event.Bio;");
 
-		var updateBio = aggregate.GetMethod(query, "UpdateBio", TypeRefs.String);
-		await Assert.That(updateBio.Modifiers.ToString()).Contains("partial");
+		var updateBio = aggregate.GetMethod("UpdateBio", TypeRefs.String);
+		await Assert.That(updateBio.Node.Modifiers.ToString()).Contains("partial");
 	}
 
 	[Test]
@@ -2644,11 +2611,11 @@ public partial class ProfileAggregate
 
 		var query = result.Generated();
 		await Assert
-			.That(query.GetClass("BioUpdatedEvent", "Testing.ProfileEvents").HasProperty(query, "Bio", TypeRefs.String))
+			.That(query.GetClass("BioUpdatedEvent", "Testing.ProfileEvents").HasProperty("Bio", TypeRefs.String))
 			.IsTrue();
 
 		var aggregate = query.GetClass("ProfileAggregate", "Testing");
-		var body = aggregate.GetMethod(query, "UpdateBio", TypeRefs.String).Body?.ToString() ?? string.Empty;
+		var body = aggregate.GetMethod("UpdateBio", TypeRefs.String).Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(result).DoesNotHaveDiagnostic("CS8777");
 		await Assert.That(body).Contains("var __bioValue = bio!;");
 		await Assert.That(body).Contains("if (bio is null)");
@@ -2683,14 +2650,11 @@ public partial class ProfileAggregate
 
 		var query = result.Generated();
 		await Assert
-			.That(query.GetClass("BioUpdatedEvent", "Testing.ProfileEvents").HasProperty(query, "Bio", TypeRefs.String))
+			.That(query.GetClass("BioUpdatedEvent", "Testing.ProfileEvents").HasProperty("Bio", TypeRefs.String))
 			.IsTrue();
 
 		var body =
-			query
-				.GetClass("ProfileAggregate", "Testing")
-				.GetMethod(query, "UpdateBio", TypeRefs.String)
-				.Body?.ToString()
+			query.GetClass("ProfileAggregate", "Testing").GetMethod("UpdateBio", TypeRefs.String).Node.Body?.ToString()
 			?? string.Empty;
 		await Assert.That(cs8777).IsEmpty();
 		await Assert.That(body).Contains("var __bioValue = bio!;");
@@ -2726,7 +2690,7 @@ namespace Testing
 
 		// Assert
 		var publicAggregate = result.Generated().GetClass("PublicAggregate", "Testing");
-		var modifiers = publicAggregate.Modifiers.ToString();
+		var modifiers = publicAggregate.Node.Modifiers.ToString();
 		await Assert.That(modifiers).Contains("public");
 		await Assert.That(modifiers).Contains("partial");
 	}
@@ -2757,10 +2721,10 @@ namespace Testing
 
 		var query = result.Generated();
 		// Assert that command method matches partial declaration
-		var setContent = query.GetClass("NoteAggregate", "Testing").GetMethod(query, "SetContent", TypeRefs.String);
-		await Assert.That(setContent.Modifiers.ToString()).Contains("partial");
+		var setContent = query.GetClass("NoteAggregate", "Testing").GetMethod("SetContent", TypeRefs.String);
+		await Assert.That(setContent.Node.Modifiers.ToString()).Contains("partial");
 		// Assert that RecordAndApply creates event with property
-		await Assert.That(setContent.Body?.ToString()).Contains("Content = content,");
+		await Assert.That(setContent.Node.Body?.ToString()).Contains("Content = content,");
 	}
 
 	[Test]
@@ -2788,7 +2752,7 @@ namespace Testing
 		var query = result.Generated();
 		var aggregate = query.GetClass("CustomerAggregate", "Testing");
 		var setCustomerIdBody =
-			aggregate.GetMethod(query, "SetCustomerId", TypeRefs.String).Body?.ToString() ?? string.Empty;
+			aggregate.GetMethod("SetCustomerId", TypeRefs.String).Node.Body?.ToString() ?? string.Empty;
 
 		var firstShouldApplyIndex = setCustomerIdBody.IndexOf(
 			"if (!ShouldApplyCustomerIdSetEvent(@event))",
@@ -2811,12 +2775,11 @@ namespace Testing
 		await Assert.That(onRaisingIndex).IsLessThan(secondShouldApplyIndex);
 
 		var onShouldApply = aggregate.GetMethod(
-			query,
 			"OnShouldApplyCustomerIdSetEvent",
 			TypeRefs.Event("CustomerIdSetEvent", "Testing.CustomerEvents"),
 			TypeRefs.Bool
 		);
-		await Assert.That(onShouldApply.Modifiers.ToString()).Contains("partial");
+		await Assert.That(onShouldApply.Node.Modifiers.ToString()).Contains("partial");
 	}
 
 	[Test]
@@ -2903,8 +2866,8 @@ namespace Testing
 		var setCustomerIdBody =
 			query
 				.GetClass("CustomerAggregate", "Testing")
-				.GetMethod(query, "SetCustomerId", TypeRefs.String)
-				.Body?.ToString()
+				.GetMethod("SetCustomerId", TypeRefs.String)
+				.Node.Body?.ToString()
 			?? string.Empty;
 
 		var onChangingIndex = setCustomerIdBody.IndexOf(
@@ -3296,26 +3259,22 @@ namespace Testing
 		var query = result.Generated();
 		var aggregate = query.GetClass("ItemAggregate", "Testing");
 		var enumerableTags = TypeRefs.EnumerableOf(TypeRefs.String);
-		var onNormalizing = aggregate.GetMethod(query, "OnNormalizingAddTags", enumerableTags);
-		await Assert.That(onNormalizing.Modifiers.ToString()).Contains("partial");
-		await Assert.That(onNormalizing.ParameterList.Parameters[0].Modifiers.ToString()).Contains("ref");
+		var onNormalizing = aggregate.GetMethod("OnNormalizingAddTags", enumerableTags);
+		await Assert.That(onNormalizing.Node.Modifiers.ToString()).Contains("partial");
+		await Assert.That(onNormalizing.Node.ParameterList.Parameters[0].Modifiers.ToString()).Contains("ref");
 
-		var onValidating = aggregate.GetMethod(query, "OnValidatingAddTags", enumerableTags);
-		await Assert.That(onValidating.Modifiers.ToString()).Contains("partial");
+		var onValidating = aggregate.GetMethod("OnValidatingAddTags", enumerableTags);
+		await Assert.That(onValidating.Node.Modifiers.ToString()).Contains("partial");
 
-		var addTagBody = aggregate.GetMethod(query, "AddTag", TypeRefs.String).Body?.ToString() ?? string.Empty;
+		var addTagBody = aggregate.GetMethod("AddTag", TypeRefs.String).Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(addTagBody).Contains("if (Tags.Contains(__itemValue))");
 
-		var addTagsBody = aggregate.GetMethod(query, "AddTags", enumerableTags).Body?.ToString() ?? string.Empty;
+		var addTagsBody = aggregate.GetMethod("AddTags", enumerableTags).Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(addTagsBody).Contains("var __eventItems = __itemsValue as string[] ?? [.. __itemsValue];");
 
-		var applyTagsAdded = aggregate.GetMethod(
-			query,
-			"Apply",
-			TypeRefs.Event("TagsAddedEvent", "Testing.ItemEvents")
-		);
+		var applyTagsAdded = aggregate.GetMethod("Apply", TypeRefs.Event("TagsAddedEvent", "Testing.ItemEvents"));
 		await Assert
-			.That(applyTagsAdded.Body?.ToString())
+			.That(applyTagsAdded.Node.Body?.ToString())
 			.Contains("((global::System.Collections.Generic.ICollection<string>)Tags).Add(__item);");
 	}
 
@@ -3347,16 +3306,12 @@ public partial class ManualAggregate
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("ManualAggregate", "Testing");
-		var apply = aggregate.GetMethod(
-			query,
-			"Apply",
-			TypeRefs.Event("ValueCommandAppliedEvent", "Testing.ManualEvents")
-		);
-		var modifiers = apply.Modifiers.ToString();
+		var apply = aggregate.GetMethod("Apply", TypeRefs.Event("ValueCommandAppliedEvent", "Testing.ManualEvents"));
+		var modifiers = apply.Node.Modifiers.ToString();
 		await Assert.That(modifiers).Contains("partial");
 		await Assert.That(modifiers).Contains("private");
 		// The Apply method must remain a declaration only; no generated body.
-		await Assert.That(apply.Body).IsNull();
+		await Assert.That(apply.Node.Body).IsNull();
 	}
 
 	[Test]
@@ -3397,16 +3352,12 @@ public sealed partial class ManualCollectionAggregate
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("ManualCollectionAggregate", "Testing");
-		var apply = aggregate.GetMethod(
-			query,
-			"Apply",
-			TypeRefs.Event("TagAddedEvent", "Testing.ManualCollectionEvents")
-		);
-		var modifiers = apply.Modifiers.ToString();
+		var apply = aggregate.GetMethod("Apply", TypeRefs.Event("TagAddedEvent", "Testing.ManualCollectionEvents"));
+		var modifiers = apply.Node.Modifiers.ToString();
 		await Assert.That(modifiers).Contains("partial");
 		await Assert.That(modifiers).Contains("private");
 		// The Apply method must remain a declaration only; no generated body.
-		await Assert.That(apply.Body).IsNull();
+		await Assert.That(apply.Node.Body).IsNull();
 	}
 
 	[Test]
@@ -3437,12 +3388,12 @@ namespace Testing
 		await Assert.That(query.HasClass("ItemAggregate", "Testing")).IsTrue();
 		var aggregate = query.GetClass("ItemAggregate", "Testing");
 
-		var removeTagBody = aggregate.GetMethod(query, "RemoveTag", TypeRefs.String).Body?.ToString() ?? string.Empty;
+		var removeTagBody = aggregate.GetMethod("RemoveTag", TypeRefs.String).Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(removeTagBody).Contains("if (!Tags.Contains(__itemValue))");
 
-		var apply = aggregate.GetMethod(query, "Apply", TypeRefs.Event("TagRemovedEvent", "Testing.ItemEvents"));
+		var apply = aggregate.GetMethod("Apply", TypeRefs.Event("TagRemovedEvent", "Testing.ItemEvents"));
 		await Assert
-			.That(apply.Body?.ToString())
+			.That(apply.Node.Body?.ToString())
 			.Contains("((global::System.Collections.Generic.ICollection<string>)Tags).Remove(@event.Tag);");
 	}
 
@@ -3475,24 +3426,20 @@ namespace Testing
 
 		var query = result.Generated();
 		var aggregate = query.GetClass("ItemAggregate", "Testing");
-		var archiveTagBody = aggregate.GetMethod(query, "ArchiveTag", TypeRefs.String).Body?.ToString() ?? string.Empty;
+		var archiveTagBody = aggregate.GetMethod("ArchiveTag", TypeRefs.String).Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(archiveTagBody).Contains("if (!Tags.Contains(__itemValue))");
 
-		var deleteTagBody = aggregate.GetMethod(query, "DeleteTag", TypeRefs.String).Body?.ToString() ?? string.Empty;
+		var deleteTagBody = aggregate.GetMethod("DeleteTag", TypeRefs.String).Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(deleteTagBody).Contains("if (Tags.Contains(__itemValue))");
 
-		var archiveApply = aggregate.GetMethod(
-			query,
-			"Apply",
-			TypeRefs.Event("TagArchivedEvent", "Testing.ItemEvents")
-		);
+		var archiveApply = aggregate.GetMethod("Apply", TypeRefs.Event("TagArchivedEvent", "Testing.ItemEvents"));
 		await Assert
-			.That(archiveApply.Body?.ToString())
+			.That(archiveApply.Node.Body?.ToString())
 			.Contains("((global::System.Collections.Generic.ICollection<string>)Tags).Remove(@event.Tag);");
 
-		var deleteApply = aggregate.GetMethod(query, "Apply", TypeRefs.Event("TagDeletedEvent", "Testing.ItemEvents"));
+		var deleteApply = aggregate.GetMethod("Apply", TypeRefs.Event("TagDeletedEvent", "Testing.ItemEvents"));
 		await Assert
-			.That(deleteApply.Body?.ToString())
+			.That(deleteApply.Node.Body?.ToString())
 			.Contains("((global::System.Collections.Generic.ICollection<string>)Tags).Add(@event.Tag);");
 	}
 }

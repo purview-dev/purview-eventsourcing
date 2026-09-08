@@ -90,10 +90,17 @@
 								}
 							</div>
 
-							<details class="event-payload">
-								<summary>Payload</summary>
-								<pre><code>@JsonFormatter.PrettyPrint(eventEnvelope.Payload)</code></pre>
-							</details>
+							@if (eventEnvelope.Payload is not null)
+							{
+								<details class="event-payload">
+									<summary>Payload</summary>
+									<pre><code>@JsonFormatter.PrettyPrint(eventEnvelope.Payload)</code></pre>
+								</details>
+							}
+							else
+							{
+								<p class="event-payload-unavailable">Payload access is not granted.</p>
+							}
 						</div>
 					}
 				</div>

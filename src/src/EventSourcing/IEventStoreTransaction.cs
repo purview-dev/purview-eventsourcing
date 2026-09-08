@@ -33,6 +33,20 @@ namespace Purview.EventSourcing;
 public interface IEventStoreTransaction : IAsyncDisposable
 {
 	/// <summary>
+	/// Gets the minimum persistence guarantee requested by the caller.
+	/// </summary>
+	EventStoreTransactionGuarantee RequiredGuarantee => EventStoreTransactionGuarantee.BestEffort;
+
+	/// <summary>
+	/// Gets the guarantee the transaction can provide for the stores currently enlisted.
+	/// </summary>
+	/// <remarks>
+	/// Empty and single-store transactions report <see cref="EventStoreTransactionGuarantee.Atomic"/> only when
+	/// their store exposes a native transaction boundary. The value can change as stores are enlisted.
+	/// </remarks>
+	EventStoreTransactionGuarantee AvailableGuarantee => EventStoreTransactionGuarantee.BestEffort;
+
+	/// <summary>
 	/// The correlation ID that binds all aggregates in this transaction together.
 	/// </summary>
 	/// <remarks>
@@ -79,6 +93,9 @@ public interface IEventStoreTransaction : IAsyncDisposable
 	/// </returns>
 	/// <exception cref="InvalidOperationException">
 	/// Thrown if <see cref="CommitAsync"/> has already been called.
+	/// </exception>
+	/// <exception cref="EventStoreTransactionGuaranteeException">
+	/// Thrown before any save is attempted when <see cref="RequiredGuarantee"/> is unavailable.
 	/// </exception>
 	Task<TransactionResult> CommitAsync(CancellationToken cancellationToken = default);
 }

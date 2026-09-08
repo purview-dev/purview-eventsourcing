@@ -13,10 +13,19 @@
 			ReferenceOutputAssembly="false"
 			OutputItemType="Analyzer"
 		/>
+		<ProjectReference
+			Include="..\SourceGenerator.CodeFixes\SourceGenerator.CodeFixes.csproj"
+			PrivateAssets="all"
+			ReferenceOutputAssembly="false"
+			OutputItemType="Analyzer"
+		/>
 	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+		<PackageReference Include="Microsoft.Extensions.Options" />
 	</ItemGroup>
 </Project>

@@ -4,8 +4,10 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Purview.EventSourcing.Aggregates;
 using Purview.EventSourcing.Aggregates.Events.Upcasting;
+using Purview.EventSourcing.Aggregates.Snapshotting;
 using Purview.EventSourcing.Internal;
 using Purview.EventSourcing.Services;
+using Purview.EventSourcing.Validation;
 
 namespace Purview.EventSourcing.SqlServer.Events;
 
@@ -48,6 +50,7 @@ public sealed partial class SqlServerEventStore<T> : ISqlServerEventStore<T>, IT
 
 	readonly string _aggregateTypeFullName;
 	readonly string _aggregateTypeShortName;
+	readonly int _snapshotSchemaVersion = AggregateSnapshotSchema.GetVersion<T>();
 
 	/// <summary>
 	/// Creates a new <see cref="SqlServerEventStore{T}"/> instance.
@@ -266,7 +269,8 @@ public sealed partial class SqlServerEventStore<T> : ISqlServerEventStore<T>, IT
 	/// </summary>
 	/// <param name="aggregateId">The id of the aggregate.</param>
 	/// <returns>The cache key, derived from the aggregate type's short name and id.</returns>
-	public string CreateCacheKey(string aggregateId) => $"{_aggregateTypeShortName}:{aggregateId}".ToUpperInvariant();
+	public string CreateCacheKey(string aggregateId) =>
+		$"{_aggregateTypeShortName}:{aggregateId}{AggregateSnapshotSchema.GetStorageSuffix<T>()}".ToUpperInvariant();
 
 	//async Task EnsureConfiguredAsync(CancellationToken cancellationToken)
 	//{

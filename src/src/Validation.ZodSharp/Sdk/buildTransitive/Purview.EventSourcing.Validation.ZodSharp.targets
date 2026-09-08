@@ -1,0 +1,19 @@
+<Project>
+	<Target Name="ValidateZodSharpDirectReference" BeforeTargets="ResolveReferences">
+		<ItemGroup>
+			<_PurviewEventSourcingZodSharpPackage
+				Include="@(PackageReference)"
+				Condition="'%(PackageReference.Identity)' == 'Purview.EventSourcing.Validation.ZodSharp'"
+			/>
+			<_ZodSharpDirectPackage
+				Include="@(PackageReference)"
+				Condition="'%(PackageReference.Identity)' == 'Purview.ZodSharp'"
+			/>
+		</ItemGroup>
+
+		<Error
+			Condition="'@(_PurviewEventSourcingZodSharpPackage)' != '' and '@(_ZodSharpDirectPackage)' == ''"
+			Text="Project '$(MSBuildProjectName)' references 'Purview.EventSourcing.Validation.ZodSharp' but does not include a direct PackageReference to 'Purview.ZodSharp'. Add '&lt;PackageReference Include=&quot;Purview.ZodSharp&quot; /&gt;' to avoid runtime assembly load failures."
+		/>
+	</Target>
+</Project>

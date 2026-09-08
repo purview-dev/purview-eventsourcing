@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+		<PackageReference Include="Purview.SourceGeneratorFramework.Testing.TUnit" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\EventSourcing\EventSourcing.csproj" />
+		<ProjectReference Include="..\..\src\SourceGenerator.CodeFixes\SourceGenerator.CodeFixes.csproj" />
+	</ItemGroup>
+</Project>

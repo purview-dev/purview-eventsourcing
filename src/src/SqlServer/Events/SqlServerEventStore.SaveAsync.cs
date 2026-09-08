@@ -8,7 +8,6 @@ using Purview.EventSourcing.Aggregates;
 using Purview.EventSourcing.Aggregates.Events;
 using Purview.EventSourcing.Aggregates.Snapshotting;
 using Purview.EventSourcing.Internal;
-using Purview.EventSourcing.Services;
 using Purview.EventSourcing.SqlServer.Events.Exceptions;
 using Purview.EventSourcing.Storage;
 using Purview.EventSourcing.Validation;
@@ -226,6 +225,7 @@ partial class SqlServerEventStore<T>
 				var changeEvent = changeEvents[i];
 
 				changeEvent.Details.IdempotencyId = idempotencyIdAsString;
+				changeEvent.Details.SchemaVersion = changeEvent.SchemaVersion;
 				changeEvent.Details.UserId = userId;
 				changeEvent.Details.CorrelationId ??= operationContext.CorrelationId;
 
@@ -241,6 +241,10 @@ partial class SqlServerEventStore<T>
 						Payload = serializedEvent,
 						EventType = _eventNameMapper.GetName<T>(changeEvent),
 						IdempotencyId = idempotencyMarkerId,
+						SchemaVersion = changeEvent.SchemaVersion,
+						CorrelationId = changeEvent.Details.CorrelationId,
+						CausationId = changeEvent.Details.CausationId,
+						UserId = changeEvent.Details.UserId,
 						Timestamp = now,
 					}
 				);
@@ -498,7 +502,8 @@ partial class SqlServerEventStore<T>
 					null,
 					null,
 					DateTimeOffset.UtcNow,
-					cancellationToken
+					schemaVersion: _snapshotSchemaVersion,
+					cancellationToken: cancellationToken
 				);
 			}
 			else
@@ -516,7 +521,8 @@ partial class SqlServerEventStore<T>
 					DateTimeOffset.UtcNow,
 					connection,
 					transaction!,
-					cancellationToken
+					schemaVersion: _snapshotSchemaVersion,
+					cancellationToken: cancellationToken
 				);
 			}
 		}

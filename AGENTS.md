@@ -28,7 +28,7 @@ This repository contains the `Purview.EventSourcing` framework, its incremental 
 | `src/src/SourceGenerator` | Roslyn incremental generator and analyzer metadata |
 | `src/src/{AzureStorage,CosmosDb,InMemory,MongoDB,Postgres,SqlServer}` | Storage-provider implementations |
 | `src/src/ImplementationShared` | Shared provider implementation support; not a public package |
-| `src/src/FluentValidationImpl`, `src/src/ZodSharpImpl` | Optional validation integrations |
+| `src/src/Validation.FluentValidation`, `src/src/Validation.ZodSharp` | Optional validation integrations |
 | `src/src/Admin.*` | Administration abstractions, security, API, UI, and provider adapters |
 | `src/src/Samples*` | Reference domains, quick start, web app, shared defaults, and Aspire AppHost |
 | `src/tests` | Unit, integration, source-generator, sample, admin, and performance projects |

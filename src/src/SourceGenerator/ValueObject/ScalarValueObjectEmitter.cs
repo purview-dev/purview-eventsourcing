@@ -57,7 +57,7 @@ static partial class ScalarValueObjectEmitter
 		return model.Options.GenerateJsonConverter && !model.HasJsonConverterAttribute
 			?
 			[
-				new AttributeDeclarationOptions(TypeLibrary.System.TextJson.JsonConverterAttribute)
+				new AttributeDeclarationOptions(TypeLibrary.System.Text.Json.Serialization.JsonConverterAttribute)
 				{
 					Arguments = [new($"typeof({model.TypeModel.Name}JsonConverter)")],
 				},

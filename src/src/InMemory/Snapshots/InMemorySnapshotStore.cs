@@ -1,8 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq.Expressions;
 using Purview.EventSourcing.Aggregates;
 using Purview.EventSourcing.Services;
+using Purview.EventSourcing.Validation;
 
 namespace Purview.EventSourcing.InMemory.Snapshots;
 

@@ -58,9 +58,11 @@ public sealed class AggregateSourceGeneratorValueObjectTests : AggregateSourceGe
 		var result = await GenerateAsync(source, cancellationToken);
 
 		var query = result.Generated();
-		var aggregate = query.GetClass("OrderAggregate", "Testing");
-		var confirmOrder = aggregate.GetMethod(query, "ConfirmOrder", TypeRefs.Named("OrderStatusCode", "Testing"));
-		var body = confirmOrder.Body?.ToString() ?? string.Empty;
+		var aggregate = await Assert.That(query).HasGeneratedClass(TypeRefs.Named("OrderAggregate", "Testing"));
+		var confirmOrder = await Assert
+			.That(aggregate)
+			.HasMethodOfType("ConfirmOrder", [TypeRefs.Named("OrderStatusCode", "Testing")]);
+		var body = confirmOrder.Node.Body?.ToString() ?? string.Empty;
 
 		await Assert.That(body).Contains("OnRaisingOrderConfirmedEvent(ref __statusValue);");
 		await Assert.That(body).Contains("OnRaisedOrderConfirmedEvent(@event);");

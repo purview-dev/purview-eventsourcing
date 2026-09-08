@@ -109,11 +109,11 @@ public sealed class AzureStorageAdminEventQueryService(IOptions<AzureStorageEven
 					item.Version,
 					item.Event.Timestamp ?? DateTimeOffset.MinValue,
 					item.Event.EventType ?? string.Empty,
-					SchemaVersion: 1,
-					CorrelationId: null,
-					CausationId: null,
+					item.Event.SchemaVersion,
+					item.Event.CorrelationId,
+					item.Event.CausationId,
 					item.Event.IdempotencyId,
-					UserId: null
+					item.Event.UserId
 				),
 				ParsePayload(item.Event.Payload)
 			))

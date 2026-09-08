@@ -7,7 +7,7 @@
 		<PackageReference Include="TUnit.Aspire" />
 		<PackageReference Include="Aspire.Hosting.Testing" />
 		<PackageReference Include="Purview.Aspire.ResourceKit" />
-		<PackageReference Include="ZodSharp" />
+		<PackageReference Include="Purview.ZodSharp" />
 	</ItemGroup>
 
 	<ItemGroup>

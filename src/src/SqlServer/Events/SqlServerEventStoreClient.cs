@@ -23,6 +23,10 @@ sealed partial class SqlServerEventStoreClient
 		"Payload",
 		"EventType",
 		"IdempotencyId",
+		"SchemaVersion",
+		"CorrelationId",
+		"CausationId",
+		"UserId",
 		"Timestamp",
 	];
 
@@ -65,6 +69,35 @@ sealed partial class SqlServerEventStoreClient
 		string? idempotencyId,
 		DateTimeOffset timestamp,
 		CancellationToken cancellationToken = default
+	) =>
+		await InsertAsync(
+			id,
+			entityType,
+			aggregateId,
+			aggregateType,
+			version,
+			isDeleted,
+			payload,
+			eventType,
+			idempotencyId,
+			timestamp,
+			1,
+			cancellationToken
+		);
+
+	public async Task InsertAsync(
+		string id,
+		int entityType,
+		string aggregateId,
+		string aggregateType,
+		int version,
+		bool isDeleted,
+		string? payload,
+		string? eventType,
+		string? idempotencyId,
+		DateTimeOffset timestamp,
+		int schemaVersion,
+		CancellationToken cancellationToken = default
 	)
 	{
 		await EnsureConfiguredAsync(cancellationToken);
@@ -80,7 +113,8 @@ sealed partial class SqlServerEventStoreClient
 				payload,
 				eventType,
 				idempotencyId,
-				timestamp
+				timestamp,
+				schemaVersion
 			)
 		);
 		await context.SaveChangesAsync(cancellationToken);
@@ -106,6 +140,35 @@ sealed partial class SqlServerEventStoreClient
 		string? idempotencyId,
 		DateTimeOffset timestamp,
 		CancellationToken cancellationToken = default
+	) =>
+		await UpsertAsync(
+			id,
+			entityType,
+			aggregateId,
+			aggregateType,
+			version,
+			isDeleted,
+			payload,
+			eventType,
+			idempotencyId,
+			timestamp,
+			1,
+			cancellationToken
+		);
+
+	public async Task UpsertAsync(
+		string id,
+		int entityType,
+		string aggregateId,
+		string aggregateType,
+		int version,
+		bool isDeleted,
+		string? payload,
+		string? eventType,
+		string? idempotencyId,
+		DateTimeOffset timestamp,
+		int schemaVersion,
+		CancellationToken cancellationToken = default
 	)
 	{
 		await EnsureConfiguredAsync(cancellationToken);
@@ -122,6 +185,7 @@ sealed partial class SqlServerEventStoreClient
 			eventType,
 			idempotencyId,
 			timestamp,
+			schemaVersion,
 			cancellationToken
 		);
 	}
@@ -139,6 +203,39 @@ sealed partial class SqlServerEventStoreClient
 		DateTimeOffset timestamp,
 		SqlConnection connection,
 		SqlTransaction transaction,
+		CancellationToken cancellationToken = default
+	) =>
+		await UpsertAsync(
+			id,
+			entityType,
+			aggregateId,
+			aggregateType,
+			version,
+			isDeleted,
+			payload,
+			eventType,
+			idempotencyId,
+			timestamp,
+			connection,
+			transaction,
+			1,
+			cancellationToken
+		);
+
+	public async Task UpsertAsync(
+		string id,
+		int entityType,
+		string aggregateId,
+		string aggregateType,
+		int version,
+		bool isDeleted,
+		string? payload,
+		string? eventType,
+		string? idempotencyId,
+		DateTimeOffset timestamp,
+		SqlConnection connection,
+		SqlTransaction transaction,
+		int schemaVersion,
 		CancellationToken cancellationToken = default
 	)
 	{
@@ -158,6 +255,7 @@ sealed partial class SqlServerEventStoreClient
 			eventType,
 			idempotencyId,
 			timestamp,
+			schemaVersion,
 			cancellationToken
 		);
 	}
@@ -192,6 +290,7 @@ sealed partial class SqlServerEventStoreClient
 			eventType,
 			idempotencyId,
 			timestamp,
+			1,
 			cancellationToken
 		);
 
@@ -233,6 +332,7 @@ sealed partial class SqlServerEventStoreClient
 			eventType,
 			idempotencyId,
 			timestamp,
+			1,
 			cancellationToken
 		);
 
@@ -361,6 +461,10 @@ sealed partial class SqlServerEventStoreClient
 				Payload = x.Payload,
 				EventType = x.EventType,
 				IdempotencyId = x.IdempotencyId,
+				SchemaVersion = x.SchemaVersion,
+				CorrelationId = x.CorrelationId,
+				CausationId = x.CausationId,
+				UserId = x.UserId,
 				Timestamp = x.Timestamp,
 			})
 			.AsAsyncEnumerable();
@@ -524,6 +628,7 @@ sealed partial class SqlServerEventStoreClient
 		string? eventType,
 		string? idempotencyId,
 		DateTimeOffset timestamp,
+		int schemaVersion,
 		CancellationToken cancellationToken
 	)
 	{
@@ -541,7 +646,8 @@ sealed partial class SqlServerEventStoreClient
 					payload,
 					eventType,
 					idempotencyId,
-					timestamp
+					timestamp,
+					schemaVersion
 				)
 			);
 		}
@@ -555,6 +661,7 @@ sealed partial class SqlServerEventStoreClient
 			entity.Payload = payload;
 			entity.EventType = eventType;
 			entity.IdempotencyId = idempotencyId;
+			entity.SchemaVersion = schemaVersion;
 			entity.Timestamp = timestamp;
 		}
 
@@ -571,7 +678,8 @@ sealed partial class SqlServerEventStoreClient
 		string? payload,
 		string? eventType,
 		string? idempotencyId,
-		DateTimeOffset timestamp
+		DateTimeOffset timestamp,
+		int schemaVersion = 1
 	) =>
 		new()
 		{
@@ -584,6 +692,7 @@ sealed partial class SqlServerEventStoreClient
 			Payload = payload,
 			EventType = eventType,
 			IdempotencyId = idempotencyId,
+			SchemaVersion = schemaVersion,
 			Timestamp = timestamp,
 		};
 
@@ -599,6 +708,10 @@ sealed partial class SqlServerEventStoreClient
 			Payload = row.Payload,
 			EventType = row.EventType,
 			IdempotencyId = row.IdempotencyId,
+			SchemaVersion = row.SchemaVersion,
+			CorrelationId = row.CorrelationId,
+			CausationId = row.CausationId,
+			UserId = row.UserId,
 			Timestamp = row.Timestamp,
 		};
 
@@ -614,6 +727,10 @@ sealed partial class SqlServerEventStoreClient
 			Payload = entity.Payload,
 			EventType = entity.EventType,
 			IdempotencyId = entity.IdempotencyId,
+			SchemaVersion = entity.SchemaVersion,
+			CorrelationId = entity.CorrelationId,
+			CausationId = entity.CausationId,
+			UserId = entity.UserId,
 			Timestamp = entity.Timestamp,
 		};
 
@@ -664,6 +781,10 @@ sealed partial class SqlServerEventStoreClient
 		public string? Payload { get; set; }
 		public string? EventType { get; set; }
 		public string? IdempotencyId { get; set; }
+		public int SchemaVersion { get; set; } = 1;
+		public string? CorrelationId { get; set; }
+		public string? CausationId { get; set; }
+		public string? UserId { get; set; }
 		public DateTimeOffset Timestamp { get; set; }
 	}
 }

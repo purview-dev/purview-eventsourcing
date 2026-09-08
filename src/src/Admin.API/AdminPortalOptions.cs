@@ -91,6 +91,43 @@ public sealed class AdminFeatureOptions
 	public bool ExportEvents { get; set; }
 
 	/// <summary>
+	/// Gets or sets whether the event-store capability contract and operational health endpoints are
+	/// enabled. Opt-in and deny-by-default; a host must also grant the <c>ViewCapabilities</c> permission.
+	/// </summary>
+	public bool ViewCapabilities { get; set; }
+
+	/// <summary>
+	/// Gets or sets whether the poisoned (dead-letter) outbox endpoint is enabled. Opt-in and
+	/// deny-by-default; a host must also grant the <c>ViewPoisonedOutbox</c> permission.
+	/// </summary>
+	public bool ViewPoisonedOutbox { get; set; }
+
+	/// <summary>
+	/// Gets or sets whether the runtime event-contract manifest endpoint is enabled. Opt-in and
+	/// deny-by-default; a host must also grant the <c>ViewManifest</c> permission and register an
+	/// <c>IEventContractManifestProvider</c>.
+	/// </summary>
+	public bool ViewManifest { get; set; }
+
+	/// <summary>
+	/// Gets or sets whether the unknown-event visibility endpoint is enabled. Opt-in and
+	/// deny-by-default; a host must also grant the <c>ViewUnknownEvents</c> permission.
+	/// </summary>
+	public bool ViewUnknownEvents { get; set; }
+
+	/// <summary>
+	/// Gets or sets whether the snapshot status endpoint is enabled. Opt-in and deny-by-default;
+	/// a host must also grant the <c>ViewSnapshot</c> permission.
+	/// </summary>
+	public bool ViewSnapshot { get; set; }
+
+	/// <summary>
+	/// Gets or sets whether the snapshot rebuild endpoint is enabled. Opt-in and deny-by-default;
+	/// a host must also grant the <c>RebuildSnapshot</c> permission.
+	/// </summary>
+	public bool RebuildSnapshot { get; set; }
+
+	/// <summary>
 	/// Validates the option object shape.
 	/// </summary>
 	/// <param name="options">The options instance to validate.</param>

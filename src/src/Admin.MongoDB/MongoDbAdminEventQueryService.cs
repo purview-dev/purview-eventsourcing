@@ -88,11 +88,11 @@ public sealed class MongoDbAdminEventQueryService(IMongoClient mongoClient, stri
 					e.Version,
 					e.Timestamp ?? DateTimeOffset.UtcNow,
 					e.EventType ?? "Unknown",
-					1,
-					null,
-					null,
+					e.SchemaVersion,
+					e.CorrelationId,
+					e.CausationId,
 					e.IdempotencyId,
-					null
+					e.UserId
 				),
 				ParsePayload(e.Payload)
 			))

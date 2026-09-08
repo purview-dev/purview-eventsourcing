@@ -54,11 +54,11 @@ The source generator supports aggregates that:
 - directly inherit `AggregateBase`
 - transitively inherit through a custom base class
 
-If an assembly uses `[GenerateAggregateDefaultBase]`, confirm the chosen default base class still inherits `AggregateBase` and does not hide event-sourcing behavior from developers.
+If an aggregate uses a custom base class, confirm the chosen base class still inherits `AggregateBase` and does not hide event-sourcing behavior from developers. Aggregates with no declared base class get `AggregateBase` added by the generator.
 
 ### Event Naming
 
-Generated event type names come from `[GenerateAggregateEvent]` method names unless overridden with `EventName`.
+Generated event type names come from `[Event]` method names unless overridden with `EventName`.
 
 Generated events normally end with `Event`. The event store name mapper trims that suffix and stores the event name as:
 
@@ -93,7 +93,7 @@ Avoid command-like event names:
 If the generated name is not the business language you want to persist, set it explicitly:
 
 ```csharp
-[GenerateAggregateEvent(EventName = "CustomerRegistered")]
+[Event(EventName = "CustomerRegistered")]
 public partial CustomerAggregate RegisterCustomer(string name, string email);
 ```
 
@@ -114,7 +114,7 @@ For example, `Purview.EventSourcing.Samples.Domain.OrderAggregate` generates eve
 Use generated methods for state changes that should become events:
 
 ```csharp
-[GenerateAggregateEvent]
+[Event]
 public partial OrderAggregate CreateOrder(CustomerId customerId);
 ```
 
@@ -123,7 +123,7 @@ Keep a public wrapper when the business intent needs guard clauses, calculations
 ```csharp
 public OrderAggregate ConfirmOrder() => SetStatusCode(OrderStatusCode.Confirmed);
 
-[GenerateAggregateEvent]
+[Event]
 private partial OrderAggregate SetStatusCode(OrderStatusCode status);
 ```
 
@@ -132,7 +132,7 @@ Use collection events for `EventStoreList<T>` and `EventStoreSet<T>` properties:
 ```csharp
 public EventStoreSet<ProjectId> RelatedProjects { get; private set; } = [];
 
-[GenerateAggregateCollectionEvent(nameof(RelatedProjects))]
+[CollectionEvent(nameof(RelatedProjects))]
 public partial ReportUploadAggregate AddRelatedProject(ProjectId projectId);
 ```
 
@@ -388,7 +388,7 @@ Do not rely only on save-time validation for user-facing command errors. Put bus
 Prefer this aggregate shape:
 
 ```csharp
-[GenerateAggregate]
+[Aggregate]
 public sealed partial class OrderAggregate : AggregateBase
 {
     public CustomerId CustomerId { get; private set; }
@@ -412,13 +412,13 @@ public sealed partial class OrderAggregate : AggregateBase
             totalAmount: updated.Sum(m => m.Quantity * m.UnitPrice));
     }
 
-    [GenerateAggregateEvent(EventName = "OrderCreated")]
+    [Event(EventName = "OrderCreated")]
     public partial OrderAggregate CreateOrder(CustomerId customerId);
 
-    [GenerateAggregateEvent(EventName = "OrderLineItemsChanged")]
+    [Event(EventName = "OrderLineItemsChanged")]
     private partial OrderAggregate AddLineItem(EventStoreList<OrderLineItem> lineItems, decimal totalAmount);
 
-    [GenerateAggregateEvent(EventName = "OrderStatusChanged")]
+    [Event(EventName = "OrderStatusChanged")]
     private partial OrderAggregate SetStatusCode(OrderStatusCode status);
 }
 ```
@@ -455,7 +455,7 @@ Be careful with:
 For metadata parameters that should be stored on generated events but not mapped to aggregate properties, use `[Metadata]`.
 
 ```csharp
-[GenerateAggregateEvent]
+[Event]
 public partial InventoryAggregate ReserveStock(
     int quantityOnHand,
     int reservedQuantity,
@@ -465,7 +465,7 @@ public partial InventoryAggregate ReserveStock(
 Use `[AggregateProperty(nameof(Property))]` when the parameter name does not match the aggregate property.
 
 ```csharp
-[GenerateAggregateEvent]
+[Event]
 public partial InventoryAggregate Create(
     string productId,
     [AggregateProperty(nameof(QuantityOnHand))] int initialQuantity = 0);
@@ -477,7 +477,7 @@ Events are persisted facts. Changing them is a compatibility decision.
 
 - Add optional event properties when possible.
 - Avoid changing the meaning of an existing property.
-- Use `[GenerateAggregateEvent(Version = N)]` for breaking schema versions.
+- Use `[Event(Version = N)]` for breaking schema versions.
 - Add upcasters when old events need to hydrate into newer event shapes.
 - Do not change `EventSuffixLength` or naming conventions after data exists unless you plan a migration.
 - Treat aggregate type names and event names as persisted contracts.

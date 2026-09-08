@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Purview.EventSourcing.Admin.Abstractions.Models;
 using Purview.EventSourcing.Admin.API.Endpoints;
 
 namespace Purview.EventSourcing.Admin.API;
@@ -18,6 +19,7 @@ public static class AdminApiEndpointRouteBuilderExtensions
 	/// <param name="optionsAccessor">
 	/// The options to configure the Admin portal with, or <see langword="null"/> to resolve them from the application's services.
 	/// </param>
+	/// <param name="configureEndpoints">Optional host authorization and endpoint conventions.</param>
 	/// <remarks>
 	/// <para>
 	/// When <see cref="AdminPortalOptions.Enabled"/> is <see langword="false"/> no endpoints are mapped. All mapped
@@ -26,7 +28,8 @@ public static class AdminApiEndpointRouteBuilderExtensions
 	/// </remarks>
 	public static void MapPurviewEventSourcingAdminAPI(
 		[NotNull] this WebApplication app,
-		IOptions<AdminPortalOptions>? optionsAccessor = null
+		IOptions<AdminPortalOptions>? optionsAccessor = null,
+		Action<AdminEndpointOptions>? configureEndpoints = null
 	)
 	{
 		optionsAccessor ??= app.Services.GetRequiredService<IOptions<AdminPortalOptions>>();
@@ -35,27 +38,130 @@ public static class AdminApiEndpointRouteBuilderExtensions
 		if (!options.Enabled)
 			return;
 
+		var endpointOptions = new AdminEndpointOptions();
+		configureEndpoints?.Invoke(endpointOptions);
+
 		var group = app.MapGroup(options.RoutePrefix).WithName("AdminPortal").RequireAuthorization();
+		endpointOptions.GroupConvention?.Invoke(group);
 
 		// Map endpoint groups
 		if (options.Features.SearchAggregates)
-			AdminAggregatesEndpoints.MapSearchAggregates(group);
+			ApplyConvention(
+				AdminFeature.SearchAggregates,
+				AdminAggregatesEndpoints.MapSearchAggregates(
+					group,
+					endpointOptions.GetPolicy(AdminFeature.SearchAggregates)
+				),
+				endpointOptions
+			);
 
 		if (options.Features.ViewAggregate)
-			AdminAggregatesEndpoints.MapViewAggregate(group);
+			ApplyConvention(
+				AdminFeature.ViewAggregate,
+				AdminAggregatesEndpoints.MapViewAggregate(group, endpointOptions.GetPolicy(AdminFeature.ViewAggregate)),
+				endpointOptions
+			);
 
 		if (options.Features.ViewEvents)
 		{
-			AdminAggregatesEndpoints.MapEventRange(group);
+			ApplyConvention(
+				AdminFeature.ViewEvents,
+				AdminAggregatesEndpoints.MapEventRange(group, endpointOptions.GetPolicy(AdminFeature.ViewEvents)),
+				endpointOptions
+			);
 
 			if (options.Features.ExportEvents)
-				AdminAggregatesEndpoints.MapExportEvents(group);
+				ApplyConvention(
+					AdminFeature.ExportEvents,
+					AdminAggregatesEndpoints.MapExportEvents(
+						group,
+						endpointOptions.GetPolicy(AdminFeature.ExportEvents)
+					),
+					endpointOptions
+				);
 		}
 
 		if (options.Features.ProjectPointInTime)
 		{
-			AdminAggregatesEndpoints.MapProjectionAtVersion(group);
-			AdminAggregatesEndpoints.MapProjectionAtTime(group);
+			var policy = endpointOptions.GetPolicy(AdminFeature.ProjectPointInTime);
+			ApplyConvention(
+				AdminFeature.ProjectPointInTime,
+				AdminAggregatesEndpoints.MapProjectionAtVersion(group, policy),
+				endpointOptions
+			);
+			ApplyConvention(
+				AdminFeature.ProjectPointInTime,
+				AdminAggregatesEndpoints.MapProjectionAtTime(group, policy),
+				endpointOptions
+			);
+		}
+
+		if (options.Features.ViewCapabilities)
+		{
+			var policy = endpointOptions.GetPolicy(AdminFeature.ViewCapabilities);
+			ApplyConvention(
+				AdminFeature.ViewCapabilities,
+				AdminOperationalEndpoints.MapCapabilities(group, policy),
+				endpointOptions
+			);
+			ApplyConvention(
+				AdminFeature.ViewCapabilities,
+				AdminOperationalEndpoints.MapHealth(group, policy),
+				endpointOptions
+			);
+		}
+
+		if (options.Features.ViewPoisonedOutbox)
+		{
+			var policy = endpointOptions.GetPolicy(AdminFeature.ViewPoisonedOutbox);
+			ApplyConvention(
+				AdminFeature.ViewPoisonedOutbox,
+				AdminOperationalEndpoints.MapPoisonedOutbox(group, policy),
+				endpointOptions
+			);
+		}
+
+		if (options.Features.ViewManifest)
+		{
+			var policy = endpointOptions.GetPolicy(AdminFeature.ViewManifest);
+			ApplyConvention(
+				AdminFeature.ViewManifest,
+				AdminOperationalEndpoints.MapManifest(group, policy),
+				endpointOptions
+			);
+		}
+
+		if (options.Features.ViewUnknownEvents)
+		{
+			var policy = endpointOptions.GetPolicy(AdminFeature.ViewUnknownEvents);
+			ApplyConvention(
+				AdminFeature.ViewUnknownEvents,
+				AdminOperationalEndpoints.MapUnknownEvents(group, policy),
+				endpointOptions
+			);
+		}
+
+		if (options.Features.ViewSnapshot)
+		{
+			var policy = endpointOptions.GetPolicy(AdminFeature.ViewSnapshot);
+			ApplyConvention(
+				AdminFeature.ViewSnapshot,
+				AdminSnapshotEndpoints.MapSnapshotStatus(group, policy),
+				endpointOptions
+			);
+		}
+
+		if (options.Features.RebuildSnapshot)
+		{
+			var policy = endpointOptions.GetPolicy(AdminFeature.RebuildSnapshot);
+			ApplyConvention(
+				AdminFeature.RebuildSnapshot,
+				AdminSnapshotEndpoints.MapRebuildSnapshot(group, policy),
+				endpointOptions
+			);
 		}
 	}
+
+	static void ApplyConvention(AdminFeature feature, RouteHandlerBuilder endpoint, AdminEndpointOptions options) =>
+		options.EndpointConvention?.Invoke(feature, endpoint);
 }

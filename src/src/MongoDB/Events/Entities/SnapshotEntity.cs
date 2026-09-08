@@ -51,6 +51,9 @@ public sealed class SnapshotEntity : IEntity
 	/// </summary>
 	public string AggregateFullType { get; set; } = default!;
 
+	/// <summary>The aggregate snapshot serialization schema version.</summary>
+	public int SchemaVersion { get; set; } = 1;
+
 	/// <summary>
 	/// The time the snapshot was persisted.
 	/// </summary>

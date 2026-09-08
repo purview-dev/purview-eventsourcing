@@ -32,6 +32,8 @@ builder.Services.AddTransient<IAdminAggregateQueryService, MyAdminAggregateQuery
 
 Permissions are expressed as `AdminPermission` records combining an `AdminFeature`, an optional aggregate-type scope, and an allow/deny flag. The `IAdminPermissionProvider` contract is intentionally deny-by-default: a feature is only authorized when a matching allow permission exists.
 
+Event history uses separate `ViewEvents` and `ViewEventPayloads` permissions. Metadata remains available to event-history readers, while `EventEnvelopeResponse.Payload` is `null` for callers without payload access.
+
 ## Related packages
 
 - [Admin API](https://github.com/purview-dev/eventsourcing/blob/main/src/src/Admin.API/Sdk/README.md): `Purview.EventSourcing.Admin.Api`

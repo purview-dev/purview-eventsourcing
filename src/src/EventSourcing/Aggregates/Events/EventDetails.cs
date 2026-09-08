@@ -6,6 +6,11 @@
 public sealed class EventDetails
 {
 	/// <summary>
+	/// The persisted schema version of the event contract.
+	/// </summary>
+	public int SchemaVersion { get; set; } = 1;
+
+	/// <summary>
 	/// The idempotency Id for the operation that resulted in this event being applied.
 	/// </summary>
 	public string? IdempotencyId { get; set; }
@@ -52,5 +57,5 @@ public sealed class EventDetails
 	/// </summary>
 	/// <returns></returns>
 	public override int GetHashCode() =>
-		HashCode.Combine(IdempotencyId, AggregateVersion, When, UserId, CausationId, CorrelationId);
+		HashCode.Combine(SchemaVersion, IdempotencyId, AggregateVersion, When, UserId, CausationId, CorrelationId);
 }

@@ -238,7 +238,9 @@ partial class MongoDBEventStore<T>
 				EntityTypes.SnapshotType,
 				cancellationToken
 			);
-			return snapshot == null ? null : DeserializeSnapshot(snapshot.Payload);
+			return snapshot == null || snapshot.SchemaVersion != _snapshotSchemaVersion
+				? null
+				: DeserializeSnapshot(snapshot.Payload);
 		}
 #pragma warning disable CA1031
 		catch (Exception ex)

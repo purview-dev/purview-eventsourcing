@@ -46,6 +46,20 @@ public static class ServiceCollectionExtensions
 				.AddTransient<IEventStore, EventStoreFacade>()
 				.AddTableEventStoreTelemetry();
 
+			services.AddEventStoreCapabilities(
+				new EventStoreCapabilities(
+					EventStoreTransactionGuarantee.BestEffort,
+					SupportsEventStreams: true,
+					SupportsSnapshots: true,
+					SnapshotSchemaVersioning: SnapshotSchemaSupport.Versioned,
+					PreservedMetadata: PreservedEventMetadata.All,
+					SupportsQueries: false,
+					SupportsIdempotencyMarkers: true,
+					Concurrency: ConcurrencyGuarantee.Optimistic,
+					OperationalLimitations: []
+				)
+			);
+
 			services
 				.AddOptions<AzureStorageEventStoreOptions>()
 				.Configure<IConfiguration>(

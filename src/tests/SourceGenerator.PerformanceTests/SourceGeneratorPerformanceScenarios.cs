@@ -7,7 +7,8 @@ sealed record SourceGeneratorScenario(
 	string Name,
 	string GeneratorName,
 	string Source,
-	Func<IIncrementalGenerator> CreateGenerator
+	Func<IIncrementalGenerator> CreateGenerator,
+	string? EditedSource = null
 );
 
 static class SourceGeneratorPerformanceScenarios
@@ -25,6 +26,13 @@ static class SourceGeneratorPerformanceScenarios
 			nameof(AggregateSourceGenerator),
 			SharedStubs.All + Samples.AggregateWithValueObjects,
 			static () => new AggregateSourceGenerator()
+		),
+		new(
+			"AggregateMulti",
+			nameof(AggregateSourceGenerator),
+			SharedStubs.All + Samples.AggregateMulti,
+			static () => new AggregateSourceGenerator(),
+			EditedSource: SharedStubs.All + Samples.AggregateMultiEdited
 		),
 		new(
 			"ScalarValueObject",
@@ -202,6 +210,119 @@ static class SourceGeneratorPerformanceScenarios
 
 					[Purview.EventSourcing.Aggregates.Event(EventName = "OrderConfirmed")]
 					public partial void ConfirmOrder(OrderStatusCode status);
+				}
+			}
+			""";
+
+		public const string AggregateMulti = """
+			namespace Testing
+			{
+				[Purview.EventSourcing.Aggregates.Aggregate]
+				public partial class OrderAggregate : Purview.EventSourcing.Aggregates.AggregateBase
+				{
+					public string CustomerId { get; private set; } = string.Empty;
+					public decimal Total { get; private set; }
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void CreateOrder(string customerId, decimal total);
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void UpdateTotal(decimal total);
+				}
+
+				[Purview.EventSourcing.Aggregates.Aggregate]
+				public partial class CustomerAggregate : Purview.EventSourcing.Aggregates.AggregateBase
+				{
+					public string Name { get; private set; } = string.Empty;
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void RegisterCustomer(string name);
+				}
+
+				[Purview.EventSourcing.Aggregates.Aggregate]
+				public partial class InventoryAggregate : Purview.EventSourcing.Aggregates.AggregateBase
+				{
+					public int Quantity { get; private set; }
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void AdjustQuantity(int quantity);
+				}
+
+				[Purview.EventSourcing.Aggregates.Aggregate]
+				public partial class InvoiceAggregate : Purview.EventSourcing.Aggregates.AggregateBase
+				{
+					public decimal Amount { get; private set; }
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void RaiseInvoice(decimal amount);
+				}
+
+				[Purview.EventSourcing.Aggregates.Aggregate]
+				public partial class ShipmentAggregate : Purview.EventSourcing.Aggregates.AggregateBase
+				{
+					public string TrackingCode { get; private set; } = string.Empty;
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void RegisterShipment(string trackingCode);
+				}
+			}
+			""";
+
+		public const string AggregateMultiEdited = """
+			#nullable enable
+			namespace Testing
+			{
+				[Purview.EventSourcing.Aggregates.Aggregate]
+				public partial class OrderAggregate : Purview.EventSourcing.Aggregates.AggregateBase
+				{
+					public string CustomerId { get; private set; } = string.Empty;
+					public decimal Total { get; private set; }
+					public string? PromotionCode { get; private set; }
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void CreateOrder(string customerId, decimal total);
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void UpdateTotal(decimal total);
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void ApplyPromotion(string? promotionCode);
+				}
+
+				[Purview.EventSourcing.Aggregates.Aggregate]
+				public partial class CustomerAggregate : Purview.EventSourcing.Aggregates.AggregateBase
+				{
+					public string Name { get; private set; } = string.Empty;
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void RegisterCustomer(string name);
+				}
+
+				[Purview.EventSourcing.Aggregates.Aggregate]
+				public partial class InventoryAggregate : Purview.EventSourcing.Aggregates.AggregateBase
+				{
+					public int Quantity { get; private set; }
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void AdjustQuantity(int quantity);
+				}
+
+				[Purview.EventSourcing.Aggregates.Aggregate]
+				public partial class InvoiceAggregate : Purview.EventSourcing.Aggregates.AggregateBase
+				{
+					public decimal Amount { get; private set; }
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void RaiseInvoice(decimal amount);
+				}
+
+				[Purview.EventSourcing.Aggregates.Aggregate]
+				public partial class ShipmentAggregate : Purview.EventSourcing.Aggregates.AggregateBase
+				{
+					public string TrackingCode { get; private set; } = string.Empty;
+
+					[Purview.EventSourcing.Aggregates.Event]
+					public partial void RegisterShipment(string trackingCode);
 				}
 			}
 			""";

@@ -41,6 +41,20 @@ public static class ServiceCollectionExtensions
 				services.TryAddTransient<IEventStore, EventStoreFacade>();
 			}
 
+			services.AddEventStoreCapabilities(
+				new EventStoreCapabilities(
+					EventStoreTransactionGuarantee.BestEffort,
+					SupportsEventStreams: false,
+					SupportsSnapshots: true,
+					SnapshotSchemaVersioning: SnapshotSchemaSupport.SingleVersion,
+					PreservedMetadata: PreservedEventMetadata.None,
+					SupportsQueries: true,
+					SupportsIdempotencyMarkers: false,
+					Concurrency: ConcurrencyGuarantee.Optimistic,
+					OperationalLimitations: [EventStoreOperationalLimitation.NoEventStream]
+				)
+			);
+
 			services
 				.AddOptions<CosmosDbEventStoreOptions>()
 				.Configure<IConfiguration>(

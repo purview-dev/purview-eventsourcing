@@ -14,6 +14,8 @@ dotnet add package Purview.EventSourcing
 - `IEventStore` and `IQueryableEventStore`
 - `IEventStoreTransactionFactory` and transaction result types
 - Source generation for aggregate events and command methods
+- Source-analysis diagnostics and code fixes (`Purview.EventSourcing.SourceGenerator` for analyzers
+  and generation, `Purview.EventSourcing.SourceGenerator.CodeFixes` for IDE code fixes)
 - Embedded AI agent skills for aggregate design, validation, and value-object modeling
 - Common extension points used by provider packages
 - Dependency injection helpers for core framework services

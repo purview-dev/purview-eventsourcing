@@ -37,6 +37,28 @@ public static class EventStoreServiceICollectionExtensions
 
 			services.TryAddSingleton<IEventStoreCorrelationIdProvider, ActivityEventStoreCorrelationIdProvider>();
 			services.TryAddSingleton<IEventStoreTransactionFactory, EventStoreTransactionFactory>();
+			services.TryAddSingleton<IAggregateTypeRegistry, AssemblyAggregateTypeRegistry>();
+
+			// Capability discovery is always available and reports the conservative default until a
+			// provider registers its truthful capabilities.
+			services.TryAddSingleton<IEventStoreCapabilitiesProvider, EventStoreCapabilitiesProvider>();
+
+			return services;
+		}
+
+		/// <summary>
+		/// Registers the event-store capabilities that a provider actually implements. Custom providers
+		/// must not claim stronger behavior than they provide; <see cref="EventStoreCapabilities.Default"/>
+		/// is the conservative baseline used when nothing is registered.
+		/// </summary>
+		/// <param name="capabilities">The truthful capabilities of the registered store.</param>
+		/// <returns>The <paramref name="services"/> passed in.</returns>
+		public IServiceCollection AddEventStoreCapabilities(EventStoreCapabilities capabilities)
+		{
+			ArgumentNullException.ThrowIfNull(capabilities);
+
+			services.TryAddSingleton<IEventStoreCapabilitiesProvider, EventStoreCapabilitiesProvider>();
+			services.AddSingleton(capabilities);
 
 			return services;
 		}

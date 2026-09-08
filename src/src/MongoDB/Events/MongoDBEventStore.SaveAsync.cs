@@ -8,7 +8,6 @@ using Purview.EventSourcing.Aggregates.Events;
 using Purview.EventSourcing.MongoDB.Events.Entities;
 using Purview.EventSourcing.MongoDB.Events.Exceptions;
 using Purview.EventSourcing.MongoDB.StorageClient;
-using Purview.EventSourcing.Services;
 using Purview.EventSourcing.Storage;
 using Purview.EventSourcing.Validation;
 
@@ -208,6 +207,7 @@ partial class MongoDBEventStore<T>
 				changeEvent.Details.IdempotencyId = idempotencyIdAsString;
 				changeEvent.Details.UserId = userId;
 				changeEvent.Details.CorrelationId ??= operationContext.CorrelationId;
+				changeEvent.Details.SchemaVersion = changeEvent.SchemaVersion;
 
 				var serializedEvent = SerializeEvent(changeEvent);
 				var eventEntity = CreateSerializedEvent(
@@ -384,6 +384,7 @@ partial class MongoDBEventStore<T>
 			Id = aggregate.Id(),
 			AggregateType = _aggregateTypeShortName,
 			AggregateFullType = _aggregateTypeFullName,
+			SchemaVersion = _snapshotSchemaVersion,
 			Timestamp = DateTimeOffset.UtcNow,
 			Payload = snapshot,
 		};
@@ -409,6 +410,10 @@ partial class MongoDBEventStore<T>
 			Payload = serializedEvent,
 			EventType = _eventNameMapper.GetName<T>(@event),
 			IdempotencyId = idempotencyId,
+			SchemaVersion = @event.SchemaVersion,
+			CorrelationId = @event.Details.CorrelationId,
+			CausationId = @event.Details.CausationId,
+			UserId = @event.Details.UserId,
 			Timestamp = DateTimeOffset.UtcNow,
 		};
 

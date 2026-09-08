@@ -60,6 +60,20 @@ public static class ServiceCollectionExtensions
 
 			services.AddMongoDBClientTelemetry();
 
+			services.AddEventStoreCapabilities(
+				new EventStoreCapabilities(
+					EventStoreTransactionGuarantee.BestEffort,
+					SupportsEventStreams: true,
+					SupportsSnapshots: true,
+					SnapshotSchemaVersioning: SnapshotSchemaSupport.Versioned,
+					PreservedMetadata: PreservedEventMetadata.All,
+					SupportsQueries: false,
+					SupportsIdempotencyMarkers: true,
+					Concurrency: ConcurrencyGuarantee.Optimistic,
+					OperationalLimitations: []
+				)
+			);
+
 			services
 				.AddOptions<MongoDBEventStoreOptions>()
 				.Configure<IConfiguration>(
@@ -150,6 +164,20 @@ public static class ServiceCollectionExtensions
 				services.AddTransient(typeof(IEventStoreCore<>), typeof(MongoDBSnapshotEventStore<>));
 				services.TryAddTransient<IEventStore, EventStoreFacade>();
 			}
+
+			services.AddEventStoreCapabilities(
+				new EventStoreCapabilities(
+					EventStoreTransactionGuarantee.BestEffort,
+					SupportsEventStreams: false,
+					SupportsSnapshots: true,
+					SnapshotSchemaVersioning: SnapshotSchemaSupport.SingleVersion,
+					PreservedMetadata: PreservedEventMetadata.None,
+					SupportsQueries: true,
+					SupportsIdempotencyMarkers: false,
+					Concurrency: ConcurrencyGuarantee.Optimistic,
+					OperationalLimitations: []
+				)
+			);
 
 			services
 				.AddOptions<MongoDBSnapshotEventStoreOptions>()

@@ -4,6 +4,7 @@ using Purview.EventSourcing.Admin.Abstractions.Models;
 using Purview.EventSourcing.Admin.Abstractions.Queries;
 using Purview.EventSourcing.Admin.Abstractions.Services;
 using Purview.EventSourcing.Admin.API;
+using Purview.EventSourcing.Admin.Security;
 
 // Exports the Admin API OpenAPI document to a file so it can be committed and used to generate a typed client
 // (for example with NSwag). Usage:
@@ -15,10 +16,19 @@ var outputPath = ResolveOutputPath(args);
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddPurviewEventSourcingAdminApi(options =>
+{
 	// The exported document describes the full Admin API surface, so all feature-gated endpoints are enabled.
-	options.Features.ExportEvents = true
-);
+	options.Features.ExportEvents = true;
+	options.Features.ViewCapabilities = true;
+	options.Features.ViewPoisonedOutbox = true;
+	options.Features.ViewManifest = true;
+	options.Features.ViewUnknownEvents = true;
+	options.Features.ViewSnapshot = true;
+	options.Features.RebuildSnapshot = true;
+});
 builder.Services.AddPurviewEventSourcingAdminOpenApi();
+builder.Services.AddPurviewEventSourcingAdminSecurity();
+builder.Services.AddEventSourcing();
 
 // The query services are only required so minimal-API metadata inference succeeds while building the document;
 // they are never invoked during export.

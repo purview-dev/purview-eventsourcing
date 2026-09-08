@@ -7,6 +7,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\ZodSharpImpl\ZodSharpImpl.csproj" />
+		<ProjectReference Include="..\Validation.ZodSharp\Validation.ZodSharp.csproj" />
 	</ItemGroup>
 </Project>

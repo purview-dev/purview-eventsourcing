@@ -28,6 +28,14 @@ public sealed class PostgresEventStoreTransactionFactory(IEventStoreCorrelationI
 	public IEventStoreTransaction Create(string? correlationId = null) => CreatePostgresTransaction(correlationId);
 
 	///<inheritdoc/>
+	public IEventStoreTransaction Create(EventStoreTransactionOptions options)
+	{
+		ArgumentNullException.ThrowIfNull(options);
+
+		return CreatePostgresTransaction(options.CorrelationId);
+	}
+
+	///<inheritdoc/>
 	public IPostgresEventStoreTransaction CreatePostgresTransaction(string? correlationId = null) =>
 		new PostgresEventStoreTransaction(correlationId ?? correlationIdProvider.GetCorrelationId());
 }

@@ -133,6 +133,7 @@ public static class IEventStoreCoreHistoryExtensions
 			AggregateType = typeof(T).Name,
 			EventType = eventType,
 			EventClrType = @event.GetType().FullName ?? @event.GetType().Name,
+			SchemaVersion = details.SchemaVersion,
 			AggregateVersion = details.AggregateVersion,
 			When = details.When,
 			IdempotencyId = details.IdempotencyId,

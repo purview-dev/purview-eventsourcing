@@ -19,7 +19,7 @@ partial class AggregateSourceEmitter
 			{
 				IsSealed = true,
 				IsPartial = false,
-				BaseType = TypeLibrary.Aggregates.EventBase,
+				BaseType = TypeLibrary.Purview.EventSourcing.Aggregates.Events.EventBase,
 			},
 			bodyWriter =>
 			{

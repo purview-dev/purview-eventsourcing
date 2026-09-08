@@ -44,7 +44,7 @@ public sealed class AggregateDiagnosticAnalyzer : DiagnosticAnalyzer
 	{
 		var typeSymbol = (INamedTypeSymbol)context.Symbol;
 
-		if (!TypeHelpers.HasAttribute(typeSymbol, TypeLibrary.Attributes.AggregateAttribute))
+		if (!TypeHelpers.HasAttribute(typeSymbol, TypeLibrary.Purview.EventSourcing.Aggregates.AggregateAttribute))
 			return;
 
 		if (
@@ -58,7 +58,12 @@ public sealed class AggregateDiagnosticAnalyzer : DiagnosticAnalyzer
 		foreach (var diagnostic in result.Diagnostics)
 			context.ReportDiagnostic(diagnostic.ToDiagnostic());
 
-		if (context.Compilation.GetTypeByMetadataName(TypeLibrary.Aggregates.AggregateBase.MetadataFullName) is null)
+		if (
+			context.Compilation.GetTypeByMetadataName(
+				TypeLibrary.Purview.EventSourcing.Aggregates.AggregateBase.MetadataFullName
+			)
+			is null
+		)
 		{
 			context.ReportDiagnostic(
 				Diagnostic.Create(

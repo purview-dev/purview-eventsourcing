@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -31,9 +32,13 @@ public static class AdminAggregatesEndpoints
 	/// Maps the <c>POST /aggregates/search</c> endpoint used to search for aggregates.
 	/// </summary>
 	/// <param name="group">The route group to map the endpoint onto.</param>
-	public static void MapSearchAggregates(RouteGroupBuilder group)
+	/// <param name="policyName">The host authorization policy required by the endpoint.</param>
+	public static RouteHandlerBuilder MapSearchAggregates(
+		RouteGroupBuilder group,
+		string policyName = AdminPortalPolicies.SearchAggregates
+	)
 	{
-		group
+		return group
 			.MapPost("/aggregates/search", SearchAggregatesAsync)
 			.WithName("SearchAggregates")
 			.WithSummary("Search for aggregates")
@@ -41,7 +46,7 @@ public static class AdminAggregatesEndpoints
 			.WithTags(AdminPortalTag)
 			.Produces<PagedResult<AggregateSummaryResponse>>()
 			.ProducesValidationProblem()
-			.RequireAuthorization(AdminPortalPolicies.SearchAggregates)
+			.RequireAuthorization(policyName)
 			.AddEndpointFilterFactory(
 				(routeHandlerContext, next) =>
 				{
@@ -64,9 +69,13 @@ public static class AdminAggregatesEndpoints
 	/// Maps the <c>GET /aggregates/{aggregateType}/{aggregateId}</c> endpoint used to view a single aggregate.
 	/// </summary>
 	/// <param name="group">The route group to map the endpoint onto.</param>
-	public static void MapViewAggregate(RouteGroupBuilder group)
+	/// <param name="policyName">The host authorization policy required by the endpoint.</param>
+	public static RouteHandlerBuilder MapViewAggregate(
+		RouteGroupBuilder group,
+		string policyName = AdminPortalPolicies.ViewAggregate
+	)
 	{
-		group
+		return group
 			.MapGet("/aggregates/{aggregateType}/{aggregateId}", GetAggregateAsync)
 			.WithName("GetAggregate")
 			.WithSummary("Get aggregate")
@@ -74,16 +83,20 @@ public static class AdminAggregatesEndpoints
 			.WithTags(AdminPortalTag)
 			.Produces<AggregateSummaryResponse>()
 			.ProducesProblem(StatusCodes.Status404NotFound)
-			.RequireAuthorization(AdminPortalPolicies.ViewAggregate);
+			.RequireAuthorization(policyName);
 	}
 
 	/// <summary>
 	/// Maps the <c>GET /aggregates/{aggregateType}/{aggregateId}/events</c> endpoint used to read an aggregate's event stream.
 	/// </summary>
 	/// <param name="group">The route group to map the endpoint onto.</param>
-	public static void MapEventRange(RouteGroupBuilder group)
+	/// <param name="policyName">The host authorization policy required by the endpoint.</param>
+	public static RouteHandlerBuilder MapEventRange(
+		RouteGroupBuilder group,
+		string policyName = AdminPortalPolicies.ViewEvents
+	)
 	{
-		group
+		return group
 			.MapGet("/aggregates/{aggregateType}/{aggregateId}/events", GetEventRangeAsync)
 			.WithName("GetAggregateEventRange")
 			.WithSummary("Get aggregate event range")
@@ -92,7 +105,7 @@ public static class AdminAggregatesEndpoints
 			.Produces<PagedResult<EventEnvelopeResponse>>()
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.ProducesValidationProblem()
-			.RequireAuthorization(AdminPortalPolicies.ViewEvents)
+			.RequireAuthorization(policyName)
 			.AddEndpointFilterFactory(
 				(routeHandlerContext, next) =>
 				{
@@ -110,9 +123,13 @@ public static class AdminAggregatesEndpoints
 	/// Maps the <c>GET /aggregates/{aggregateType}/{aggregateId}/projection</c> endpoint used to project state at a version.
 	/// </summary>
 	/// <param name="group">The route group to map the endpoint onto.</param>
-	public static void MapProjectionAtVersion(RouteGroupBuilder group)
+	/// <param name="policyName">The host authorization policy required by the endpoint.</param>
+	public static RouteHandlerBuilder MapProjectionAtVersion(
+		RouteGroupBuilder group,
+		string policyName = AdminPortalPolicies.ProjectPointInTime
+	)
 	{
-		group
+		return group
 			.MapGet("/aggregates/{aggregateType}/{aggregateId}/projection", GetProjectionAtVersionAsync)
 			.WithName("GetAggregateProjectionAtVersion")
 			.WithSummary("Get aggregate projection at version")
@@ -121,16 +138,20 @@ public static class AdminAggregatesEndpoints
 			.Produces<ProjectionResponse>()
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
-			.RequireAuthorization(AdminPortalPolicies.ProjectPointInTime);
+			.RequireAuthorization(policyName);
 	}
 
 	/// <summary>
 	/// Maps the <c>GET /aggregates/{aggregateType}/{aggregateId}/projection/time</c> endpoint used to project state at a timestamp.
 	/// </summary>
 	/// <param name="group">The route group to map the endpoint onto.</param>
-	public static void MapProjectionAtTime(RouteGroupBuilder group)
+	/// <param name="policyName">The host authorization policy required by the endpoint.</param>
+	public static RouteHandlerBuilder MapProjectionAtTime(
+		RouteGroupBuilder group,
+		string policyName = AdminPortalPolicies.ProjectPointInTime
+	)
 	{
-		group
+		return group
 			.MapGet("/aggregates/{aggregateType}/{aggregateId}/projection/time", GetProjectionAtTimeAsync)
 			.WithName("GetAggregateProjectionAtTime")
 			.WithSummary("Get aggregate projection at time")
@@ -139,16 +160,20 @@ public static class AdminAggregatesEndpoints
 			.Produces<ProjectionResponse>()
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
-			.RequireAuthorization(AdminPortalPolicies.ProjectPointInTime);
+			.RequireAuthorization(policyName);
 	}
 
 	/// <summary>
 	/// Maps the <c>GET /aggregates/{aggregateType}/{aggregateId}/events/export</c> endpoint used to export an aggregate's event stream.
 	/// </summary>
 	/// <param name="group">The route group to map the endpoint onto.</param>
-	public static void MapExportEvents(RouteGroupBuilder group)
+	/// <param name="policyName">The host authorization policy required by the endpoint.</param>
+	public static RouteHandlerBuilder MapExportEvents(
+		RouteGroupBuilder group,
+		string policyName = AdminPortalPolicies.ExportEvents
+	)
 	{
-		group
+		return group
 			.MapGet("/aggregates/{aggregateType}/{aggregateId}/events/export", ExportEventsAsync)
 			.WithName("ExportAggregateEvents")
 			.WithSummary("Export aggregate events")
@@ -157,7 +182,7 @@ public static class AdminAggregatesEndpoints
 			.Produces<byte[]>(StatusCodes.Status200OK, contentType: "application/x-ndjson")
 			.ProducesProblem(StatusCodes.Status404NotFound)
 			.ProducesValidationProblem()
-			.RequireAuthorization(AdminPortalPolicies.ExportEvents)
+			.RequireAuthorization(policyName)
 			.AddEndpointFilterFactory(
 				(routeHandlerContext, next) =>
 				{
@@ -216,6 +241,8 @@ public static class AdminAggregatesEndpoints
 		string aggregateId,
 		[AsParameters] EventRangeRequest request,
 		IAdminEventQueryService queryService,
+		[FromServices] IAuthorizationService authorizationService,
+		HttpContext httpContext,
 		IOptions<AdminPortalOptions> options,
 		CancellationToken cancellationToken
 	)
@@ -235,7 +262,22 @@ public static class AdminAggregatesEndpoints
 		);
 
 		var result = await queryService.GetRangeAsync(aggregateType, aggregateId, query, cancellationToken);
-		return result is null ? TypedResults.NotFound() : TypedResults.Ok(result);
+		if (result is null)
+			return TypedResults.NotFound();
+
+		var payloadAuthorization = await authorizationService.AuthorizeAsync(
+			httpContext.User,
+			aggregateType,
+			AdminPortalPolicies.ViewEventPayloads
+		);
+		if (payloadAuthorization.Succeeded)
+			return TypedResults.Ok(result);
+
+		var redacted = result with
+		{
+			Items = result.Items.Select(envelope => envelope with { Payload = null }).ToArray(),
+		};
+		return TypedResults.Ok(redacted);
 	}
 
 	static async Task<Results<Ok<ProjectionResponse>, NotFound, ValidationProblem>> GetProjectionAtVersionAsync(
@@ -307,6 +349,7 @@ public static class AdminAggregatesEndpoints
 		[AsParameters] EventRangeRequest request,
 		IAdminEventQueryService queryService,
 		IOptions<AdminPortalOptions> options,
+		HttpContext httpContext,
 		CancellationToken cancellationToken
 	)
 	{
@@ -317,6 +360,7 @@ public static class AdminAggregatesEndpoints
 		var batchSize = ClampPageSize(request.PageSize, options.Value.Paging.MaxPageSize);
 		var remaining = (long)options.Value.Projections.MaxVersionsPerQuery;
 		var page = 1;
+		var truncated = false;
 
 		var firstPage = await queryService.GetRangeAsync(
 			aggregateType,
@@ -339,12 +383,16 @@ public static class AdminAggregatesEndpoints
 		)
 		{
 			var current = firstPage;
-			while (remaining > 0)
+			while (true)
 			{
 				foreach (var envelope in current.Items)
 				{
 					if (remaining <= 0)
+					{
+						// The export cap was reached before all events could be written.
+						truncated = true;
 						break;
+					}
 
 					remaining--;
 					await writer.WriteLineAsync(
@@ -353,7 +401,7 @@ public static class AdminAggregatesEndpoints
 					);
 				}
 
-				if (!current.HasNextPage || remaining <= 0)
+				if (truncated || !current.HasNextPage)
 					break;
 
 				page++;
@@ -373,6 +421,7 @@ public static class AdminAggregatesEndpoints
 		}
 
 		stream.Position = 0;
+		httpContext.Response.Headers["Purview-Event-Export-Truncated"] = truncated ? "true" : "false";
 		return TypedResults.Stream(stream, "application/x-ndjson");
 	}
 

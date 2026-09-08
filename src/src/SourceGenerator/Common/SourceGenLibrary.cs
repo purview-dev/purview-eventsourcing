@@ -20,26 +20,113 @@ static partial class SourceGenLibrary
 			static (compilation, settings, logger, _) =>
 			{
 				var hasAggregateBase =
-					compilation.GetTypeByMetadataName(TypeLibrary.Aggregates.AggregateBase.MetadataFullName)
+					compilation.GetTypeByMetadataName(
+						TypeLibrary.Purview.EventSourcing.Aggregates.AggregateBase.MetadataFullName
+					)
 					is not null;
 				return new(hasAggregateBase);
 			}
 		);
 
-	public static IncrementalValuesProvider<GeneratorResult<AggregateInfo>> GetAggregateTargets(
+	public static IncrementalValuesProvider<GeneratorResult<AggregateTarget>> GetAggregateTargets(
 		IncrementalGeneratorInitializationContext context
 	) =>
 		IncrementalPipeline.ForAttributeWithMetadataName(
 			context,
-			TypeLibrary.Attributes.AggregateAttribute,
+			TypeLibrary.Purview.EventSourcing.Aggregates.AggregateAttribute,
 			predicate: static (s, _) => s is ClassDeclarationSyntax,
 			transform: static (ctx, ct) =>
-				AggregateInfoBuilder.Build(
-					(INamedTypeSymbol)ctx.TargetSymbol,
-					(ClassDeclarationSyntax)ctx.TargetNode,
-					ctx.SemanticModel.Compilation,
-					ct
-				),
+			{
+				var classSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
+				var syntax = (ClassDeclarationSyntax)ctx.TargetNode;
+				var info = AggregateInfoBuilder.Build(classSymbol, syntax, ctx.SemanticModel.Compilation, ct);
+
+				if (!info.ShouldProcess || !info.HasValue)
+					return GeneratorResult<AggregateTarget>.Create([.. info.Diagnostics]);
+
+				var target = new AggregateTarget(
+					info.Value,
+					EventContractBuilder.Build(info.Value),
+					EventContractBuilder.BuildLocations(info.Value, classSymbol, syntax)
+				);
+				return GeneratorResult<AggregateTarget>.Create(target, info.Diagnostics);
+			},
 			trackingName: "GetAggregateTargets"
 		);
+
+	public static IncrementalValueProvider<EventContractManifest> GetEventContractManifest(
+		IncrementalValuesProvider<GeneratorResult<AggregateTarget>> targets
+	) =>
+		targets
+			.Where(static result => result.ShouldProcess && result.HasValue)
+			.Select(static (result, _) => result.Value.Contract)
+			.Collect()
+			.Select(static (contracts, _) => EventContractManifestLibrary.BuildManifest(new(contracts)))
+			.WithTrackingName("EventContractManifest");
+
+	public static IncrementalValueProvider<EquatableArray<AggregateContractLocations>> GetEventContractLocations(
+		IncrementalValuesProvider<GeneratorResult<AggregateTarget>> targets
+	) =>
+		targets
+			.Where(static result => result.ShouldProcess && result.HasValue)
+			.Select(static (result, _) => result.Value.Locations)
+			.Collect()
+			.Select(static (locations, _) => new EquatableArray<AggregateContractLocations>(locations))
+			.WithTrackingName("EventContractLocations");
+
+	public static IncrementalValueProvider<EventContractComparison> GetEventContractComparison(
+		IncrementalValueProvider<EventContractManifest> manifest,
+		IncrementalValueProvider<BaselineState> baseline
+	) =>
+		manifest
+			.Combine(baseline)
+			.Select(static (pair, _) => EventContractComparer.Compare(pair.Left, pair.Right))
+			.WithTrackingName("EventContractComparison");
+
+	public static IncrementalValueProvider<BaselineState> GetEventContractBaseline(
+		IncrementalGeneratorInitializationContext context
+	)
+	{
+		var fileName = IncrementalPipeline.PropertyValueProvider(
+			context,
+			EventContractManifestLibrary.BaselineFileNameProperty,
+			static value =>
+				string.IsNullOrWhiteSpace(value) ? EventContractManifestLibrary.BaselineFileName : value!.Trim()
+		);
+
+		return context
+			.AdditionalTextsProvider.Combine(fileName)
+			.Where(static pair => IsBaselineFile(pair.Left?.Path ?? string.Empty, pair.Right))
+			.Collect()
+			.Select(
+				static (pairs, ct) =>
+				{
+					ct.ThrowIfCancellationRequested();
+					if (pairs.IsEmpty)
+						return new BaselineState(null, null);
+
+					var (Left, Right) = pairs[0];
+					var content = Left.GetText(ct)?.ToString() ?? string.Empty;
+					return EventContractManifestLibrary.Parse(content, Right);
+				}
+			)
+			.WithTrackingName("EventContractBaseline");
+	}
+
+	public static IncrementalValueProvider<bool> IsEventContractManifestEnabled(
+		IncrementalGeneratorInitializationContext context
+	) =>
+		IncrementalPipeline.PropertyValueProvider(
+			context,
+			EventContractManifestLibrary.ManifestEnabledProperty,
+			static value => bool.TryParse(value, out var enabled) && enabled
+		);
+
+	static bool IsBaselineFile(string path, string fileName)
+	{
+		var normalized = path.Replace('\\', '/');
+		var lastSlash = normalized.LastIndexOf('/');
+		var actualName = lastSlash >= 0 ? normalized.Substring(lastSlash + 1) : normalized;
+		return StringComparer.Ordinal.Equals(actualName, fileName);
+	}
 }

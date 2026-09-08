@@ -4,8 +4,8 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\EventSourcing\EventSourcing.csproj" />
-		<ProjectReference Include="..\FluentValidationImpl\FluentValidationImpl.csproj" />
-		<ProjectReference Include="..\ZodSharpImpl\ZodSharpImpl.csproj" />
+		<ProjectReference Include="..\Validation.FluentValidation\Validation.FluentValidation.csproj" />
+		<ProjectReference Include="..\Validation.ZodSharp\Validation.ZodSharp.csproj" />
 		<!-- Direct reference required when not used via a NuGet package -->
 		<ProjectReference
 			Include="..\SourceGenerator\SourceGenerator.csproj"

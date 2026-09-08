@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\AzureStorage\AzureStorage.csproj" />
+		<ProjectReference Include="..\..\src\CosmosDb\CosmosDb.csproj" />
+		<ProjectReference Include="..\..\src\InMemory\InMemory.csproj" />
+		<ProjectReference Include="..\..\src\MongoDB\MongoDB.csproj" />
+		<ProjectReference Include="..\..\src\Postgres\Postgres.csproj" />
+		<ProjectReference Include="..\..\src\SqlServer\SqlServer.csproj" />
+	</ItemGroup>
+</Project>

@@ -1,9 +1,14 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Purview.EventSourcing.SourceGenerator.Generators;
+using StepReason = Microsoft.CodeAnalysis.IncrementalStepRunReason;
 
 namespace Purview.EventSourcing.SourceGenerator.Incremental;
 
-public sealed class ValueObjectSourceGeneratorIncrementalTests
+/// <summary>
+/// Per-target incremental caching tests for the value-object pipeline, driven by the framework's
+/// <c>GenerateIncrementalAsync</c> runner over a single shared <c>GeneratorDriver</c>.
+/// </summary>
+public sealed class ValueObjectSourceGeneratorIncrementalTests : ValueObjectSourceGeneratorTestBase
 {
 	const string EmailScalarSource = """
 		using Purview.EventSourcing.Serialization;
@@ -47,122 +52,67 @@ public sealed class ValueObjectSourceGeneratorIncrementalTests
 	[Test]
 	public async Task Generate_FirstRun_AllScalarTargetsNew(CancellationToken cancellationToken)
 	{
-		var driver = IncrementalGeneratorTestHarness.CreateDriver<ValueObjectSourceGenerator>();
-		var compilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(EmailScalarSource, "Email.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(MoneyScalarSource, "Money.cs"),
-		]);
-
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-
-		var steps = IncrementalGeneratorTestHarness.GetSteps(
-			driver.GetRunResult().Results[0],
-			"GetScalarValueObjectTargets"
+		var result = await GenerateIncrementalAsync(
+			[new IncrementalRunInput([EmailScalarSource, MoneyScalarSource])],
+			cancellationToken: cancellationToken
 		);
 
-		await Assert.That(steps.Length).IsEqualTo(2);
-		await Assert
-			.That(steps.All(step => IncrementalGeneratorTestHarness.GetReason(step) == IncrementalStepRunReason.New))
-			.IsTrue();
+		var reasons = StepReasons(result.Runs[0], "GetScalarValueObjectTargets");
+		await Assert.That(reasons.Length).IsEqualTo(2);
+		await Assert.That(reasons.All(static reason => reason == StepReason.New)).IsTrue();
 	}
 
 	[Test]
 	public async Task Generate_RerunWithUnchangedCompilation_ScalarTargetsCached(CancellationToken cancellationToken)
 	{
-		var driver = IncrementalGeneratorTestHarness.CreateDriver<ValueObjectSourceGenerator>();
-		var compilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(EmailScalarSource, "Email.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(MoneyScalarSource, "Money.cs"),
-		]);
-
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-
-		var steps = IncrementalGeneratorTestHarness.GetSteps(
-			driver.GetRunResult().Results[0],
-			"GetScalarValueObjectTargets"
+		var result = await GenerateIncrementalAsync(
+			[EmailScalarSource, MoneyScalarSource],
+			cancellationToken: cancellationToken
 		);
 
-		await Assert.That(steps.Length).IsEqualTo(2);
-		await Assert
-			.That(
-				steps.All(step =>
-				{
-					var reason = IncrementalGeneratorTestHarness.GetReason(step);
-					return reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged;
-				})
-			)
-			.IsTrue();
+		var reasons = StepReasons(result.Runs[1], "GetScalarValueObjectTargets");
+		await Assert.That(reasons.Length).IsEqualTo(2);
+		await Assert.That(reasons.All(static reason => reason is StepReason.Cached or StepReason.Unchanged)).IsTrue();
 	}
 
 	[Test]
 	public async Task Generate_GivenChangeToOneScalar_OnlyThatTargetModified(CancellationToken cancellationToken)
 	{
-		var driver = IncrementalGeneratorTestHarness.CreateDriver<ValueObjectSourceGenerator>();
-		var compilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(EmailScalarSource, "Email.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(MoneyScalarSource, "Money.cs"),
-		]);
-
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-
-		var modifiedCompilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(ModifiedEmailScalarSource, "Email.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(MoneyScalarSource, "Money.cs"),
-		]);
-		driver = driver.RunGeneratorsAndUpdateCompilation(modifiedCompilation, out _, out _, cancellationToken);
-
-		var steps = IncrementalGeneratorTestHarness.GetSteps(
-			driver.GetRunResult().Results[0],
-			"GetScalarValueObjectTargets"
+		var result = await GenerateIncrementalAsync(
+			[
+				new IncrementalRunInput([EmailScalarSource, MoneyScalarSource]),
+				new IncrementalRunInput([ModifiedEmailScalarSource, MoneyScalarSource]),
+			],
+			cancellationToken: cancellationToken
 		);
 
-		await Assert.That(steps.Length).IsEqualTo(2);
-		await Assert
-			.That(
-				steps.Count(step =>
-					IncrementalGeneratorTestHarness.GetReason(step) == IncrementalStepRunReason.Modified
-				)
-			)
-			.IsEqualTo(1);
-		await Assert
-			.That(steps.Count(step => IncrementalGeneratorTestHarness.GetReason(step) == IncrementalStepRunReason.New))
-			.IsEqualTo(0);
+		var reasons = StepReasons(result.Runs[1], "GetScalarValueObjectTargets");
+		await Assert.That(reasons.Length).IsEqualTo(2);
+		await Assert.That(reasons.Count(static reason => reason == StepReason.Modified)).IsEqualTo(1);
+		await Assert.That(reasons.Count(static reason => reason == StepReason.New)).IsEqualTo(0);
 	}
 
 	[Test]
 	public async Task Generate_GivenScalarDeleted_TargetRemoved(CancellationToken cancellationToken)
 	{
-		var driver = IncrementalGeneratorTestHarness.CreateDriver<ValueObjectSourceGenerator>();
-		var compilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(EmailScalarSource, "Email.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(MoneyScalarSource, "Money.cs"),
-		]);
-
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-
-		var reducedCompilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(EmailScalarSource, "Email.cs"),
-		]);
-		driver = driver.RunGeneratorsAndUpdateCompilation(reducedCompilation, out _, out _, cancellationToken);
-
-		var steps = IncrementalGeneratorTestHarness.GetSteps(
-			driver.GetRunResult().Results[0],
-			"GetScalarValueObjectTargets"
+		var result = await GenerateIncrementalAsync(
+			[
+				new IncrementalRunInput([EmailScalarSource, MoneyScalarSource]),
+				new IncrementalRunInput([EmailScalarSource]),
+			],
+			cancellationToken: cancellationToken
 		);
 
-		await Assert.That(steps.Length).IsEqualTo(2);
-		await Assert
-			.That(
-				steps.Count(step => IncrementalGeneratorTestHarness.GetReason(step) == IncrementalStepRunReason.Removed)
-			)
-			.IsEqualTo(1);
-		await Assert
-			.That(
-				steps.Count(step =>
-					IncrementalGeneratorTestHarness.GetReason(step) == IncrementalStepRunReason.Modified
-				)
-			)
-			.IsEqualTo(0);
+		var reasons = StepReasons(result.Runs[1], "GetScalarValueObjectTargets");
+		await Assert.That(reasons.Length).IsEqualTo(2);
+		await Assert.That(reasons.Count(static reason => reason == StepReason.Removed)).IsEqualTo(1);
+		await Assert.That(reasons.Count(static reason => reason == StepReason.Modified)).IsEqualTo(0);
 	}
+
+	static ImmutableArray<StepReason> StepReasons(IncrementalCacheRun run, string stepName) =>
+		[
+			.. run.Steps.TryGetValue(stepName, out var steps)
+				? steps.SelectMany(static step => step.Outputs.Select(static output => output.Reason))
+				: [],
+		];
 }
