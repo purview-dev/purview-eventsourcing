@@ -36,15 +36,18 @@ public sealed class EventStoreAnalyzer : DiagnosticAnalyzer
 				var targetMethod = invocation.TargetMethod;
 
 				if (
-					!TypeHelpers.HasAttribute(targetMethod, TypeLibrary.Attributes.EventAttribute)
-					&& !TypeHelpers.HasAttribute(targetMethod, TypeLibrary.Attributes.CollectionEventAttribute)
+					!TypeHelpers.HasAttribute(targetMethod, TypeLibrary.Purview.EventSourcing.Aggregates.EventAttribute)
+					&& !TypeHelpers.HasAttribute(
+						targetMethod,
+						TypeLibrary.Purview.EventSourcing.Aggregates.CollectionEventAttribute
+					)
 				)
 				{
 					return;
 				}
 
 				var computedParameter = targetMethod.Parameters.FirstOrDefault(static parameter =>
-					TypeHelpers.HasAttribute(parameter, TypeLibrary.Attributes.ComputedAttribute)
+					TypeHelpers.HasAttribute(parameter, TypeLibrary.Purview.EventSourcing.Aggregates.ComputedAttribute)
 				);
 
 				if (computedParameter is null)
@@ -117,10 +120,17 @@ public sealed class EventStoreAnalyzer : DiagnosticAnalyzer
 			{
 				var typeSymbol = (INamedTypeSymbol)context.Symbol;
 
-				if (!TypeHelpers.InheritsFrom(typeSymbol, TypeLibrary.Aggregates.EventBase))
+				if (
+					!TypeHelpers.InheritsFrom(typeSymbol, TypeLibrary.Purview.EventSourcing.Aggregates.Events.EventBase)
+				)
 					return;
 
-				if (TypeHelpers.HasAttribute(typeSymbol, TypeLibrary.Attributes.SentinelEventAttribute))
+				if (
+					TypeHelpers.HasAttribute(
+						typeSymbol,
+						TypeLibrary.Purview.EventSourcing.Aggregates.SentinelEventAttribute
+					)
+				)
 				{
 					return;
 				}
@@ -149,14 +159,22 @@ public sealed class EventStoreAnalyzer : DiagnosticAnalyzer
 				var methodSymbol = (IMethodSymbol)context.Symbol;
 
 				if (
-					!TypeHelpers.HasAttribute(methodSymbol, TypeLibrary.Attributes.EventAttribute)
-					&& !TypeHelpers.HasAttribute(methodSymbol, TypeLibrary.Attributes.CollectionEventAttribute)
+					!TypeHelpers.HasAttribute(methodSymbol, TypeLibrary.Purview.EventSourcing.Aggregates.EventAttribute)
+					&& !TypeHelpers.HasAttribute(
+						methodSymbol,
+						TypeLibrary.Purview.EventSourcing.Aggregates.CollectionEventAttribute
+					)
 				)
 				{
 					return;
 				}
 
-				if (TypeHelpers.HasAttribute(methodSymbol.ContainingType, TypeLibrary.Attributes.AggregateAttribute))
+				if (
+					TypeHelpers.HasAttribute(
+						methodSymbol.ContainingType,
+						TypeLibrary.Purview.EventSourcing.Aggregates.AggregateAttribute
+					)
+				)
 					return;
 
 				var location = methodSymbol.Locations.FirstOrDefault(static location => location.IsInSource);
@@ -186,6 +204,6 @@ public sealed class EventStoreAnalyzer : DiagnosticAnalyzer
 			type = namedType.TypeArguments[0];
 		}
 
-		return TypeHelpers.HasAttribute(type, TypeLibrary.Attributes.ScalarAttribute);
+		return TypeHelpers.HasAttribute(type, TypeLibrary.Purview.EventSourcing.Serialization.ScalarAttribute);
 	}
 }

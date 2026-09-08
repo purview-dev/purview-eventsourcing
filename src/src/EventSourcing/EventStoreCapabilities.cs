@@ -153,9 +153,11 @@ public sealed record EventStoreCapabilities(
 			all.Any(static part => part.Concurrency == ConcurrencyGuarantee.LastWriterWins)
 				? ConcurrencyGuarantee.LastWriterWins
 				: ConcurrencyGuarantee.Optimistic,
-			[.. all.SelectMany(static part => part.OperationalLimitations)
-				.Distinct(StringComparer.Ordinal)
-				.OrderBy(static limitation => limitation, StringComparer.Ordinal)]
+			[
+				.. all.SelectMany(static part => part.OperationalLimitations)
+					.Distinct(StringComparer.Ordinal)
+					.OrderBy(static limitation => limitation, StringComparer.Ordinal),
+			]
 		)
 		{
 			SupportsTransactionalOutbox = all.Any(static part => part.SupportsTransactionalOutbox),

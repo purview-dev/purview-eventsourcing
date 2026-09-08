@@ -20,7 +20,9 @@ static partial class SourceGenLibrary
 			static (compilation, settings, logger, _) =>
 			{
 				var hasAggregateBase =
-					compilation.GetTypeByMetadataName(TypeLibrary.Aggregates.AggregateBase.MetadataFullName)
+					compilation.GetTypeByMetadataName(
+						TypeLibrary.Purview.EventSourcing.Aggregates.AggregateBase.MetadataFullName
+					)
 					is not null;
 				return new(hasAggregateBase);
 			}
@@ -31,7 +33,7 @@ static partial class SourceGenLibrary
 	) =>
 		IncrementalPipeline.ForAttributeWithMetadataName(
 			context,
-			TypeLibrary.Attributes.AggregateAttribute,
+			TypeLibrary.Purview.EventSourcing.Aggregates.AggregateAttribute,
 			predicate: static (s, _) => s is ClassDeclarationSyntax,
 			transform: static (ctx, ct) =>
 			{

@@ -10,11 +10,11 @@ namespace Purview.EventSourcing;
 public sealed class EventStoreTransactionGuaranteeException(
 	EventStoreTransactionGuarantee requiredGuarantee,
 	EventStoreTransactionGuarantee availableGuarantee
-	) : InvalidOperationException(
+)
+	: InvalidOperationException(
 		$"The transaction requires the '{requiredGuarantee}' guarantee, but the enlisted stores provide '{availableGuarantee}'. No saves were attempted."
-		)
+	)
 {
-
 	/// <summary>Gets the guarantee requested by the caller.</summary>
 	public EventStoreTransactionGuarantee RequiredGuarantee { get; } = requiredGuarantee;
 

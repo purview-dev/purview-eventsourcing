@@ -47,7 +47,7 @@ static class AggregateEventMethodBuilder
 					DiagnosticLibrary.UnsupportedEventMethodSignature,
 					methodSymbol,
 					methodSymbol.Name,
-					$"methods cannot combine [{TypeLibrary.Attributes.EventAttribute.RenderTypeName}] and [{TypeLibrary.Attributes.CollectionEventAttribute.RenderTypeName}]"
+					$"methods cannot combine [{TypeLibrary.Purview.EventSourcing.Aggregates.EventAttribute.RenderTypeName}] and [{TypeLibrary.Purview.EventSourcing.Aggregates.CollectionEventAttribute.RenderTypeName}]"
 				)
 			);
 			return false;
@@ -768,14 +768,14 @@ static class AggregateEventMethodBuilder
 		if (typeSymbol is not INamedTypeSymbol namedType || !namedType.IsGenericType)
 			return false;
 
-		if (TypeLibrary.Aggregates.EventStoreList.Equals(namedType.OriginalDefinition))
+		if (TypeLibrary.Purview.EventSourcing.EventStoreList.Equals(namedType.OriginalDefinition))
 		{
 			elementType = namedType.TypeArguments[0];
 			isSet = false;
 			return true;
 		}
 
-		if (TypeLibrary.Aggregates.EventStoreSet.Equals(namedType.OriginalDefinition))
+		if (TypeLibrary.Purview.EventSourcing.EventStoreSet.Equals(namedType.OriginalDefinition))
 		{
 			elementType = namedType.TypeArguments[0];
 			isSet = true;
@@ -823,8 +823,8 @@ static class AggregateEventMethodBuilder
 		typeSymbol is INamedTypeSymbol namedType
 		&& namedType.IsGenericType
 		&& (
-			TypeLibrary.Aggregates.EventStoreList.Equals(namedType.OriginalDefinition)
-			|| TypeLibrary.Aggregates.EventStoreSet.Equals(namedType.OriginalDefinition)
+			TypeLibrary.Purview.EventSourcing.EventStoreList.Equals(namedType.OriginalDefinition)
+			|| TypeLibrary.Purview.EventSourcing.EventStoreSet.Equals(namedType.OriginalDefinition)
 		);
 
 	public static bool TryGetComplexScalarValueType(ITypeSymbol typeSymbol, out string valueTypeDisplayName)
@@ -834,7 +834,7 @@ static class AggregateEventMethodBuilder
 		if (typeSymbol is not INamedTypeSymbol namedType)
 			return false;
 
-		if (!HasAttribute(namedType, TypeLibrary.Attributes.ScalarAttribute))
+		if (!HasAttribute(namedType, TypeLibrary.Purview.EventSourcing.Serialization.ScalarAttribute))
 			return false;
 
 		var valueProperty = namedType
@@ -868,11 +868,11 @@ static class AggregateEventMethodBuilder
 		// Check for common system types that are often used as scalar values in queries.
 		return TypeLibrary.System.Guid.Equals(typeSymbol)
 			|| TypeLibrary.System.Uri.Equals(typeSymbol)
-			|| TypeLibrary.System.DateTime.Equals(typeSymbol)
-			|| TypeLibrary.System.DateTimeOffset.Equals(typeSymbol)
-			|| TypeLibrary.System.TimeSpan.Equals(typeSymbol)
-			|| TypeLibrary.System.DateOnly.Equals(typeSymbol)
-			|| TypeLibrary.System.TimeOnly.Equals(typeSymbol);
+			|| PurviewTypeLibrary.System.DateTime.Equals(typeSymbol)
+			|| PurviewTypeLibrary.System.DateTimeOffset.Equals(typeSymbol)
+			|| PurviewTypeLibrary.System.TimeSpan.Equals(typeSymbol)
+			|| PurviewTypeLibrary.System.DateOnly.Equals(typeSymbol)
+			|| PurviewTypeLibrary.System.TimeOnly.Equals(typeSymbol);
 	}
 
 	public static bool HasAttribute(ISymbol symbol, INamedTypeSymbol? attributeSymbol)
@@ -897,7 +897,10 @@ static class AggregateEventMethodBuilder
 		foreach (var attribute in parameterSymbol.GetAttributes())
 		{
 			var attributeClass = attribute.AttributeClass;
-			if (attributeClass is not null && TypeLibrary.Attributes.ComputedAttribute.Equals(attributeClass))
+			if (
+				attributeClass is not null
+				&& TypeLibrary.Purview.EventSourcing.Aggregates.ComputedAttribute.Equals(attributeClass)
+			)
 				return true;
 		}
 
@@ -936,8 +939,8 @@ static class AggregateEventMethodBuilder
 
 	public static bool IsEventType(INamedTypeSymbol typeSymbol)
 	{
-		return TypeHelpers.InheritsFrom(typeSymbol, TypeLibrary.Aggregates.EventBase)
-			|| TypeHelpers.Implements(typeSymbol, TypeLibrary.Aggregates.IEvent);
+		return TypeHelpers.InheritsFrom(typeSymbol, TypeLibrary.Purview.EventSourcing.Aggregates.Events.EventBase)
+			|| TypeHelpers.Implements(typeSymbol, TypeLibrary.Purview.EventSourcing.Aggregates.Events.IEvent);
 	}
 
 	public static string? GetAggregatePropertyNameOverride(IParameterSymbol parameterSymbol)
@@ -945,7 +948,10 @@ static class AggregateEventMethodBuilder
 		foreach (var attribute in parameterSymbol.GetAttributes())
 		{
 			var attributeClass = attribute.AttributeClass;
-			if (attributeClass is null || !TypeLibrary.Attributes.PropertyAttribute.Equals(attributeClass))
+			if (
+				attributeClass is null
+				|| !TypeLibrary.Purview.EventSourcing.Aggregates.PropertyAttribute.Equals(attributeClass)
+			)
 				continue;
 
 			if (attribute.ConstructorArguments.Length == 1 && attribute.ConstructorArguments[0].Value is string value)
@@ -1136,7 +1142,10 @@ static class AggregateEventMethodBuilder
 	{
 		conversionKind = EventParameterConversionKind.None;
 
-		var hasScalarAttribute = HasAttribute(propertyType, TypeLibrary.Attributes.ScalarAttribute);
+		var hasScalarAttribute = HasAttribute(
+			propertyType,
+			TypeLibrary.Purview.EventSourcing.Serialization.ScalarAttribute
+		);
 		var createMethods = propertyType.GetMembers("Create").OfType<IMethodSymbol>().ToArray();
 
 		var hasContextualCreate = createMethods.Any(method =>
@@ -1279,7 +1288,7 @@ static class AggregateEventMethodBuilder
 					methodSymbol.Parameters[0].Name,
 					methodSymbol.Name,
 					methodSymbol.ContainingType.Name,
-					$"collection property '{collectionEventAttribute.PropertyName}' must use {TypeLibrary.Aggregates.EventStoreList.MakeGeneric("T")} or {TypeLibrary.Aggregates.EventStoreSet.MakeGeneric("T")}"
+					$"collection property '{collectionEventAttribute.PropertyName}' must use {TypeLibrary.Purview.EventSourcing.EventStoreList.MakeGeneric("T")} or {TypeLibrary.Purview.EventSourcing.EventStoreSet.MakeGeneric("T")}"
 				)
 			);
 			return false;
@@ -1319,7 +1328,7 @@ static class AggregateEventMethodBuilder
 			}
 
 			parameterShape = CollectionParameterShape.Enumerable;
-			parameterType = TypeLibrary.System.Collections.Generic.IEnumerable.MakeGeneric(
+			parameterType = PurviewTypeLibrary.System.Collections.Generic.IEnumerable.MakeGeneric(
 				new TypeIdentity(elementType)
 			);
 			eventPropertyType = CreateTypeReference(elementType, compilation).MakeArray();
@@ -1381,7 +1390,7 @@ static class AggregateEventMethodBuilder
 		var attribute = methodSymbol
 			.GetAttributes()
 			.FirstOrDefault(attribute =>
-				TypeLibrary.Attributes.CollectionEventAttribute.Equals(attribute.AttributeClass)
+				TypeLibrary.Purview.EventSourcing.Aggregates.CollectionEventAttribute.Equals(attribute.AttributeClass)
 			);
 		if (attribute is null)
 			return "Auto";

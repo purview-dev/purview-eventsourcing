@@ -1,11 +1,15 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Purview.EventSourcing.SourceGenerator.Generators;
 using StepReason = Microsoft.CodeAnalysis.IncrementalStepRunReason;
 
 namespace Purview.EventSourcing.SourceGenerator.Incremental;
 
-public sealed class AggregateSourceGeneratorIncrementalTests
+/// <summary>
+/// Per-aggregate incremental caching tests driven by the framework's <c>GenerateIncrementalAsync</c>
+/// runner, which reuses one <c>GeneratorDriver</c> across the supplied source sets so each run's
+/// step reasons prove what actually changed.
+/// </summary>
+public sealed class AggregateSourceGeneratorIncrementalTests : AggregateSourceGeneratorTestBase
 {
 	const string OrderAggregateSource = """
 		using Purview.EventSourcing.Aggregates;
@@ -62,114 +66,67 @@ public sealed class AggregateSourceGeneratorIncrementalTests
 	[Test]
 	public async Task Generate_FirstRun_AllAggregateTargetsNew(CancellationToken cancellationToken)
 	{
-		var driver = IncrementalGeneratorTestHarness.CreateDriver<AggregateSourceGenerator>();
-		var compilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(OrderAggregateSource, "Order.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(CustomerAggregateSource, "Customer.cs"),
-		]);
+		var result = await GenerateIncrementalAsync(
+			[new IncrementalRunInput([OrderAggregateSource, CustomerAggregateSource])],
+			cancellationToken: cancellationToken
+		);
 
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-
-		var steps = IncrementalGeneratorTestHarness.GetSteps(driver.GetRunResult().Results[0], "GetAggregateTargets");
-
-		await Assert.That(steps.Length).IsEqualTo(2);
-		await Assert
-			.That(steps.All(step => IncrementalGeneratorTestHarness.GetReason(step) == StepReason.New))
-			.IsTrue();
+		var reasons = StepReasons(result.Runs[0], "GetAggregateTargets");
+		await Assert.That(reasons.Length).IsEqualTo(2);
+		await Assert.That(reasons.All(static reason => reason == StepReason.New)).IsTrue();
 	}
 
 	[Test]
 	public async Task Generate_RerunWithUnchangedCompilation_AggregateTargetsCached(CancellationToken cancellationToken)
 	{
-		var driver = IncrementalGeneratorTestHarness.CreateDriver<AggregateSourceGenerator>();
-		var compilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(OrderAggregateSource, "Order.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(CustomerAggregateSource, "Customer.cs"),
-		]);
+		var result = await GenerateIncrementalAsync(
+			[OrderAggregateSource, CustomerAggregateSource],
+			cancellationToken: cancellationToken
+		);
 
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-
-		var steps = IncrementalGeneratorTestHarness.GetSteps(driver.GetRunResult().Results[0], "GetAggregateTargets");
-
-		await Assert.That(steps.Length).IsEqualTo(2);
-		await Assert
-			.That(
-				steps.All(step =>
-				{
-					var reason = IncrementalGeneratorTestHarness.GetReason(step);
-					return reason is StepReason.Cached or StepReason.Unchanged;
-				})
-			)
-			.IsTrue();
+		var reasons = StepReasons(result.Runs[1], "GetAggregateTargets");
+		await Assert.That(reasons.Length).IsEqualTo(2);
+		await Assert.That(reasons.All(static reason => reason is StepReason.Cached or StepReason.Unchanged)).IsTrue();
 	}
 
 	[Test]
 	public async Task Generate_GivenChangeToOneAggregate_OnlyThatTargetModified(CancellationToken cancellationToken)
 	{
-		var driver = IncrementalGeneratorTestHarness.CreateDriver<AggregateSourceGenerator>();
-		var compilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(OrderAggregateSource, "Order.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(CustomerAggregateSource, "Customer.cs"),
-		]);
-
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-
-		var modifiedCompilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(ModifiedOrderAggregateSource, "Order.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(CustomerAggregateSource, "Customer.cs"),
-		]);
-		driver = driver.RunGeneratorsAndUpdateCompilation(modifiedCompilation, out _, out _, cancellationToken);
-
-		var steps = IncrementalGeneratorTestHarness.GetSteps(driver.GetRunResult().Results[0], "GetAggregateTargets");
-
-		var orderStep = steps.Single(step =>
-			IncrementalGeneratorTestHarness.GetAggregateName(step) == "OrderAggregate"
-		);
-		var customerStep = steps.Single(step =>
-			IncrementalGeneratorTestHarness.GetAggregateName(step) == "CustomerAggregate"
+		var result = await GenerateIncrementalAsync(
+			[
+				new IncrementalRunInput([OrderAggregateSource, CustomerAggregateSource]),
+				new IncrementalRunInput([ModifiedOrderAggregateSource, CustomerAggregateSource]),
+			],
+			cancellationToken: cancellationToken
 		);
 
-		await Assert
-			.That(IncrementalGeneratorTestHarness.GetReason(orderStep))
-			.IsEqualTo(StepReason.Modified);
-		await Assert
-			.That(IncrementalGeneratorTestHarness.GetReason(customerStep))
-			.IsNotEqualTo(StepReason.Modified);
+		var steps = GetSteps(result.Runs[1], "GetAggregateTargets");
+		var orderStep = steps.Single(step => GetAggregateName(step) == "OrderAggregate");
+		var customerStep = steps.Single(step => GetAggregateName(step) == "CustomerAggregate");
+
+		await Assert.That(GetReason(orderStep)).IsEqualTo(StepReason.Modified);
+		await Assert.That(GetReason(customerStep)).IsNotEqualTo(StepReason.Modified);
 	}
 
 	[Test]
 	public async Task Generate_GivenAggregateDeleted_TargetRemoved(CancellationToken cancellationToken)
 	{
-		var driver = IncrementalGeneratorTestHarness.CreateDriver<AggregateSourceGenerator>();
-		var compilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(OrderAggregateSource, "Order.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(CustomerAggregateSource, "Customer.cs"),
-		]);
+		var result = await GenerateIncrementalAsync(
+			[
+				new IncrementalRunInput([OrderAggregateSource, CustomerAggregateSource]),
+				new IncrementalRunInput([OrderAggregateSource]),
+			],
+			cancellationToken: cancellationToken
+		);
 
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-
-		var reducedCompilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(OrderAggregateSource, "Order.cs"),
-		]);
-		driver = driver.RunGeneratorsAndUpdateCompilation(reducedCompilation, out _, out _, cancellationToken);
-
-		var steps = IncrementalGeneratorTestHarness.GetSteps(driver.GetRunResult().Results[0], "GetAggregateTargets");
-
+		var steps = GetSteps(result.Runs[1], "GetAggregateTargets");
 		await Assert.That(steps.Length).IsEqualTo(2);
-		await Assert
-			.That(
-				steps.Count(step => IncrementalGeneratorTestHarness.GetReason(step) == StepReason.Removed)
-			)
-			.IsEqualTo(1);
+		await Assert.That(steps.Count(step => GetReason(step) == StepReason.Removed)).IsEqualTo(1);
 
 		var orderStep = steps.Single(step =>
-			IncrementalGeneratorTestHarness.GetReason(step) != StepReason.Removed
-			&& IncrementalGeneratorTestHarness.GetAggregateName(step) == "OrderAggregate"
+			GetReason(step) != StepReason.Removed && GetAggregateName(step) == "OrderAggregate"
 		);
-		await Assert
-			.That(IncrementalGeneratorTestHarness.GetReason(orderStep))
-			.IsNotEqualTo(StepReason.Modified);
+		await Assert.That(GetReason(orderStep)).IsNotEqualTo(StepReason.Modified);
 	}
 
 	[Test]
@@ -191,47 +148,25 @@ public sealed class AggregateSourceGeneratorIncrementalTests
 			}
 			""";
 
-		var driver = IncrementalGeneratorTestHarness.CreateDriver<AggregateSourceGenerator>();
-		var compilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(OrderAggregateSource, "Order.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(CustomerAggregateSource, "Customer.cs"),
-		]);
+		var result = await GenerateIncrementalAsync(
+			[
+				new IncrementalRunInput([OrderAggregateSource, CustomerAggregateSource]),
+				new IncrementalRunInput([OrderAggregateSource, CustomerAggregateSource, additionalAggregateSource]),
+			],
+			cancellationToken: cancellationToken
+		);
 
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-
-		var expandedCompilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(OrderAggregateSource, "Order.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(CustomerAggregateSource, "Customer.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(additionalAggregateSource, "Inventory.cs"),
-		]);
-		driver = driver.RunGeneratorsAndUpdateCompilation(expandedCompilation, out _, out _, cancellationToken);
-
-		var steps = IncrementalGeneratorTestHarness.GetSteps(driver.GetRunResult().Results[0], "GetAggregateTargets");
-
+		var steps = GetSteps(result.Runs[1], "GetAggregateTargets");
 		await Assert.That(steps.Length).IsEqualTo(3);
-		await Assert
-			.That(steps.Count(step => IncrementalGeneratorTestHarness.GetReason(step) == StepReason.New))
-			.IsEqualTo(1);
+		await Assert.That(steps.Count(step => GetReason(step) == StepReason.New)).IsEqualTo(1);
 
-		var inventoryStep = steps.Single(step =>
-			IncrementalGeneratorTestHarness.GetAggregateName(step) == "InventoryAggregate"
-		);
-		await Assert
-			.That(IncrementalGeneratorTestHarness.GetReason(inventoryStep))
-			.IsEqualTo(StepReason.New);
+		var inventoryStep = steps.Single(step => GetAggregateName(step) == "InventoryAggregate");
+		await Assert.That(GetReason(inventoryStep)).IsEqualTo(StepReason.New);
 
-		var orderStep = steps.Single(step =>
-			IncrementalGeneratorTestHarness.GetAggregateName(step) == "OrderAggregate"
-		);
-		var customerStep = steps.Single(step =>
-			IncrementalGeneratorTestHarness.GetAggregateName(step) == "CustomerAggregate"
-		);
-		await Assert
-			.That(IncrementalGeneratorTestHarness.GetReason(orderStep))
-			.IsNotEqualTo(StepReason.Modified);
-		await Assert
-			.That(IncrementalGeneratorTestHarness.GetReason(customerStep))
-			.IsNotEqualTo(StepReason.Modified);
+		var orderStep = steps.Single(step => GetAggregateName(step) == "OrderAggregate");
+		var customerStep = steps.Single(step => GetAggregateName(step) == "CustomerAggregate");
+		await Assert.That(GetReason(orderStep)).IsNotEqualTo(StepReason.Modified);
+		await Assert.That(GetReason(customerStep)).IsNotEqualTo(StepReason.Modified);
 	}
 
 	[Test]
@@ -239,22 +174,16 @@ public sealed class AggregateSourceGeneratorIncrementalTests
 		CancellationToken cancellationToken
 	)
 	{
-		var driver = IncrementalGeneratorTestHarness.CreateDriver<AggregateSourceGenerator>();
-		var compilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(OrderAggregateSource, "Order.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(CustomerAggregateSource, "Customer.cs"),
-		]);
+		var result = await GenerateIncrementalAsync(
+			[
+				new IncrementalRunInput([OrderAggregateSource, CustomerAggregateSource]),
+				new IncrementalRunInput([ModifiedOrderAggregateSource, CustomerAggregateSource]),
+			],
+			cancellationToken: cancellationToken
+		);
 
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-		var firstCustomerSource = GeneratedSourcesContaining(driver.GetRunResult().Results[0], "CustomerAggregate");
-
-		var modifiedCompilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(ModifiedOrderAggregateSource, "Order.cs"),
-			IncrementalGeneratorTestHarness.ParseTree(CustomerAggregateSource, "Customer.cs"),
-		]);
-		driver = driver.RunGeneratorsAndUpdateCompilation(modifiedCompilation, out _, out _, cancellationToken);
-
-		var secondCustomerSource = GeneratedSourcesContaining(driver.GetRunResult().Results[0], "CustomerAggregate");
+		var firstCustomerSource = GeneratedSourcesContaining(result.Runs[0].RunResult, "CustomerAggregate");
+		var secondCustomerSource = GeneratedSourcesContaining(result.Runs[1].RunResult, "CustomerAggregate");
 		await Assert.That(secondCustomerSource).IsEqualTo(firstCustomerSource);
 	}
 
@@ -279,60 +208,43 @@ public sealed class AggregateSourceGeneratorIncrementalTests
 			}
 			""";
 
-		var driver = IncrementalGeneratorTestHarness.CreateDriver<AggregateSourceGenerator>();
-		var invalidCompilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(nonPartialAggregateSource, "Order.cs"),
-		]);
-
-		driver = driver.RunGeneratorsAndUpdateCompilation(invalidCompilation, out _, out _, cancellationToken);
-		await Assert.That(AggregateSources(driver.GetRunResult().Results[0])).IsEmpty();
-
-		driver = driver.RunGeneratorsAndUpdateCompilation(invalidCompilation, out _, out _, cancellationToken);
-		var invalidRerunSteps = IncrementalGeneratorTestHarness.GetSteps(
-			driver.GetRunResult().Results[0],
-			"GetAggregateTargets"
+		var result = await GenerateIncrementalAsync(
+			[
+				new IncrementalRunInput([nonPartialAggregateSource]),
+				new IncrementalRunInput([nonPartialAggregateSource]),
+				new IncrementalRunInput([OrderAggregateSource]),
+			],
+			cancellationToken: cancellationToken
 		);
+
+		await Assert.That(AggregateSources(result.Runs[0].RunResult)).IsEmpty();
+
+		var invalidRerunSteps = GetSteps(result.Runs[1], "GetAggregateTargets");
 		await Assert
-			.That(
-				invalidRerunSteps.All(step =>
-				{
-					var reason = IncrementalGeneratorTestHarness.GetReason(step);
-					return reason is StepReason.Cached or StepReason.Unchanged;
-				})
-			)
+			.That(invalidRerunSteps.All(step => GetReason(step) is StepReason.Cached or StepReason.Unchanged))
 			.IsTrue();
 
-		var validCompilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(OrderAggregateSource, "Order.cs"),
-		]);
-		driver = driver.RunGeneratorsAndUpdateCompilation(validCompilation, out _, out _, cancellationToken);
-
-		await Assert.That(AggregateSources(driver.GetRunResult().Results[0])).IsNotEmpty();
+		await Assert.That(AggregateSources(result.Runs[2].RunResult)).IsNotEmpty();
 	}
 
-	[Test]
-	public async Task Generate_GivenUnrelatedAdditionalFileChange_TargetsUnaffected(CancellationToken cancellationToken)
+	static ImmutableArray<IncrementalGeneratorRunStep> GetSteps(IncrementalCacheRun run, string stepName) =>
+		run.Steps.TryGetValue(stepName, out var steps) ? steps : [];
+
+	static ImmutableArray<StepReason> StepReasons(IncrementalCacheRun run, string stepName) =>
+		[.. GetSteps(run, stepName).SelectMany(static step => step.Outputs.Select(static output => output.Reason))];
+
+	static StepReason GetReason(IncrementalGeneratorRunStep step) =>
+		step.Outputs.Length > 0 ? step.Outputs[0].Reason : default;
+
+	static string GetAggregateName(IncrementalGeneratorRunStep step)
 	{
-		var unrelated = new InMemoryAdditionalText("notes.txt", "first");
-		var driver = IncrementalGeneratorTestHarness.CreateDriver<AggregateSourceGenerator>(
-			[unrelated]
-		);
-		var compilation = IncrementalGeneratorTestHarness.CreateCompilation([
-			IncrementalGeneratorTestHarness.ParseTree(OrderAggregateSource, "Order.cs"),
-		]);
+		if (
+			step.Outputs.Length > 0
+			&& step.Outputs[0].Value is global::Purview.SourceGeneratorFramework.GeneratorResult<AggregateTarget> result
+		)
+			return result.HasValue ? result.Value.Info.AggregateClass.Identity.Name : "(failed)";
 
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-		var firstGenerated = GeneratedSourceTexts(driver.GetRunResult().Results[0]);
-
-		driver = driver.ReplaceAdditionalText(unrelated, new InMemoryAdditionalText("notes.txt", "second"));
-		driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _, cancellationToken);
-
-		var result = driver.GetRunResult().Results[0];
-		await Assert.That(StepReasons(result, "GetAggregateTargets")).DoesNotContain(StepReason.Modified);
-		await Assert.That(StepReasons(result, "EventContractManifest")).DoesNotContain(StepReason.Modified);
-
-		var secondGenerated = GeneratedSourceTexts(result);
-		await Assert.That(secondGenerated).IsEquivalentTo(firstGenerated);
+		return "(unknown)";
 	}
 
 	static ImmutableArray<GeneratedSourceResult> AggregateSources(GeneratorRunResult result) =>
@@ -345,22 +257,8 @@ public sealed class AggregateSourceGeneratorIncrementalTests
 			),
 		];
 
-	static ImmutableArray<string> GeneratedSourceTexts(GeneratorRunResult result) =>
-		[
-			.. result
-				.GeneratedSources.Select(static source => source.SourceText.ToString())
-				.OrderBy(static source => source, StringComparer.Ordinal),
-		];
-
 	static string GeneratedSourcesContaining(GeneratorRunResult result, string fragment) =>
 		result
 			.GeneratedSources.Select(static source => source.SourceText.ToString())
 			.Single(source => source.Contains(fragment, StringComparison.Ordinal));
-
-	static ImmutableArray<StepReason> StepReasons(GeneratorRunResult result, string stepName) =>
-		[
-			.. IncrementalGeneratorTestHarness
-				.GetSteps(result, stepName)
-				.SelectMany(static step => step.Outputs.Select(static output => output.Reason)),
-		];
 }

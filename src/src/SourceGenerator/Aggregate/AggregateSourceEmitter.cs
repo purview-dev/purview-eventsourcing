@@ -48,7 +48,7 @@ static partial class AggregateSourceEmitter
 
 		var classAttributes = outputContext.Aggregate.IsValid
 			? ImmutableArray.Create(
-				new AttributeDeclarationOptions(TypeLibrary.System.TextJson.JsonConverterAttribute)
+				new AttributeDeclarationOptions(TypeLibrary.System.Text.Json.Serialization.JsonConverterAttribute)
 				{
 					Arguments = [new($"typeof({outputContext.Aggregate.AggregateClass.Identity.Name}JsonConverter)")],
 				}
@@ -65,7 +65,7 @@ static partial class AggregateSourceEmitter
 				IsSealed = false,
 				BaseType =
 					outputContext.Aggregate.IsValid && outputContext.Aggregate.ShouldDeclareAggregateBase
-						? TypeLibrary.Aggregates.AggregateBase
+						? TypeLibrary.Purview.EventSourcing.Aggregates.AggregateBase
 						: null,
 				Attributes = classAttributes,
 				GenericTypes = outputContext.Aggregate.TypeParameters,
@@ -141,7 +141,10 @@ static partial class AggregateSourceEmitter
 					{
 						InitializerMembers =
 						[
-							new("Details", $"jsonModel.Details ?? new {TypeLibrary.Aggregates.AggregateDetails}()"),
+							new(
+								"Details",
+								$"jsonModel.Details ?? new {TypeLibrary.Purview.EventSourcing.Aggregates.AggregateDetails}()"
+							),
 							.. outputContext.Aggregate.Properties.Select(
 								static property => new ObjectInitializerMemberOptions(
 									property.PropertyName,
@@ -265,10 +268,11 @@ static partial class AggregateSourceEmitter
 			},
 			writeBody =>
 			{
-				writeBody.IfBlock($"{collectionEvent.PropertyName} is null",
+				writeBody.IfBlock(
+					$"{collectionEvent.PropertyName} is null",
 					block =>
 						block.Throw(
-							TypeLibrary.System.InvalidOperationException,
+							PurviewTypeLibrary.System.InvalidOperationException,
 							$"Collection property '{collectionEvent.PropertyName}' cannot be null when applying {method.EventType}."
 						)
 				);
@@ -276,7 +280,7 @@ static partial class AggregateSourceEmitter
 				if (collectionEvent.ParameterShape == CollectionParameterShape.Single)
 				{
 					writeBody.MethodCallOn(
-						$"(({TypeLibrary.System.Collections.Generic.ICollection.MakeGeneric(collectionEvent.ElementType)})"
+						$"(({PurviewTypeLibrary.System.Collections.Generic.ICollection.MakeGeneric(collectionEvent.ElementType)})"
 							+ $"{collectionEvent.PropertyName})",
 						operationMethod,
 						$"{eventParameterName}.{parameter.PropertyName}"
@@ -288,7 +292,7 @@ static partial class AggregateSourceEmitter
 						$"foreach (var __item in {eventParameterName}.{parameter.PropertyName})",
 						block =>
 							block.MethodCallOn(
-								$"(({TypeLibrary.System.Collections.Generic.ICollection.MakeGeneric(collectionEvent.ElementType)})"
+								$"(({PurviewTypeLibrary.System.Collections.Generic.ICollection.MakeGeneric(collectionEvent.ElementType)})"
 									+ $"{collectionEvent.PropertyName})",
 								operationMethod,
 								"__item"
@@ -373,7 +377,7 @@ static partial class AggregateSourceEmitter
 	}
 
 	public static AttributeDeclarationOptions CreateCA1822Suppression() =>
-		new(TypeLibrary.System.DiagnosticsCodeAnalysis.SuppressMessageAttribute)
+		new(PurviewTypeLibrary.System.Diagnostics.CodeAnalysis.SuppressMessageAttribute)
 		{
 			Arguments =
 			[
@@ -532,7 +536,7 @@ static partial class AggregateSourceEmitter
 			{
 				IsPartial = false,
 				IsSealed = true,
-				BaseType = TypeLibrary.System.TextJson.JsonConverter.MakeGeneric(
+				BaseType = TypeLibrary.System.Text.Json.Serialization.JsonConverter.MakeGeneric(
 					outputContext.Aggregate.AggregateClass
 				),
 			},
@@ -548,9 +552,9 @@ static partial class AggregateSourceEmitter
 						IsOverride = true,
 						Parameters =
 						[
-							new("reader", TypeLibrary.System.TextJson.Utf8JsonReader, ParameterModifier.Ref),
+							new("reader", TypeLibrary.System.Text.Json.Utf8JsonReader, ParameterModifier.Ref),
 							new("typeToConvert", PurviewTypeLibrary.System.Type),
-							new("options", TypeLibrary.System.TextJson.JsonSerializerOptions),
+							new("options", TypeLibrary.System.Text.Json.JsonSerializerOptions),
 						],
 					},
 					methodWriter =>
@@ -562,7 +566,7 @@ static partial class AggregateSourceEmitter
 								writeValue.MethodCall(
 									"Deserialize",
 									[new MethodCallArgumentOptions("reader", ParameterModifier.Ref), "options"],
-									receiver: $"{TypeLibrary.System.TextJson.JsonSerializer}",
+									receiver: $"{TypeLibrary.System.Text.Json.JsonSerializer}",
 									genericArguments: [jsonModel]
 								)
 						);
@@ -571,7 +575,7 @@ static partial class AggregateSourceEmitter
 							"jsonModel is null",
 							ifBlock =>
 								ifBlock.Throw(
-									TypeLibrary.System.TextJson.JsonException,
+									TypeLibrary.System.Text.Json.JsonException,
 									$"Unable to deserialize {outputContext.Aggregate.AggregateClass}."
 								)
 						);
@@ -592,14 +596,14 @@ static partial class AggregateSourceEmitter
 						IsOverride = true,
 						Parameters =
 						[
-							new("writer", TypeLibrary.System.TextJson.Utf8JsonWriter),
+							new("writer", TypeLibrary.System.Text.Json.Utf8JsonWriter),
 							new("value", outputContext.Aggregate.AggregateClass),
-							new("options", TypeLibrary.System.TextJson.JsonSerializerOptions),
+							new("options", TypeLibrary.System.Text.Json.JsonSerializerOptions),
 						],
 					},
 					methodWriter =>
 						methodWriter.MethodCallOn(
-							$"{TypeLibrary.System.TextJson.JsonSerializer}",
+							$"{TypeLibrary.System.Text.Json.JsonSerializer}",
 							"Serialize",
 							"writer",
 							"value.ToJsonModel()",
@@ -626,7 +630,7 @@ static partial class AggregateSourceEmitter
 				bodyWriter.Property(
 					new(
 						"Details",
-						TypeLibrary.Aggregates.AggregateDetails.MakeNullable(bodyWriter),
+						TypeLibrary.Purview.EventSourcing.Aggregates.AggregateDetails.MakeNullable(bodyWriter),
 						TypeDeclarationAccessibility.Public
 					)
 					{

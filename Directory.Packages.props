@@ -2,11 +2,11 @@
 	<PropertyGroup>
 		<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
 		<!-- Keep compiler-facing Roslyn packages aligned with the minimum SDK pinned in global.json so analyser ProjectReferences load on build machines. -->
-		<RoslynCompilerVersion>5.0.0</RoslynCompilerVersion>
+		<RoslynCompilerVersion>5.9.0</RoslynCompilerVersion>
 		<RoslynAnalyzersVersion>5.9.0</RoslynAnalyzersVersion>
 		<TUnitVersion>1.65.68</TUnitVersion>
-		<PurviewSGFrameworkVersion>1.0.0-prerelease.36</PurviewSGFrameworkVersion>
-		<PurviewZodSharpVersion>2.0.0-prerelease.2</PurviewZodSharpVersion>
+		<PurviewSGFrameworkVersion>1.0.0-prerelease.37</PurviewSGFrameworkVersion>
+		<PurviewZodSharpVersion>2.0.0-prerelease.3</PurviewZodSharpVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.5.3" />
@@ -28,13 +28,13 @@
 		<PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" />
 		<PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.11" />
 		<PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
-		<PackageVersion Include="Purview.Aspire.ResourceKit" Version="1.0.0-prerelease.23" />
+		<PackageVersion Include="Purview.Aspire.ResourceKit" Version="1.0.0-prerelease.24" />
 		<PackageVersion Include="Purview.SourceGeneratorFramework" Version="$(PurviewSGFrameworkVersion)" />
 		<PackageVersion
 			Include="Purview.SourceGeneratorFramework.Testing.TUnit"
 			Version="$(PurviewSGFrameworkVersion)"
 		/>
-		<PackageVersion Include="Purview.Telemetry.SourceGenerator" Version="5.0.0-prerelease.5" />
+		<PackageVersion Include="Purview.Telemetry.SourceGenerator" Version="5.0.0-prerelease.6" />
 		<PackageVersion Include="Purview.ZodSharp" Version="$(PurviewZodSharpVersion)" />
 		<PackageVersion Include="Purview.ZodSharp.AspNetCore" Version="$(PurviewZodSharpVersion)" />
 		<PackageVersion Include="Purview.ZodSharp.SystemTextJson" Version="$(PurviewZodSharpVersion)" />

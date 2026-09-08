@@ -190,7 +190,8 @@ public sealed class AdminOperationalEndpointsTests
 		CancellationToken cancellationToken
 	)
 	{
-		const string manifestJson = /*lang=json,strict*/ """{"formatVersion":1,"aggregates":[]}""";
+		const string manifestJson = /*lang=json,strict*/
+			"""{"formatVersion":1,"aggregates":[]}""";
 		await using var host = await AdminTestHost.CreateAsync(
 			configureAdmin: static options => options.Features.ViewManifest = true,
 			configureServices: static services =>

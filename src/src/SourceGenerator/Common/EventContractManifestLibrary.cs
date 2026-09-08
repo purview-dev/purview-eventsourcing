@@ -35,13 +35,13 @@ static class EventContractManifestLibrary
 			.Select(static contract => new AggregateContract(
 				contract.AggregateName,
 				contract.AggregateNamespace,
-				new EquatableArray<EventContractEntry>(
-					[.. contract
+				new EquatableArray<EventContractEntry>([
+					.. contract
 						.Events.OrderBy(static e => e.EventName, StringComparer.Ordinal)
 						.ThenBy(static e => e.EventNamespace, StringComparer.Ordinal)
 						.ThenBy(static e => e.SchemaVersion)
-						.ThenBy(static e => e.MethodName, StringComparer.Ordinal)]
-				)
+						.ThenBy(static e => e.MethodName, StringComparer.Ordinal),
+				])
 			))
 			.ToImmutableArray();
 

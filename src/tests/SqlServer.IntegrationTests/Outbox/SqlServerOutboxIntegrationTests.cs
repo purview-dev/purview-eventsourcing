@@ -197,7 +197,7 @@ public sealed class SqlServerOutboxIntegrationTests(SqlServerEventStoreFixture f
 			"PersistenceAggregate",
 			aggregateId,
 			"StringValueSet",
-			/*lang=json,strict*/ """{"value":"outbox"}""",
+			/*lang=json,strict*/"""{"value":"outbox"}""",
 			IdempotencyKey: null,
 			CorrelationId: null,
 			CreatedUtc: DateTimeOffset.UtcNow

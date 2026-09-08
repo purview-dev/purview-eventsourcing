@@ -39,11 +39,13 @@ public sealed class EventContractManifestIncrementalTests : AggregateSourceGener
 		}
 		""";
 
-	const string BaselineV1Json = /*lang=json,strict*/ """
+	const string BaselineV1Json = /*lang=json,strict*/
+		"""
 		{"formatVersion":1,"aggregates":[{"name":"OrderAggregate","namespace":"Testing","events":[{"name":"OrderCreatedEvent","namespace":"Testing.OrderEvents","method":"CreateOrder","schemaVersion":1,"fields":[{"name":"CustomerId","type":"string","elementType":null,"isArray":false,"isNullable":false,"isRequired":false,"isString":true}]}]}]}
 		""";
 
-	const string BaselineV2Json = /*lang=json,strict*/ """
+	const string BaselineV2Json = /*lang=json,strict*/
+		"""
 		{"formatVersion":1,"aggregates":[{"name":"OrderAggregate","namespace":"Testing","events":[{"name":"OrderCreatedEvent","namespace":"Testing.OrderEvents","method":"CreateOrder","schemaVersion":2,"fields":[{"name":"CustomerId","type":"string","elementType":null,"isArray":false,"isNullable":false,"isRequired":false,"isString":true}]}]}]}
 		""";
 

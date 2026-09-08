@@ -137,7 +137,10 @@ static class AggregateInfoBuilder
 	{
 		shouldDeclareAggregateBase = false;
 		isPartial = TypeHelpers.IsPartial(syntax);
-		inheritsAggregateBase = TypeHelpers.InheritsFrom(classSymbol, TypeLibrary.Aggregates.AggregateBase);
+		inheritsAggregateBase = TypeHelpers.InheritsFrom(
+			classSymbol,
+			TypeLibrary.Purview.EventSourcing.Aggregates.AggregateBase
+		);
 		var canGenerate = true;
 
 		if (!isPartial)
@@ -294,10 +297,13 @@ static class AggregateInfoBuilder
 			if (
 				member is IMethodSymbol methodSymbol
 				&& (
-					AggregateEventMethodBuilder.HasAttribute(methodSymbol, TypeLibrary.Attributes.EventAttribute)
+					AggregateEventMethodBuilder.HasAttribute(
+						methodSymbol,
+						TypeLibrary.Purview.EventSourcing.Aggregates.EventAttribute
+					)
 					|| AggregateEventMethodBuilder.HasAttribute(
 						methodSymbol,
-						TypeLibrary.Attributes.CollectionEventAttribute
+						TypeLibrary.Purview.EventSourcing.Aggregates.CollectionEventAttribute
 					)
 				)
 			)

@@ -142,8 +142,8 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 
 		var query = result.Generated();
 		var blobUri = query.GetRecord("BlobUri", "Testing");
-		var compareTo = blobUri.GetMethod(query, "CompareTo", TypeRefs.Named("BlobUri", "Testing"));
-		await Assert.That(compareTo.ParameterList.Parameters[0].Type?.ToString()).Contains("?");
+		var compareTo = blobUri.GetMethod("CompareTo", TypeRefs.Named("BlobUri", "Testing"));
+		await Assert.That(compareTo.Node.ParameterList.Parameters[0].Type?.ToString()).Contains("?");
 
 		var errors = result
 			.CompilationResult.Compilation.GetDiagnostics(cancellationToken)
@@ -181,8 +181,8 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		);
 		var query = result.Generated();
 		var phoneNumber = query.GetRecord("PhoneNumber", "Testing");
-		var ctor = phoneNumber.GetConstructor(query, TypeRefs.String);
-		await Assert.That(ctor.Modifiers.ToString()).Contains("private");
+		var ctor = phoneNumber.GetConstructor(TypeRefs.String);
+		await Assert.That(ctor.Node.Modifiers.ToString()).Contains("private");
 		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.ScalarConstructorMissing);
 
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
@@ -214,8 +214,8 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 
 		var query = result.Generated();
 		var blobUri = query.GetRecord("BlobUri", "Testing");
-		var empty = blobUri.GetProperty(query, "Empty", TypeRefs.Named("BlobUri", "Testing"));
-		await Assert.That(empty.Modifiers.ToString()).Contains("static");
+		var empty = blobUri.GetProperty("Empty", TypeRefs.Named("BlobUri", "Testing"));
+		await Assert.That(empty.Node.Modifiers.ToString()).Contains("static");
 	}
 
 	[Test]
@@ -248,8 +248,8 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		);
 		var query = result.Generated();
 		var emailAddress = query.GetRecord("EmailAddress", "Testing");
-		var toString = emailAddress.GetMethod(query, "ToString");
-		await Assert.That(toString.Modifiers.ToString()).Contains("override");
+		var toString = emailAddress.GetMethod("ToString");
+		await Assert.That(toString.Node.Modifiers.ToString()).Contains("override");
 
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 
@@ -275,9 +275,7 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 
 		var result = await GenerateAsync(source, cancellationToken);
 
-		await Assert
-			.That(result.Generated().GetRecord("BlobUri", "Testing").HasProperty(result.Generated(), "Empty"))
-			.IsFalse();
+		await Assert.That(result.Generated().GetRecord("BlobUri", "Testing").HasProperty("Empty")).IsFalse();
 	}
 
 	[Test]
@@ -330,8 +328,8 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		);
 		var query = result.Generated();
 		var projectId = query.GetRecord("ProjectId", "Testing");
-		var ctor = projectId.GetConstructor(query, TypeRefs.String);
-		await Assert.That(ctor.Modifiers.ToString()).Contains("private");
+		var ctor = projectId.GetConstructor(TypeRefs.String);
+		await Assert.That(ctor.Node.Modifiers.ToString()).Contains("private");
 
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 		var harnessType = assembly.GetType("Testing.ProjectHarness")!;
@@ -455,10 +453,10 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		var query = result.Generated();
 		var reportProcessingStatus = query.GetRecord("ReportProcessingStatus", "Testing");
 		var statusType = TypeRefs.Named("ReportProcessingStatus", "Testing");
-		await Assert.That(reportProcessingStatus.HasProperty(query, "Uploaded", statusType)).IsTrue();
-		await Assert.That(reportProcessingStatus.HasProperty(query, "Processing", statusType)).IsTrue();
-		await Assert.That(reportProcessingStatus.HasProperty(query, "Completed", statusType)).IsTrue();
-		await Assert.That(reportProcessingStatus.HasProperty(query, "Failed", statusType)).IsTrue();
+		await Assert.That(reportProcessingStatus.HasProperty("Uploaded", statusType)).IsTrue();
+		await Assert.That(reportProcessingStatus.HasProperty("Processing", statusType)).IsTrue();
+		await Assert.That(reportProcessingStatus.HasProperty("Completed", statusType)).IsTrue();
+		await Assert.That(reportProcessingStatus.HasProperty("Failed", statusType)).IsTrue();
 
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 
@@ -496,10 +494,10 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 
 		var query = result.Generated();
 		var reportProcessingStatus = query.GetRecord("ReportProcessingStatus", "Testing");
-		await Assert.That(reportProcessingStatus.HasProperty(query, "Uploaded")).IsFalse();
-		await Assert.That(reportProcessingStatus.HasProperty(query, "Processing")).IsFalse();
-		await Assert.That(reportProcessingStatus.HasProperty(query, "Completed")).IsFalse();
-		await Assert.That(reportProcessingStatus.HasProperty(query, "Failed")).IsFalse();
+		await Assert.That(reportProcessingStatus.HasProperty("Uploaded")).IsFalse();
+		await Assert.That(reportProcessingStatus.HasProperty("Processing")).IsFalse();
+		await Assert.That(reportProcessingStatus.HasProperty("Completed")).IsFalse();
+		await Assert.That(reportProcessingStatus.HasProperty("Failed")).IsFalse();
 	}
 
 	[Test]
@@ -624,9 +622,9 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		var address = query.GetClass("Address", "Testing");
 		var addressType = TypeRefs.Named("Address", "Testing");
 
-		var ctor = address.GetConstructor(query, TypeRefs.String, TypeRefs.String);
-		await Assert.That(ctor.Modifiers.ToString()).Contains("private");
-		await Assert.That(address.HasMethod(query, "Equals", addressType)).IsTrue();
+		var ctor = address.GetConstructor(TypeRefs.String, TypeRefs.String);
+		await Assert.That(ctor.Node.Modifiers.ToString()).Contains("private");
+		await Assert.That(address.HasMethod("Equals", addressType)).IsTrue();
 		await Assert.That(HasOperator(query, address, "==", "Address", "Address")).IsTrue();
 
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
@@ -661,8 +659,8 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 
 		var query = result.Generated();
 		var userDetails = query.GetClass("UserDetails", "Testing");
-		var empty = userDetails.GetProperty(query, "Empty", TypeRefs.Named("UserDetails", "Testing"));
-		await Assert.That(empty.Modifiers.ToString()).Contains("static");
+		var empty = userDetails.GetProperty("Empty", TypeRefs.Named("UserDetails", "Testing"));
+		await Assert.That(empty.Node.Modifiers.ToString()).Contains("static");
 	}
 
 	[Test]
@@ -693,7 +691,7 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		);
 		var query = result.Generated();
 		var userCaptureStruct = query.GetStruct("UserCaptureStruct", "Testing");
-		await Assert.That(userCaptureStruct.BaseList?.ToString()).Contains("IEquatable");
+		await Assert.That(userCaptureStruct.Node.BaseList?.ToString()).Contains("IEquatable");
 
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 
@@ -735,9 +733,9 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		);
 		var query = result.Generated();
 		var emptyValueObject = query.GetClass("EmptyValueObject", "Testing");
-		var create = emptyValueObject.GetMethod(query, "Create");
-		await Assert.That(create.Modifiers.ToString()).Contains("static");
-		var createBody = create.Body?.ToString() ?? string.Empty;
+		var create = emptyValueObject.GetMethod("Create");
+		await Assert.That(create.Node.Modifiers.ToString()).Contains("static");
+		var createBody = create.Node.Body?.ToString() ?? string.Empty;
 		await Assert.That(createBody).Contains("OnNormalize();");
 		await Assert.That(createBody).DoesNotContain("OnNormalize(ref );");
 
@@ -769,9 +767,7 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 
 		var result = await GenerateAsync(source, cancellationToken);
 
-		await Assert
-			.That(result.Generated().GetClass("UserDetails", "Testing").HasProperty(result.Generated(), "Empty"))
-			.IsFalse();
+		await Assert.That(result.Generated().GetClass("UserDetails", "Testing").HasProperty("Empty")).IsFalse();
 	}
 
 	[Test]
@@ -811,7 +807,7 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		);
 		var query = result.Generated();
 		var converter = query.GetClass("StrictEmailAddressJsonConverter", "Testing");
-		await Assert.That(converter.GetMethod(query, "Read").Body?.ToString()).Contains("return Create(value);");
+		await Assert.That(converter.GetMethod("Read").Node.Body?.ToString()).Contains("return Create(value);");
 
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 		var harnessType = assembly.GetType("Testing.StrictHarness")!;
@@ -884,7 +880,7 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		await Assert.That(HasOperator(query, name, ">", "Name", "string")).IsTrue();
 		await Assert.That(HasOperator(query, name, "<=", "Name", "string")).IsTrue();
 		await Assert.That(HasOperator(query, name, ">=", "Name", "string")).IsTrue();
-		await Assert.That(name.HasMethod(query, "Equals", TypeRefs.String)).IsTrue();
+		await Assert.That(name.HasMethod("Equals", TypeRefs.String)).IsTrue();
 		await Assert.That(HasOperator(query, name, "==", "Name", "string")).IsTrue();
 		await Assert.That(HasOperator(query, name, "!=", "Name", "string")).IsTrue();
 		await Assert.That(HasOperator(query, name, "==", "string", "Name")).IsTrue();
@@ -943,7 +939,7 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		await Assert
 			.That(HasOperator(query, reportProcessingStatus, "!=", "ReportProcessingStatus", "ReportProcessingStatus"))
 			.IsTrue();
-		await Assert.That(reportProcessingStatus.BaseList?.ToString()).Contains("IEquatable");
+		await Assert.That(reportProcessingStatus.Node.BaseList?.ToString()).Contains("IEquatable");
 
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 
@@ -977,8 +973,8 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		var query = result.Generated();
 		var name = query.GetRecord("Name", "Testing");
 		var nameType = TypeRefs.Named("Name", "Testing");
-		await Assert.That(name.HasMethod(query, "CompareTo", nameType)).IsTrue();
-		await Assert.That(name.HasMethod(query, "CompareTo", TypeRefs.String)).IsTrue();
+		await Assert.That(name.HasMethod("CompareTo", nameType)).IsTrue();
+		await Assert.That(name.HasMethod("CompareTo", TypeRefs.String)).IsTrue();
 		await Assert.That(HasOperator(query, name, "<", "Name", "Name")).IsFalse();
 		await Assert.That(HasOperator(query, name, ">", "Name", "Name")).IsFalse();
 		await Assert.That(HasOperator(query, name, "<=", "Name", "Name")).IsFalse();
@@ -1006,8 +1002,8 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		var query = result.Generated();
 		var name = query.GetRecord("Name", "Testing");
 		var nameType = TypeRefs.Named("Name", "Testing");
-		await Assert.That(name.HasMethod(query, "CompareTo", nameType)).IsTrue();
-		await Assert.That(name.HasMethod(query, "CompareTo", TypeRefs.String)).IsTrue();
+		await Assert.That(name.HasMethod("CompareTo", nameType)).IsTrue();
+		await Assert.That(name.HasMethod("CompareTo", TypeRefs.String)).IsTrue();
 		await Assert.That(HasOperator(query, name, "<", "Name", "Name")).IsFalse();
 		await Assert.That(HasOperator(query, name, ">", "Name", "Name")).IsFalse();
 		await Assert.That(HasOperator(query, name, "<=", "Name", "Name")).IsFalse();
@@ -1234,29 +1230,29 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		);
 
 		var query = result.Generated();
-		var recordCtor = query.GetRecord("UserCaptureRecord", "Testing").GetConstructor(query);
-		await Assert.That(recordCtor.Modifiers.ToString()).Contains("private");
-		await Assert.That(recordCtor.Initializer?.ToString()).Contains("this(");
+		var recordCtor = query.GetRecord("UserCaptureRecord", "Testing").GetConstructor();
+		await Assert.That(recordCtor.Node.Modifiers.ToString()).Contains("private");
+		await Assert.That(recordCtor.Node.Initializer?.ToString()).Contains("this(");
 
-		var recordStructCtor = query.GetRecord("UserCaptureRecordStruct", "Testing").GetConstructor(query);
-		await Assert.That(recordStructCtor.Modifiers.ToString()).Contains("public");
-		await Assert.That(recordStructCtor.Initializer?.ToString()).Contains("this(");
+		var recordStructCtor = query.GetRecord("UserCaptureRecordStruct", "Testing").GetConstructor();
+		await Assert.That(recordStructCtor.Node.Modifiers.ToString()).Contains("public");
+		await Assert.That(recordStructCtor.Node.Initializer?.ToString()).Contains("this(");
 
-		var recordStruct1Ctor = query.GetRecord("UserCaptureRecordStruct1", "Testing").GetConstructor(query);
-		await Assert.That(recordStruct1Ctor.Modifiers.ToString()).Contains("public");
-		await Assert.That(recordStruct1Ctor.Initializer?.ToString()).Contains("this(");
+		var recordStruct1Ctor = query.GetRecord("UserCaptureRecordStruct1", "Testing").GetConstructor();
+		await Assert.That(recordStruct1Ctor.Node.Modifiers.ToString()).Contains("public");
+		await Assert.That(recordStruct1Ctor.Node.Initializer?.ToString()).Contains("this(");
 
-		var recordClassCtor = query.GetRecord("UserCaptureRecordClass", "Testing").GetConstructor(query);
-		await Assert.That(recordClassCtor.Modifiers.ToString()).Contains("private");
-		await Assert.That(recordClassCtor.Initializer?.ToString()).Contains("this(");
+		var recordClassCtor = query.GetRecord("UserCaptureRecordClass", "Testing").GetConstructor();
+		await Assert.That(recordClassCtor.Node.Modifiers.ToString()).Contains("private");
+		await Assert.That(recordClassCtor.Node.Initializer?.ToString()).Contains("this(");
 
-		var classCtor = query.GetClass("UserCaptureClass", "Testing").GetConstructor(query);
-		await Assert.That(classCtor.Modifiers.ToString()).Contains("private");
-		await Assert.That(classCtor.Initializer?.ToString()).Contains("this(");
+		var classCtor = query.GetClass("UserCaptureClass", "Testing").GetConstructor();
+		await Assert.That(classCtor.Node.Modifiers.ToString()).Contains("private");
+		await Assert.That(classCtor.Node.Initializer?.ToString()).Contains("this(");
 
-		var structCtor = query.GetStruct("UserCaptureStruct", "Testing").GetConstructor(query);
-		await Assert.That(structCtor.Modifiers.ToString()).Contains("public");
-		await Assert.That(structCtor.Initializer?.ToString()).Contains("this(");
+		var structCtor = query.GetStruct("UserCaptureStruct", "Testing").GetConstructor();
+		await Assert.That(structCtor.Node.Modifiers.ToString()).Contains("public");
+		await Assert.That(structCtor.Node.Initializer?.ToString()).Contains("this(");
 
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 
@@ -1392,8 +1388,8 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 		var query = result.Generated();
 		var onValidate = query
 			.GetRecord("UserDetails", "Testing")
-			.GetMethod(query, "OnValidate", TypeRefs.Guid, TypeRefs.String, TypeRefs.Bool);
-		var modifiers = onValidate.Modifiers.ToString();
+			.GetMethod("OnValidate", TypeRefs.Guid, TypeRefs.String, TypeRefs.Bool);
+		var modifiers = onValidate.Node.Modifiers.ToString();
 		await Assert.That(modifiers).Contains("readonly");
 		await Assert.That(modifiers).Contains("partial");
 
@@ -1422,10 +1418,10 @@ public sealed class ValueObjectSourceGeneratorTests : ValueObjectSourceGenerator
 	{
 		foreach (var candidate in query.In(type).GetAll<OperatorDeclarationSyntax>())
 		{
-			if (candidate.OperatorToken.Text != operatorToken)
+			if (candidate.Node.OperatorToken.Text != operatorToken)
 				continue;
 
-			var parameters = candidate.ParameterList.Parameters;
+			var parameters = candidate.Node.ParameterList.Parameters;
 			if (parameters.Count != parameterTypeContains.Length)
 				continue;
 

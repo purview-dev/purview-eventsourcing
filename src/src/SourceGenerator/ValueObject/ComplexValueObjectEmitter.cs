@@ -56,7 +56,7 @@ static partial class ComplexValueObjectEmitter
 		return model.Options.GenerateJsonConverter && !model.HasJsonConverterAttribute
 			?
 			[
-				new AttributeDeclarationOptions(TypeLibrary.System.TextJson.JsonConverterAttribute)
+				new AttributeDeclarationOptions(TypeLibrary.System.Text.Json.Serialization.JsonConverterAttribute)
 				{
 					Arguments = [new($"typeof({model.TypeModel.Name}JsonConverter)")],
 				},
@@ -163,7 +163,7 @@ static partial class ComplexValueObjectEmitter
 				IsReadOnly = model.ValidateHookIsReadOnly,
 				Attributes =
 				[
-					new(TypeLibrary.System.DiagnosticsCodeAnalysis.SuppressMessageAttribute)
+					new(PurviewTypeLibrary.System.Diagnostics.CodeAnalysis.SuppressMessageAttribute)
 					{
 						Arguments = [new("\"Performance\""), new("\"CA1822:Mark members as static\"")],
 					},

@@ -177,12 +177,7 @@ public sealed class AdminSnapshotEndpointsTests
 		{
 			SaveCount++;
 			return Task.FromResult(
-				new SaveResult<T>(
-					aggregate,
-					Validation.ValidationResult.Success,
-					saved: true,
-					skipped: false
-				)
+				new SaveResult<T>(aggregate, Validation.ValidationResult.Success, saved: true, skipped: false)
 			);
 		}
 
